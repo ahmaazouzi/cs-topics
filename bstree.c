@@ -10,13 +10,14 @@ node *newNode(char data);
 node *insert(node *node, char data);
 void inorder(node * node);
 int main(){
-	node *root = newNode('d');
-	insert(root, 'j');
-	insert(root, '2');
-	insert(root, 'f');
-	insert(root, 'd');
-	insert(root, 'd');
-	insert(root, 'd');
+	node *root = NULL; 
+	root = insert(root, 'd');
+	insert(root, 'z');
+	insert(root, 'z');
+	insert(root, 'z');
+	insert(root, 'z');
+	insert(root, 'z');
+	insert(root, 'z');
 	insert(root, 'a');
 	insert(root, 'z');
 	insert(root, '#');
@@ -26,29 +27,28 @@ int main(){
 }
 
 node *newNode(char data){
-	node *newnode = (struct node *) malloc(sizeof(node));
-	newnode->data = data;
-	newnode->left = newnode->right = NULL;
-	return newnode;
+	node *node = (struct node *) malloc(sizeof(struct node));
+	node->data = data;
+	node->left = node->right = NULL;
+	return node;
+}
+
+void inorder(node *node){
+	if (node != NULL){
+		inorder(node->left);
+		printf("%c ", node->data);
+		inorder(node->right);
+	}
 }
 
 node *insert(node *node, char data){
 	if (node == NULL)
 		return newNode(data);
-
-	if (data == node->data)
-		return node;
-	else if (data < node->data)
+	// if (node->data == data)
+	// 	;
+	if (data < node->data)
 		node->left = insert(node->left, data);
-	else
+	else if (data > node->data)
 		node->right = insert(node->right, data);
 	return node;
-}
-
-void inorder(node * node){
-	if (node != NULL){
-		inorder(node->left);
-		printf("%c\n", node->data);
-		inorder(node->right);
-	}
 }
