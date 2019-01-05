@@ -10,6 +10,8 @@ typedef struct node {
 node *newNode(char data);
 node *insert(node *, char);
 void inorder(node *);
+struct node * minValueNode(struct node*);
+node *delete(node *, char);
 int main(){
 	node *root = NULL;
 	root = insert(root, 100);
@@ -18,6 +20,10 @@ int main(){
 	insert(root, 98);
 	insert(root, 119);
 	inorder(root);
+	putchar('\n');
+	delete(root, 99);
+	inorder(root);
+	putchar('\n');
 	return 0;
 }
 
@@ -41,11 +47,43 @@ node *insert(node * node, char data){
 void inorder(node *node){
 	if(node != NULL){
 		inorder(node->left);
-		printf("%c\n", node->data);
+		printf("%c ", node->data);
 		inorder(node->right);
 	}
 }
 
-node *delete(node *node){
-	return *node;
+struct node * minValueNode(struct node* node) { 
+    struct node* current = node; 
+    while (current->left != NULL) 
+        current = current->left; 
+    return current; 
+} 
+
+node *delete(node *node, char data){
+	if (node == NULL)
+		return node;
+
+	if (data < node->data)
+		node->left = delete(node->left, data);
+	else if(data > node->data)
+		node->right = delete(node->right, data);
+
+	else {
+		if (node->left == NULL){
+			struct node *temp = node->right;
+			free(node);
+			return temp;
+		} else if (node->right == NULL){
+			struct node *temp = node->left;
+			free(node);
+			return temp;
+		}
+
+		struct node* temp = minValueNode(node->right); 
+		node->data = temp->data;
+		node->right = delete(node->right, temp->data);
+
+	}
+
+	return node;
 }
