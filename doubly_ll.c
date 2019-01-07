@@ -1,3 +1,5 @@
+// From: geeksforgeeks.com
+
 typedef struct deque Deque;
 
 #define DEQUE_FRONT (0)
