@@ -1,3 +1,5 @@
+# From Miller and Ranum's "Problem Solving with Algorithms and Data Structures"
+
 def insert_sort(lista):
 	for index in range(1,len(lista)):
 		pos = index
