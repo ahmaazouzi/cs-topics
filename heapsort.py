@@ -1,4 +1,6 @@
-#From: CLRS, MIT's intro to algorithms OWC.
+# From: CLRS, MIT's intro to algorithms OWC
+# with slight modifications as CLRS's lists are 1-based.
+# 
 
 def get_parent(index):
 	return index / 2
@@ -10,16 +12,16 @@ def get_right(index):
 	return (2 * index) + 1
 
 #Repackeging this spaghetti into a heap object will make it less messy
-def max_heapify(alist, index):
+def max_heapify(alist, size, index):
 	left = get_left(index)
 	right = get_right(index)
 
 	# heap size (to be changed)
-	if left < len(alist) and alist[left] > alist[index]:
+	if left < size and alist[left] > alist[index]:
 		largest = left
 	else:
 		largest = index
-	if right < len(alist)  and alist[right] > alist[largest]:
+	if right < size and alist[right] > alist[largest]:
 		largest = right
 
 	if largest != index:
@@ -27,25 +29,27 @@ def max_heapify(alist, index):
 		temp = alist[largest]
 		alist[largest] = alist[index]
 		alist[index] = temp
-		max_heapify(alist, largest)
+		max_heapify(alist, size, largest)
 
 def build_max_heap(alist):
 	# Crap to be fixed
 	half_size = reversed(range((len(alist))/2))
 	for i in half_size:
-		max_heapify(alist, i)
-		
+		max_heapify(alist, len(alist), i)
 
-a = [1, 16, 14, 10, 8, 7, 9, 3, 2, 4, 1]
-print "1 is unheaped: ", a
-max_heapify(a, 0)
-print "1 is heaped: ", a
-print
+def heap_sort(alist):
+	build_max_heap(alist)
+	heap_size = len(alist) - 1
+	while heap_size > 0:
+		temp = alist[0]
+		alist[0] = alist[heap_size]
+		alist[heap_size] = temp
+		heap_size -= 1
+		max_heapify(alist, heap_size, 0)
 
-b = [4, 1, 3, 2, 16, 9, 10, 14, 8]
-print "unheapified list: ", b
-build_max_heap(b)
-print "heapified list: ", b
+b = [4, 1, 3, 2, 16, 9, 10, 14, 8, 7]
+heap_sort(b)
+print b
 
 
 
