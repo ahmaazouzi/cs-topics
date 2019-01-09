@@ -37,19 +37,51 @@ def build_max_heap(alist):
 	for i in half_size:
 		max_heapify(alist, len(alist), i)
 
-def heap_sort(alist):
-	build_max_heap(alist)
-	heap_size = len(alist) - 1
-	while heap_size > 0:
-		temp = alist[0]
-		alist[0] = alist[heap_size]
-		alist[heap_size] = temp
-		heap_size -= 1
-		max_heapify(alist, heap_size, 0)
+def heap_max(alist):
+	if len(alist) > 0:
+		return alist[0]
+	else:
+		print "Empty queue"
 
-b = [4, 1, 3, 2, 16, 9, 10, 14, 8, 7]
-heap_sort(b)
-print b
+def heap_extract_max(alist):
+	if len(alist) < 1:
+		print "Empty queue"
+		return
+	maximum = alist[0]
+	alist[0] = alist[-1]
+	del(alist[-1])
+	max_heapify(alist, len(alist), 0)
+	return maximum
+
+def heap_increase_key(alist, index, key):
+	if (key) < alist[index]:
+		print "new key is smaller than current key"
+		return
+
+	alist[index] = key
+	while index > 0 and alist[get_parent(index)] < alist[index]:
+		temp = alist[index]
+		alist[index] = alist[get_parent(index)] # to be fixed
+		alist[get_parent(index)] = temp
+		index = get_parent(index)
+
+def max_heap_insert(alist, key):
+	alist.append(-1)
+	heap_increase_key(alist, len(alist) - 1, key)
+
+a = []
+
+max_heap_insert(a, 0)
+max_heap_insert(a, 44)
+max_heap_insert(a, 55)
+max_heap_insert(a, 1000)
+heap_extract_max(a)
+
+print a
+
+
+
+
 
 
 
