@@ -1,4 +1,4 @@
-# From: CLRS, MIT's intro to algorithms OWC
+# From: CLRS, MIT's intro to algorithms OCW
 # with slight modifications as CLRS's lists are 1-based.
 # Heap size is also a little ambiguous.
 
