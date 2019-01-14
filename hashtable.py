@@ -1,5 +1,13 @@
 # From Miller and Ranum's "Problem Solving with Algorithms and Data Structures"
 
+# 1. Ideally, insert/delete in a hashtable is O(1).
+# 2. It takes advantage of array random access. It's also dynamic in the sense that 
+# the index of an item is derived from its value. This dynamity can cause collisions.
+# 3. Collisions can be resolved using chaining (I personally find chaining better.)or open addressing.
+# Open addressing sounds very problematic. In addition to having to search for a slot somwhere other than
+# where it's supposed to be, it also causes later insertions to fall away from their supposed locations.
+# It's like a double collision.
+
 class HashMap:
 	def __init__(self):
 		self.size = 11
@@ -46,18 +54,23 @@ class HashMap:
 	def __getitem__(self, key):
 		return self.get(key)
 
-	def __setitem__(self, key):
-		return self.set(key)
+	def __setitem__(self, key, data):
+		return self.put(key)
 
 	def hashFunction(self, key, size):
-		return key % size
+		strkey = str(key)
+		val = 0
+		for i in strkey:
+			val = val + ord(i)
+		return val % size
 
 	def rehash(self, oldhash, size):
 		return (oldhash + 1) % size
 
 
 a = HashMap()
-a.put(0, "baba")
-a.put(0, "nana")
-print a.slots
+a.put("lala", "nana")
+
+v = a.get("lala")
+print v
 
