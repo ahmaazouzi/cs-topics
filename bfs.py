@@ -1,7 +1,9 @@
+# Can be used for udacity  cs101 path problem
+
 from graph import Graph, Vertex
 from queue import Queue
 
-def bfs(g,start):
+def bfs(start):
 	start.setDistance(0)
 	start.setPred(None)
 	vertQueue = Queue()
@@ -19,6 +21,6 @@ def bfs(g,start):
 d = Graph()
 v = d.addVertex(44)
 print v.getColor()
-bfs(d, v)
+bfs(v)
 print v.getColor()
 
