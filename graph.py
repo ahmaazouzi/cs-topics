@@ -24,6 +24,8 @@ class Vertex:
 		self.color = 'white'
 		self.pred = None
 		self.disc = 0
+		self.disc = 0
+		self.fin = 0
 
 	def addNeighbor(self, nbr, weight = 0):
 		self.connectedTo[nbr] = weight
@@ -49,12 +51,20 @@ class Vertex:
 	def setPred(self,p):
 		self.pred = p
 
+	def setDiscovery(self,dtime): self.disc = dtime
+	
+	def setFinish(self,ftime): self.fin = ftime
+
 	def getPred(self):
 		return self.pred
         
 	def getDistance(self): return self.dist
         
 	def getColor(self): return self.color
+        
+    def getFinish(self): return self.fin
+        
+    def getDiscovery(self): return self.disc
 
 class Graph:
 	def __init__(self):
