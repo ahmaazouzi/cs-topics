@@ -23,7 +23,7 @@ class Vertex:
 		self.connectedTo = {}
 		self.color = 'white'
 		self.pred = None
-		self.disc = 0
+		self.dist = 0
 		self.disc = 0
 		self.fin = 0
 
