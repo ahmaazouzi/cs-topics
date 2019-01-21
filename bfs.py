@@ -1,3 +1,4 @@
+# From Miller and Ranum's "Problem Solving with Algorithms and Data Structures"
 # Can be used for udacity  cs101 path problem
 
 from graph import Graph, Vertex

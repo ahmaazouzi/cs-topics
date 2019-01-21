@@ -1,3 +1,4 @@
+# From Miller and Ranum's "Problem Solving with Algorithms and Data Structures"
 class Queue:
     def __init__(self):
         self.items = []

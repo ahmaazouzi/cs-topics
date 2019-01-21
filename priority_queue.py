@@ -79,6 +79,7 @@ max_heap_insert(a, 44)
 max_heap_insert(a, 55)
 max_heap_insert(a, 105500)
 max_heap_insert(a, 13300)
+
 print heap_extract_max(a)
 print heap_extract_max(a)
 print heap_extract_max(a)
