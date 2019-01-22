@@ -23,7 +23,7 @@ class Vertex:
 		self.connectedTo = {}
 		self.color = 'white'
 		self.pred = None
-		self.dist = 0
+		self.dist   = 0
 		self.disc = 0
 		self.fin = 0
 
@@ -61,10 +61,10 @@ class Vertex:
 	def getDistance(self): return self.dist
         
 	def getColor(self): return self.color
-        
-    def getFinish(self): return self.fin
-        
-    def getDiscovery(self): return self.disc
+
+	def getFinish(self): return self.fin
+
+	def getDiscovery(self): return self.disc
 
 class Graph:
 	def __init__(self):

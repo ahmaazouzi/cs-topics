@@ -17,11 +17,11 @@ def max_heapify(alist, size, index):
 	right = get_right(index)
 
 	# heap size (to be changed)
-	if left < size and alist[left] > alist[index]:
+	if left < size and alist[left][0] < alist[index][0]:
 		largest = left
 	else:
 		largest = index
-	if right < size and alist[right] > alist[largest]:
+	if right < size and alist[right][0] < alist[largest][0]:
 		largest = right
 
 	if largest != index:
@@ -33,7 +33,7 @@ def max_heapify(alist, size, index):
 
 def build_max_heap(alist):
 	# Crap to be fixed
-	half_size = reversed(range((len(alist))/2))
+	half_size = reversed(range((len(alist) // 2) + 1))
 	for i in half_size:
 		max_heapify(alist, len(alist), i)
 
@@ -59,7 +59,7 @@ def heap_increase_key(alist, index, key):
 		return
 
 	alist[index] = key
-	while index > 0 and alist[get_parent(index)] < alist[index]:
+	while index > 0 and alist[get_parent(index)] > alist[index]:
 		temp = alist[index]
 		alist[index] = alist[get_parent(index)] # to be fixed
 		alist[get_parent(index)] = temp
@@ -69,31 +69,21 @@ def max_heap_insert(alist, key):
 	alist.append(-1)
 	heap_increase_key(alist, len(alist) - 1, key)
 
-a = []
+# a = []
 
-max_heap_insert(a, 77)
-max_heap_insert(a, 100)
-max_heap_insert(a, 1000)
-max_heap_insert(a, 0)
-max_heap_insert(a, 44)
-max_heap_insert(a, 55)
-max_heap_insert(a, 105500)
-max_heap_insert(a, 13300)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
-print heap_extract_max(a)
+# max_heap_insert(a, 77)
+# max_heap_insert(a, 100)
+# max_heap_insert(a, 1000)
+# max_heap_insert(a, 0)
+# max_heap_insert(a, 44)
+# max_heap_insert(a, 55)
+# max_heap_insert(a, 105500)
+# max_heap_insert(a, 13300)
+
+# a = [6666, 666, 0, 7773,54,2,2,4,444,5,6,66666]
+# build_max_heap(a)
+
+# while a != []:
+# 	print heap_extract_max(a)
  
-print a
-
-
-
-
-
-
-
-
+# print a

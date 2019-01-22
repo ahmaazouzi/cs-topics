@@ -33,7 +33,7 @@ def max_heapify(alist, size, index):
 
 def build_max_heap(alist):
 	# Crap to be fixed
-	half_size = reversed(range((len(alist))/2))
+	half_size = reversed(range((len(alist))/2) + 1)
 	for i in half_size:
 		max_heapify(alist, len(alist), i)
 
