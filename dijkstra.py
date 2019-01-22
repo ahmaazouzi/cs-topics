@@ -14,6 +14,8 @@ def dijkstra(G, s):
 		lis = [i[1].getDistance() for i in Q]
 		l = minheap.heap_extract_max(Q)
 		minheap.build_max_heap(Q)
+		minheap.build_max_heap(Q)
+		
 		
 		u = l[1]
 		print u.getDistance(), lis

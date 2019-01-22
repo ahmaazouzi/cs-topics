@@ -59,7 +59,7 @@ def heap_increase_key(alist, index, key):
 		return
 
 	alist[index] = key
-	while index > 0 and alist[get_parent(index)] > alist[index]:
+	while index > 0 and alist[get_parent(index)][0] < alist[index][0]:
 		temp = alist[index]
 		alist[index] = alist[get_parent(index)] # to be fixed
 		alist[get_parent(index)] = temp
