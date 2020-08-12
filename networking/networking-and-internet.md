@@ -66,12 +66,14 @@
 - Networks are extremely complicated. Fortunately we have we use models to organize and simplify our knowledge about the structure and many components, protocols and technologies of networking.
 - One great way of describing networking is the so-called layered architecture. Networking in general and networks are described into terms of layers of things. These layered models allow for modularity as parts of a complex system can be changed without affecting the overall system. They also allow us to discuss specific parts of a system without having to bother or be confused by what lies in other layers.
 
+| --- |
 | Application |
 | Transport |
 | Network|
 | Link |
 | Physical |
 
+| --- |
 | Application |
 | Presentation |
 | session |
@@ -79,6 +81,9 @@
 | Network|
 | Link |
 | Physical |
+
+
+
 
 
 
