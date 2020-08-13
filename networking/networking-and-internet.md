@@ -130,10 +130,24 @@
 - An important concept that allows for this interlayer interaction **encapsulation**. Upper layer data is encapsulated in lower layer packets: meaning that a layer receives a packet from the layer above it, adds its **header** information to the received packet, thus constructing a packet of its kind.
 - In the 5-layer Internet stack, an application layer message is passed down to the transport layer which adds transport layer header information to the application message thus turning it into an application layer segment. The transport header information allows the packet to be directed to the right application in the end system and checks for errors and maybe allows for reliability in the case of TCP. The segment is then passed to the network layer where it becomes the payload of a an IP datagram. It receives source and destination information which allows it to be routed to its final destination. The datagram is then encapsulated into a link layer frame which allow it to move through the a link the appropriate next node. Frames themselves are carefully arranged bit patterns that move through the underlying hardware. When the frames  are received by the application in the destination end system, they are reassembled and reconstructed back into the original messages that were sent by the original end system.
 - This was a very brief and simplified overview of how a message moves through the network. In reality, there is much more to this process. One important process that take place in data's journey through the network is splitting large messages into smaller chunks that can be fitted inside a segment and breaking a segment up to parts that can be encapsulated inside datagrams... etc.
-- The following figures is a better illustration of encapsulation:
-<div>
-![data journey 2](fivelayer.svg)
-</div>
+- The following [figure](https://en.wikipedia.org/wiki/Internet_protocol_suite#/media/File:IP_stack_connections.svg) at Wikipedia is an excellent illustration of how encapsulation works in general.
 
 ## Network Security:
-## Networking History:
+- Networks are vulnerable to many attacks that might target the hosts connected to it, its users and the network itself. The attackers might want to damage the networks, the hosts or invade the privacy of the users. The network engineer must strive to find out how  such attacks are carried out, defend the network and its users against such attacks and think of ways to design networks that are immune to such attacks. Network security is an important field and this section provides an overview of common network security threats.
+- The reason for the Internet being so insecure is the fact that its original creators strove to make a transparent network based mutual trust!! They didn't know that most people are kinda scumbags! 
+
+### Networks as a Malware Delivery System:
+- **Malware** is bad software that infects your computer and can do terrible things like sending information to unauthorized actors, delete your files or shut down your computer. Most probably, you'd get a virus from the Internet. It's possibly that your computer becomes a part of a **botnet** which is a network of infected zombie computers that a bad actor uses to spread spam and carry DDoS attacks. Malware is also usually self-replicating meaning it creates copies of itself to infect your computer even more or it sends copies of itself over the network to infect other computers.
+
+### The Network Infrastructure Itself Can Be Attacked:
+- The most common attack on a network is **Denial of Service (DoS)**. In this attack a network or part of it such as a server is rendered unusable by legitimate users. DoS can be achieved using several types of attacks such as:
+	- **Vulnerability attack**: is achieved through sending a well-crafted sequence of packets to a vulnerable server/host. If the sequence is correct the host stops or crashes. 
+	- **Bandwidth flooding**: is done literally flooding the target with so many packets that its access linked so congested that it can't receive legitimate packets.
+	- **connection flooding**: is done with flooding a host with fully-open or half-opened TCP connections that it stops receiving legitimate connections.
+- DoS attacks can be detected and blocked, but an even worse and harder to detect and defend against version of this attack exists. It's called **DDoS**, distributed DoS. This is done usually with a botnet where connections from different distributed hosts.
+
+### The sniffers:
+- A passive receiver can be placed in the vicinity of a wireless transmitter and obtain a copy of every packet that moves in the network. This is called a **packet sniffer**. It is more ever more dangerous because its activity can't be detected and it can be the first step in other more lethal attacks. Even though most sensitive data today is strongly encrypted, the dangers of this attack shouldn't be underestimated. Wired LANs are also susceptible to sniffing.
+
+### Spoofing:
+- Spoofing is all about masquerading as somebody you are not! One form of spoofing is **IP spoofing** where you can create a packet with an arbitrary source address, add a real destination address to it and some content and send it in the wild Internet.
