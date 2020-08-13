@@ -65,24 +65,8 @@
 ## Protocol Layers and Models:
 - Networks are extremely complicated. Fortunately we have we use models to organize and simplify our knowledge about the structure and many components, protocols and technologies of networking.
 - One great way of describing networking is the so-called layered architecture. Networking in general and networks are described into terms of layers of things. These layered models allow for modularity as parts of a complex system can be changed without affecting the overall system. They also allow us to discuss specific parts of a system without having to bother or be confused by what lies in other layers.
-
-<table>
-	<tr>
-		<td>Application</td>
-	</tr>
-		<tr>
-		<td>Transport</td>
-	</tr>
-		<tr>
-		<td>Network</td>
-	</tr>
-		<tr>
-		<td>Link</td>
-	</tr>
-		<tr>
-		<td>Physical</td>
-	</tr>
-</table>
+- Networking protocols are organized in simple layered models that do a great job at simplifying the dizzying nature of networks and allowing for easy understanding of how protocols (be they hardware or software protocols) do their job and interact with other protocols in other layers.
+- One very popular layered networking model is the **seven-layer ISO OSI reference model**:
 
 <table>
 	<tr>
@@ -108,15 +92,46 @@
 		<tr>
 		<td>Physical</td>
 	</tr>
+</table> 
+
+- Another popular model which today's de facto model is the **five-layer Internet protocol stack**:
+
+<table>
+	<tr>
+		<td>Application</td>
+	</tr>
+		<tr>
+		<td>Transport</td>
+	</tr>
+		<tr>
+		<td>Network</td>
+	</tr>
+		<tr>
+		<td>Link</td>
+	</tr>
+		<tr>
+		<td>Physical</td>
+	</tr>
 </table>
 
+- Some people are opposed to protocol layering arguing that it introduces repetition such as the fact that indeed multiple protocols on different layers check for errors while this checking could have been done in just one layer. Interdependence between protocols from different layers kinda beats the purpose of layering which seems contrived and artificial.
+- Layers be layering:
+	+ **Application**: This is where protocols of specific applications exist. Here you have HTTP for web page applications, SMTP for email, DNS for website names, FTP for file transfer..etc. You can define your own protocols for your applications here use use the existing protocols. This layer's packets are called **messages**.
+	+ **Transport**: packets here are called **segments** and this layer is all about transport. It breaks large application messages into manageable segments to transport them through the network. It has the two famous protocols **TCP** and **UDP**. TCP provides and connection-oriented type of transport and strives to establish reliability and recovery of lost segments and prevention of congestion. UDP just sends segments and doesn't care about too much control.
+	+ **Network**: Packets are called **datagrams**. This layer acts like a postal service. The transport layer passes it information about the destination of the transport segment and this takes care of carrying the segment to the appropriate end-system. It includes the **IP** protocols which tells it where to forward the datagram and many types of **routing protocols** which guide the journey of a datagram.
+	+ **Link**: The network needs the assistance of the link layer to move the datagram (which gets wrapped in a link layer **frame**) through a link. There are several link layer protocols such as Ethernet, WiFi, cable's DOCSIS and PPP. The same frame might be handled by different protocols before it reaches its final destination.
+	+ **Physical**: Here individual bits move in the form of electrons, light pulses or radio waves through coaxial cable, UTP, fiber optics or air/the void. This layer's protocols are tied to the link layer's protocols, for example, Ethernet is both a link layer and physical layer protocol. 
 
+- The **OSI** model is old and respected. It's mostly the same as the 5-layer Internet stack, except for two layers: the **presentation layer** which deal with application specific features such as compression and encryption, and the **session layer** which handles data synchronization and delimiting between applications. The Internet stack removes these two layers and delegates the responsibility of implementing them the app developer if she sees need for them. 
 
-
-
-
-
-
+### Encapsulation in Networking:
+- when you send a piece of data through the Internet or any other network, it moves up and down the network stack depending on multiple circumstances. This movement up and down the stack happens at different depths depending on the node: They can move through the whole 5 layers in an end system but can only travel through the 3 bottom layers in a router because those are all the layers a router needs to be useful. In a link-layer switch data moves up and own only the first 2 bottom layers. The following figure shows the steps of such a journey:
+![End-to-end data journey (with and up and down the stack travel)](stack.png)
+- An important concept that allows for this interlayer interaction **encapsulation**. Upper layer data is encapsulated in lower layer packets: meaning that a layer receives a packet from the layer above it, adds its **header** information to the received packet, thus constructing a packet of its kind.
+- In the 5-layer Internet stack, an application layer message is passed down to the transport layer which adds transport layer header information to the application message thus turning it into an application layer segment. The transport header information allows the packet to be directed to the right application in the end system and checks for errors and maybe allows for reliability in the case of TCP. The segment is then passed to the network layer where it becomes the payload of a an IP datagram. It receives source and destination information which allows it to be routed to its final destination. The datagram is then encapsulated into a link layer frame which allow it to move through the a link the appropriate next node. Frames themselves are carefully arranged bit patterns that move through the underlying hardware. When the frames  are received by the application in the destination end system, they are reassembled and reconstructed back into the original messages that were sent by the original end system.
+- This was a very brief and simplified overview of how a message moves through the network. In reality, there is much more to this process. One important process that take place in data's journey through the network is splitting large messages into smaller chunks that can be fitted inside a segment and breaking a segment up to parts that can be encapsulated inside datagrams... etc.
+- The following figures is a better illustration of encapsulation:
+![data journey 2](fivelayer.svg)
 
 ## Network Security:
 ## Networking History:
