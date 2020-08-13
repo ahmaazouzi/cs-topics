@@ -131,7 +131,9 @@
 - In the 5-layer Internet stack, an application layer message is passed down to the transport layer which adds transport layer header information to the application message thus turning it into an application layer segment. The transport header information allows the packet to be directed to the right application in the end system and checks for errors and maybe allows for reliability in the case of TCP. The segment is then passed to the network layer where it becomes the payload of a an IP datagram. It receives source and destination information which allows it to be routed to its final destination. The datagram is then encapsulated into a link layer frame which allow it to move through the a link the appropriate next node. Frames themselves are carefully arranged bit patterns that move through the underlying hardware. When the frames  are received by the application in the destination end system, they are reassembled and reconstructed back into the original messages that were sent by the original end system.
 - This was a very brief and simplified overview of how a message moves through the network. In reality, there is much more to this process. One important process that take place in data's journey through the network is splitting large messages into smaller chunks that can be fitted inside a segment and breaking a segment up to parts that can be encapsulated inside datagrams... etc.
 - The following figures is a better illustration of encapsulation:
+<div>
 ![data journey 2](fivelayer.svg)
+</div>
 
 ## Network Security:
 ## Networking History:
