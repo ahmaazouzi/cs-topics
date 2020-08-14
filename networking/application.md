@@ -46,7 +46,107 @@
 - Protocols are only one part of the applications that are based on them. HTTP is only one part of the Web. The Web has many other components such as servers, the HTML language... etc. 
 
 ## HTTP:
+### HTTP Overview:
 - **HTTP (typer-text transfer protocol)** is the de facto protocol of the **web** or the **world wide web**. The web itself is an application, the most popular and successful application that runs on the Internet. 
+- Let's start with some basic but crucial terminology:
+	+ A **web page** (also a **document**) consists of one or more objects. Objects can be images, video clips, HTML files... etc. 
+	+ A web page consists of a **base HTML file** and probably sever referenced objects.
+	+ The objects are referenced in the base HTML file with **URLs**. A URL consists of two parts: the **hostname** of the server that houses the object, the object's **path name**. 
+	+ The clients in the web are usually the web browsers and **web servers** such as Apache are the servers.
+- The HTTP protocol defines how a client requests a web page from a server and how the server sends back the requested document.
+- HTTP uses the TCP transport protocol. The client initiates a connection with the server. Once the connection is established, the client and server processes can exchange messages through their sockets. Both processes send HTTP messages into their socket interfaces and receive messages from those same sockets. 
+- HTTP is also traditionally a **stateless protocol**, meaning that the server doesn't keep track of the client between any two requests. The server doesn't know if two requests comes from two different clients or the same client.
+
+### Persistent vs Non-Persistent Connections:
+- Should each request/response pair have its own TCP connection (i.e. use **persistent connections**), or should all request/response pairs be sent over the same TCP connection (i.e. use **non-persistent connections**)? This is a very important design decision and can have ramifications on your application. 
+- HTTP uses persistent connections by default, but you can configure the clients and server to use non-persistent connections.
+
+#### HTTP with Non-Persistent Connections:
+- Let's say we have a web page consisting of a base HMTL file and 20 JPEG images. When using non-persistent connections, the client initiates a connection, then the server open the connection, then client sends a request to get the base HTML, then the server receives the request, retrieves the file and sends it back, the server tells the client to close the connection, the client ensures that the file has been received completely intact, the client then closes the connection. This whole process then is repeated for each of the 20 other documents.
+- In non-persistent TCP connections, only one request and only one response can be transported. In our example above 21 connections are opened to serve our web page.
+- The connections can be opened in parallel (simultaneously) or serially (one connection at a time). Modern browsers allow for certain amount of parallel connections, but users can configure their browsers to change this number or specify an upper limit to the number parallel connections. 
+- **Round-trip time (RTT)** is the time it takes for a small packet to travel from client to server and then back to the server. RTT includes all kinds of delay (transmission, propagation, queuing, processing delays... etc.).
+- RTT can be used as a measure of how much time it would take to retrieve a file/object. Requesting a file takes two RTTs plus the time necessary to transfer the file as files usually take several packets. This can be done as follows:
+	1. **First RTT**: 
+		- The client sends a small TCP segment to the server asking for a connection to be opened.
+		- The server responds with a small acknowledgment segment.
+	2. **Second RTT**:
+		- The client sends an acknowledgment that it has been acknowledged by the server. Combined with the acknowledgment is a message requesting the HTML file.
+		- The server sends the file to the client after receiving the acknowledgment and request message.
+
+- The first RTT and the first trip of the second RTT are called a **TCP 3-way handshake**. We will cover it later.
+
+#### HTTP with Persistent Connections:
+- Non-Persistent connections suffer from several disadvantages:
+	- A new connection with all its overhead such as a TCP buffer and a TCP variable. These are costly on resources and a server handling thousands of requests can easily get overwhelmed by these.
+	- Each object will suffer a delay of 2 RTTs.
+- In a persistent connection, the server leaves the TCP connection open after sending a response. The following requests and responses will be sent over the same connection. Our entire page and its 20 images get sent over the same connection. Even multiple web pages from the same server can be served over the same persistent connection. Other objects can be sent over the same connection even if there are pending requests that haven't be served yet. 
+- HTTP servers close connections when they are used for a certain time (timeout).
+
+### HTTP Message Format:
+- HTTP defines two types of messages: **request messages** and **response messages**.
+
+#### HTTP Request Messages:
+- The following is a simple HTTP request message:
+
+```
+GET /cs-topics/networking.html HTTP/1.1
+Host: www.ahmaazouzi.io
+Connection: close
+User-agent: Mozilla/6.0
+Accept-language: ar
+
+```
+- HTTP messages are written in plain ASCII text.
+- The request message in our example has 5 lines but it can have many more and it can also have few as one!
+- A Typical request consists of:
+	- The first line of the request is called a **request line**. The request line itself consists of:
+		+ The request method, such as GET, POST ..etc. A request method dictates how the client communicates with the server. With GET, for example, a client usually fetches data or documents. A google search, for example, asks for search results. 
+		+ The **path** which points to the requested resource.
+		+ The HTTP **version**. The most common version is http 1.1.
+	- **Request headers** are key value pairs. They include the host, user agent..etc. There can be a lot of headers.
+	- A request might also have a **body** that contains parameters added to the request. A POST method has a body while GET doesn't. query parameters in a POST method are added to the request's body and are not appended to the URL as in a GET request.
+- `POST` and `GET` are the most commonly used HTTP request methods. The following tables shows some of the fundamental differences between the two:
+
+| **`GET`** | **`POST`**
+| --- | --- |
+| Parameters are placed in URL | Parameters in body
+| Used for fetching documents | Updates data in server
+| Has a maximum URL length | No max length
+| Cachable | Non-cachable
+| Not for changing server | supposed to change server
+
+- These fundamental differences between `POST` and `GET` dictate the fact that `GET` is mostly used to retrieve documents (or data) from the server, while `POST` is used to send data to the server and actuate changes
+- The following figure shows the general format of an HTTP request:
+![Request message format](request.png)
+
+#### HTTP Response Messages:
+- A typical HTTP response looks as follow:
+```
+HTTP/1.1 200 OK 
+Connection: close
+Date: Mon, 10 Apr 2020 00:00:00 GMT
+Server: Apache
+Content-Length: 6821
+Content-Type: text/html
+
+<h1>Hello, World!</h1>
+```
+- It has headers and a body just like a request, but it differs from a request in that it has a **status line** instead of a request line. A status line consists of 3 parts:
+	+ The HTTP version.
+	+ A **status code** which is a number indicating if the request was successful. Codes include 202 for a successful request, 404 for a not found page, 500 for a server error.. etc. 
+	+ "A **status message**, a non-authoritative short description of the status code."
+- One important header line in the example request is the **connection** line which controls the connection's persistence. This particular request wants the server to close connection after the requested object is received.
+- The following figure shows the general format of an HTTP response:
+![Response message format](response.png)
+
+### User-Server Interaction: Cookies:
+-
+
+### Web Caching:
+-
+
+### The Conditional `GET`:
 
 ## FTP:
 ## SMTP and Email:
