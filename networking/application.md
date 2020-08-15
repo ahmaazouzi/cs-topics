@@ -141,14 +141,66 @@ Content-Type: text/html
 ![Response message format](response.png)
 
 ### User-Server Interaction: Cookies:
--
+- HTTP is stateless. This simple designed has allowed for the creation of highly performant web servers since these don't have to worry too much about remembering clients. Servers can still remember clients with the infamous **cookies**.
+- A cookie consists of 4 parts:
+	1. A cookie header on the request message.
+	2. A cookie header on the response message.
+	3. A cookie file in the client host that is managed by the browser.
+	4. A backend database at the server.
+- Cookies work as follows:
+	+ When a user visits a website for the first time, the server creates a unique identification number and a unique entry in its database. The database entry is indexed by the unique identification number.
+	+ The server responds to the user's request by adding the `Set-cookie` header line to the response, for example `Set-cookie: 222222`.
+	+ When the browser receives the response it sees the `Set-cookie` header and appends a line to it's cookie file. This line has the hostname of the server and the identification number in the `Set-cookie` header.
+	+ In every subsequent request from the user to the server, the browser will consult its cookie file, extracts the identification number from the cookie file and attaches it to the request before sending it to the server. This is achieved with the `Cookie` header. (e.g. `Cookie: 222222`)
+- Cookies permit the server to identify the host between different request. Cookies are very useful in that they keep track of logged in user, for example, allow the user to set personal preferences. They are used for recommendations and have many great application.
+- Some corporations, however, use cookies in extremely nefarious ways. Cookies are a privacy nightmare!!
 
 ### Web Caching:
--
+- "A **web cache**-Also called a **proxy server**- is a network entity that satisfies HTTP requests on behalf of of an origin of a web server." Wow, so academic! The web cache server has its own storage. Browsers can be configured to direct their requests to the web cache first. Basically, the cache stands as a mediator between the client and the actual server. When the client requests an object, the request goes to the proxy server which checks if it has a copy of the object. If it has a copy, it sends it to the client. If it doesn't have a copy, it sends an HTTP request to the reasl server, stores a copy of the object and serves the client's request. 
+- Web cache is installed by ISPs and your cache might go through several caches corresponding to different levels of ISPs.
+- Using cache servers achieves two goals: increasing the speed of responses and page retrieval on the one hand (in the worse case it would eliminate a lot of propagation delay), and on the other hand caching offloads much of traffic strain on an ISP's access link reducing costs and and frustration. 
+- **Content delivery networks (CDN)** are geographically distributed cache servers that play an important role in today's Internet.
 
 ### The Conditional `GET`:
+- Caching is good and all, but you don't want stale objects from the cache in the ever more dynamic web of today. The **conditional GET** allows the cache server to verify that an object is up to date. A conditional GET is a regular GET request with a **`If-Modified-Since:`** header.
+- When the client requests something, the cache server sends a conditional GET request to the actual server. If the requested object hasn't been modified, the server returns a response with an empty body and the status code **`304`** and the status message **`Not Modified`**. An empty body means a very fast transmission.
 
 ## FTP:
+- **FTP (file transfer protocol)** allows you to transfer files between the local host and remote host. A typical FTP session goes as follows:
+	1. The user provides an FTP client with an FTP hostname.
+	2. The client opens a TCP connection with the FTP server process.
+	3. The user is asked to provide a username and a password.
+	4. The user is authorized to use the server.
+	5. The user copies files from/to the local host or remote host.
+- FTP seems similar to HTTP. They are both used to transfer files. However they are differences between the two. One big difference is that FTP establishes two connections between the local and remote host:
+	1. A **control connection** for sending control information to the server such as user identification, password and commands to change the directory and put and get files
+	2. A **data connection** that's used exclusively for exchanging data, that is files, between the two hosts.
+- *Nerd extra*: protocols which send both data and control information over the same connection are called **in-band** such as HTTP and SMTP. FTP is said to be **out-of-band**.
+- The anatomy of an FTP session: The client initiates a control connection with the FTP server on port 21. The client sends the FTP server the username and password over this control connection. The user can send command to change the directory in the remote host over this same control connection. When the server receives a command to transfer a file, it opens a data connection and then a single file is transfered. The connection is closed immediately after one and only one filed has been transferred. If the user wants to transfer another file during the same session, a new data connections is opened for that.
+- The control connection is persistent throughout an FTP session while the data connection is non-persistent.
+- Unlike HTTP, FTP is **stateful**. It needs to keep track of the user and associate her with an id and a password and keep track of where she is in the directory tree!! This taxing on the FTP server making less capable of having many simultaneous sessions. It's not as amazingly performant as HTTP.
+
+#### FTP Commands and Replies:
+- FTP commands are sent in 7-bit ASCII format over the control connection. Each command is made of 4 ASCII characters. Some commands have optional arguments.To delineate successful commands, separate them by a new line. 
+- Here are some common FTP commands (thee are many more):
+
+| Command | Role |
+| --- | --- |
+| USER *username* | send user id to the server |
+| PASS *password* | send user password to the server |
+| LIST | asks the server to send a list of files in the current directory in the remote host. The list is sent back to the client over a new data non-persistent data connection |
+| RETR *filename* | gets a file from the server in the current directory. It opens a data connection over which the file is sent. |
+| STOR *filename* | puts a file in the remote host in the current directory in the remote host. |
+
+- Each command is responded to by the server with a **reply** which is a 3 digit code followed by an optional message. replies are similar to HTTP response status codes. The following table lists some of the more common replies:
+
+| Reply | Message |
+| --- | --- |
+| 331 | Username OK, password required |
+| 125 | Data connection already open; transfer starting |
+| 425 | Can't open data connection |
+| 452 | Error writing file |
+
 ## SMTP and Email:
 ## DNS:
 ## Peer-to-Peer Applications:
