@@ -186,20 +186,20 @@ Content-Type: text/html
 
 | Command | Role |
 | --- | --- |
-| USER *username* | send user id to the server |
-| PASS *password* | send user password to the server |
-| LIST | asks the server to send a list of files in the current directory in the remote host. The list is sent back to the client over a new data non-persistent data connection |
-| RETR *filename* | gets a file from the server in the current directory. It opens a data connection over which the file is sent. |
-| STOR *filename* | puts a file in the remote host in the current directory in the remote host. |
+| `USER *username*` | send user id to the server |
+| `PASS *password*` | send user password to the server |
+| `LIST` | asks the server to send a list of files in the current directory in the remote host. The list is sent back to the client over a new data non-persistent data connection |
+| `RETR *filename*` | gets a file from the server in the current directory. It opens a data connection over which the file is sent. |
+| `STOR *filename*` | puts a file in the remote host in the current directory in the remote host. |
 
 - Each command is responded to by the server with a **reply** which is a 3 digit code followed by an optional message. replies are similar to HTTP response status codes. The following table lists some of the more common replies:
 
 | Reply | Message |
 | --- | --- |
-| 331 | Username OK, password required |
-| 125 | Data connection already open; transfer starting |
-| 425 | Can't open data connection |
-| 452 | Error writing file |
+| `331` | `Username OK, password required` |
+| `125` | `Data connection already open; transfer starting` |
+| `425` | `Can't open data connection` |
+| `452` | `Error writing file` |
 
 ## SMTP and Email:
 ## DNS:
