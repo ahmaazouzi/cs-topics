@@ -202,6 +202,52 @@ Content-Type: text/html
 | `452` | `Error writing file` |
 
 ## SMTP and Email:
+- Email is asynchronous! When you send an email to somebody, they can read it any time they want! They don't have to be there at moment you send the email. 
+- The following figures shows how Email is structured in general:
+
+![E-mail](mail.png)
+
+- E-mail generally consists of these three main components:
+	+ **User agents** which are pieces of software the user utilizes to read, forward, save, compose and send emails.
+	+ **Mail servers** which are the core of email. They contain **mailboxes** that are assigned to users. These mailboxes contain emails sent to the corresponding users. When a user sends an email to another user, the email goes to sender's mail server. The sender's mail server sends the email to the recipient's mail server which places the email in the recipient's mailbox. If for any reason the sender's server fails to send the email, it puts the email in it's **outgoing message queue** which will try and retry  to send the email to the recipient (typically every half hour for several days) until it successfully sends it. If it fails to send it, the message is discarded and sender is notified with an email.
+	+ **Simple mail transfer protocol (SMTP)** which is the main protocol used in exchanging email between the sender's mail server and the recipient's server. It runs on top of TCP. A mail server can be either an SMTP client or an SMTP server, depending on which is sending the email (or more accurately which one initiates a TCP connection).
+
+### SMTP:
+- SMTP is an amazing and very old technology that dates back to the 70s or even 60s. While it works mostly fine, it has one big flaw. It encodes the headers and body of a message in 7-bit ASCII. Emails, including their binary multimedia content, have to be encoded to 7-bit ASCII before being sent and then decoded back when received.
+- The client mail server starts transferring an email by first establishing a TCP connection at port 25 of the server SMTP. If the connection fails, a reattempt is done later. Once the connection is established, the client and server do some application-level handshaking "to introduce themselves". The client indicates the sender and recipient emails as  After the handshake, the client sends the message's data over the TCP connection. If there are other emails, they are sent one after the other. When there are no more emails to be sent the client closes the TCP connection. 
+- The SMTP TCP connection is persistent. Multiple mail messages can be sent over a single TCP connection. 
+- The messages exchanged between the two SMTP servers involve some voodoo and messages and handshaking which not very necessary to copy here.
+
+### SMTP vs HTTP:
+- SMTP is similar to HTTP in that both run on TCP; they are used to transfer files; SMTP operates over a persistent connection, while HTTP is mostly persistent connection-wise. However there some fundamental differences between the two:
+	+ HTTP is **pull protocol** meaning that the client pulls and gets data from the server. TCP is initiated by the machine that want to receive files. SMTP is a **push protocol**, meaning that the client sends data to the server. The client is the one who wants to send data.
+	+ SMTP requires that the messages be encoded in 7-bit ASCII while HTTP does not.
+	+ While HTTP puts each object (such as image, video) in its own HTTP message, SMTP puts all objects in one message.
+
+### Mail Access Protocols:
+- Until the early 1990s, users used to log into the server host to access their mail boxes and run a reader that goes over their mail. Today, mail access is done with a client-server architecture, where the user uses a **mail client** running on her end system. Mail clients allow for cool things like the ability to view multimedia and attachments. 
+- A user agent can't directly communicate with the mail server it wants to send a message to. instead, it uses SMTP to send an email to to its mail server. The mail server then sends the message to the recipient's mail server. Why this two way scheme? The mail client alone doesn't have a way to handle situations where the recipient's mail server is down. The always on mail server receives mail any time and makes reattempts to send emails when the recipient's mail server is unresponsive.
+- The following figure shows the journey of an email from the time it's sent by the sender until it's accessed by the recipient:
+![The journey of an email](journeymail.png)
+- SMTP is a push protocol. It is used to push the email from the user agent to the mail server and the then from the sender's mail server to the recipient's server. Accessing the email by the recipient's is a pull operation; it requires a pull operation. There are several protocols used to pull emails from the recipient's mail server including: **post office protocol--Version 3 (POP3)**, **Internet mail access protocol (IMAP)** and **HTTP**.
+
+#### POP3:
+- POP3 is simple but has limited capabilities. A POP3 session starts when the user agents opens a TCP connection at port 110. When the connection is established, the POP3 session goes through 3 phases:
+	1. *Authorization*: the user agent sends a user and password (in the clear) to authenticate the user.
+	2. *Transaction*: If the authorization is successful, the agent can retrieve mail, mark it for deletion, remove deletion marks ..etc.
+	3. *Update*: takes place after the user uses `quit` command which ends the session. At this stage, mail marked for deletion is deleted.
+- Generally speaking, POP3 commands are responded to with two possible replies: **`+OK`** with some data if the command was executed successfully, and **`+ERR`** if something went wrong.
+- POP3 has several commands that can be used during the transaction phase such as `list` for listing messages, `retr` for retrieving messages and `dele` for deleting messages. 
+- With POP3 you can use a *download and delete* mode where you delete messages from the server after downloading them, or you can use the *download and keep* mode where the messages are kept after the download for later access on other machines.
+- POP3 keeps some state during a session to identify messages marked for deletion, but doesn't keep state between different session. This limited guarding of state keeps POP3 simple.
+
+#### IMAP:
+- POP3 presents you with a list of emails that you can download locally and organize into folders and do all kinds of data management with them, but you can't create folders in the server itself or organize your mail in it so that you have a unified mail hierarchy that you can access from any computer. The much more complex IMAP protocol solves this problem. IMAP allows you to create folders and move messages between folders. When a new message arrives, it's placed in the INBOX folder, but you can moved to any folder. IMAP also has commands to search messages in remote folders. It also allows you to just retrieve parts of messages like their headers to jut have peeps at messages and only read emergent ones during situations of low bandwidth.
+- IMAP holds state across sessions such as state about what folders contain what messages.
+
+#### Web-Based E-Mail:
+- Since the creation of HOTMAIL in the mid 1990s, email has been largely accessed in the web through HTTP and web browsers. Email is retrieved through HTTP rather than POP3 or IMAP. Sending email from the user agent to the mail server is also done with HTTP instead of SMTP. Mail servers, however, still use SMTP to communicate with each other.
+
 ## DNS:
 ## Peer-to-Peer Applications:
 ## Socket Programming:
