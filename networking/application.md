@@ -184,7 +184,7 @@ Content-Type: text/html
 - FTP commands are sent in 7-bit ASCII format over the control connection. Each command is made of 4 ASCII characters. Some commands have optional arguments.To delineate successful commands, separate them by a new line. 
 - Here are some common FTP commands (thee are many more):
 
-| Command | Role |
+| Command Syntax | Role |
 | --- | --- |
 | `USER <username>` | send user id to the server |
 | `PASS <password>` | send user password to the server |
@@ -249,8 +249,65 @@ Content-Type: text/html
 - Since the creation of HOTMAIL in the mid 1990s, email has been largely accessed in the web through HTTP and web browsers. Email is retrieved through HTTP rather than POP3 or IMAP. Sending email from the user agent to the mail server is also done with HTTP instead of SMTP. Mail servers, however, still use SMTP to communicate with each other.
 
 ## DNS:
+- **Hostnames** such as `www.github.com` are easy to remember for humans but might be difficult for routers because they are alphanumeric strings of various lengths. IP addresses, on the other hand, are hard to remember for humans but an easy cake for routers.
+- An IP address such as `127.0.0.10`consists of 4 bytes and has a rigid hierarchical structure. The four bytes are represented as decimal numbers separated by periods. Each byte can have a value between 0 and 255. It's hierarchical because it's scanned from left to right to get more specific information about where a website is located. It's like starting with a country, then a state, then a county, then a village, then a street ...etc. until you pinpoint a house or an apartment. 
+
+### DANS Services:
+- **Domain Name System (DNS)** is a directory service that translate hostnames to IP addresses, thus allowing both humans and machines to easily identify hosts. DNS consists of: 
+	1. "A distributed database implemented in a hierarchy of **DNS servers**."
+	2. An application-layer protocol that enables hosts to query the distributed database.
+- DNS servers are usually UNIX machines running the **Berkley Internet Name Domain** software. The DNS protocol runs over UDP at port 53.
+- DNS is heavily relied on by other application layer protocols such as HTTP, FTP, SMTP, etc.
+- Using DNS as part of an HTTP request, for example, works as follows:
+	+ You enter a URL `www.someHost.com/index.html` in the browser.
+	+ The browser extracts the hostname from the URL you entered and passes it into the DNS client.
+	+ The DNS client sends a query containing the hostname to the DNS server.
+	+ The DNS server processes the query and sends back an IP address associated with the hostname.
+	+ When the browser gets a IPD address, it opens a TCP connection with the server process located in the given IP address.
+- DNS round trips add delay to whatever application uses it. Sometimes, this delay is substantial. However, IP addresses are cached in nearby DNS servers. Caching helps reduce DNS traffic and delays!
+- Other services provided by the DNS include:
+	+ **Host aliasing**: You can use a simplified **alias** like `www.doors4.com`to refer to a long convoluted hostname such as as `www.locks.doors.4saddles.com` (the real hostname is called the **canonical hostname**). DNS can be made to return the canonical hostname and the IP address corresponding to the given alias. 
+	+ **Mail server aliasing**: This is the same as host aliasing but for mail servers. Give people short easy to remember hostnames if you want them to use your amazing website.
+	+ **Load distribution**: DNS also allows for load distribution among replicated systems that sit over different servers with different IP addresses. One hostname can be associated with a range of IP addresses. When the client sends a query, the DNS server replies with the entire set of IP addresses rotated. The HTTP requested will be sent to the first IP address in the set. This helps distribute the workload between different servers making them faster and more responsive.
+
+### Overview of How DNS Works:
+- From the perspective of the applications that use DNS, it is a black box. The application passes the DNS client a hostname, and the DNS client does some voodoo that might last anything between milliseconds to seconds until it returns the intended IP address.
+- The distributed nature of DNS makes it extremely complex, however, this very distributedness is the reason for the success of DNS and why it still works: it remove the risk of a *single point of failure*, the traffic volume is distributed, the costs of maintaining a distributed database is shared among many entities .. etc. Simply put, DNS is *scalable* because it is distributed. An alternative centralized system would easily fail under too much traffic that keeps growing.
+
+#### A Distributed Hierarchical Database:
+- There is a bunch of DNS servers distributed around the globe. No single DNS server have all the mappings, but these are distributed. Generally speaking, there are three classes of DNS servers: **root DNS servers**, **top-level domain (TLD) DNS servers** and **authoritative DNS servers**. organized in the following manner:
+![DNS classes](dnslevels.png)
+- As far as this hierarchy is concerned, When a DNS client wants to get the IP address of `www.amazon.com`, it first contacts some root server which returns IP addresses for TLD servers for the top-level	domain `com`. The client then asks one of these TLD servers which returns the IP address of an authoritative server for `amazon.com`. Then the client contacts that authoritative server which returns the IP for `www.amazon.com`.
+- Some more details on the DNS server classes:
+	1. **Root DNS servers**: There are 13 root DNS servers (labeled A through M), most of which are located in North America. These servers are not single servers, but each of them is a network of replicated servers. This is intended for security and reliability. There 247 root DNS servers in 2011. 
+	2. **Top-level domain (TLD) servers**: These servers maintain the top level domains such as `com`, `org`, `edu`, `info` as well as country top-level domains such `ma`, `us`, `fr`, `ca`, etc.
+	3. **Authoritative DNS servers**: Every organization with publicly accessible hostx (web or mail server) must provide DNS records that map those hosts to IP addresses. An organization can implement its own authoritative DNS server, or it can pay to have their authoritative DNS records be stored and maintained by a service provider. Large organizations do this themselves.
+- **Local DNS servers** or **default name servers** are not part of the DNS hierarchy, but they are crucial to the DNS architecture. They are part of the ISP. When the host connects to the ISP, the ISP gives it the IP addresses of one or more of its local DNS servers. DNS servers can be either in the LAN or in very few routers away from the host. They act as a proxy between the host and the DNS hierarchy.
+- I will repeat how an IP address get mapped by DNS:
+	1. The local host sends a query to its local DNS server.
+	2. The DNS server sends a query to a root level DNS server.
+	3. The root DNS server returns a list of IP addresses for TLD servers to the local DNS server.
+	4. The local DNS server sends a query to one of the TLD servers.
+	5. The TLD server sends the IP address for the appropriate authoritative server to the local DNS server.
+	6. The local server sends a query for the desired domain's IP address.
+	7. The authoritative address sends the desired IP address to the local DNS server.
+	8. The local DNS server sends the desired IP address to the host.
+- In this example, DNS exchanged at least 8 messages to get a single hostname's IP address, 4 queries and 4 replies! There can be more than 8 messages. Consider a case where the TLD DNS servers don't know about the authoritative DNS servers that are closest in hierarchy to the given hostname. They might be authoritative servers nested within larger servers in the hierarchy. This will require more DNS messages as the nesting gets deeper. 
+- There are two types of queries: **recursive queries** in which a server asks another server to do queries on its behalf, while **iterative queries** have replies returned to them directly. Both types of queries are possible, but iterative queries are more common.
+![Types of queries](typesofqueries.png)
+
+#### DNS Caching:
+
+
+
 ## Peer-to-Peer Applications:
 ## Socket Programming:
+
+
+
+
+
+
 
 
 
