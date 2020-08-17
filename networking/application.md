@@ -315,7 +315,7 @@ Content-Type: text/html
 
 #### DNS Messages:
 - The only types of messages in DNS are **queries** and **replies**. They both have the same format. The following figure illustrates the format of a DNS message:
-[Format of DNS message](dnsmessageformat.png)
+![Format of DNS message](dnsmessageformat.png)
 - A DNS message consist of the following sections:
 	* The **header section** which is the first 12 bytes of the message. It consists of:
 		+ The *identification* field which is a 16-bit number that identifies the query. This number gets copied into the reply messages to query allowing the client to match the reply with the right query.
