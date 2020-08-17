@@ -297,8 +297,49 @@ Content-Type: text/html
 ![Types of queries](typesofqueries.png)
 
 #### DNS Caching:
+- **DNS caching** is an essential piece of the puzzle. It can substantially reduce delay time and the amount of DNSgenic traffic. Local DNS servers are frequently used to cache DNS replies for future reuse. Because hostnames are not really bound to the IP addresses they map too, cached DNS replies are refreshed after a certain period of time (usually every 2 days).
 
+### DNS Records and Messages:
+- DNS servers that implement the DNS distributed database store **resource records (RR)**, "including RRs that provide hostname-to-IP address mappings." A DNS reply message contains one or more RRs.
+- A resource record is a 4-field tuple that has the following fields: 
+	**`(Name, Value, Type, TTL)`**
+- **`TTL`** is *the time to live* of the resource record. It specifies when a resource record is to be removed from a DNS cache.
+- A resource record's **type** decides what values go into the **name** and **value** fields, as the following table shows:
 
+| Type | Example | Explanation |
+| --- | --- | --- |
+| **`A`** | **`(kindle.books.amazon.com, 224.0.22.14, A, 22)`** | In this type the name is a host name and the value is an IP address. This is the DNS hostname-to-IP mapping. |
+| **`NS`** | **`(foo.com, dns.foo.com, NS, 22)`** | The name is a domain and the value is an authoritative DNS server that knows how to get IPs. This used to dig further down for the hostname-to-IP mapping. |
+| **`CNAME`** | **`(foo.com, foo.bar.morefoo.cazyfoo.com, CNAME, 22)`** | The name is an alias and the value is the canonical hostname. This types resolves aliases to hostnames. |
+| **`MX`** | **`(bestmail.com, relay1.amazing.new.bestmail.com, MX, 22)`** | Resolves an alias to the canonical name of a mail server. Such alias allows a both a mail server and another server such as a web server to have the same domain name. When querying the mail server DNS uses **`MX`**, but use **`CNAME`** when trying to reach a web server. |
+
+#### DNS Messages:
+- The only types of messages in DNS are **queries** and **replies**. They both have the same format. The following figure illustrates the format of a DNS message:
+[Format of DNS message](dnsmessageformat.png)
+- A DNS message consist of the following sections:
+	* The **header section** which is the first 12 bytes of the message. It consists of:
+		+ The *identification* field which is a 16-bit number that identifies the query. This number gets copied into the reply messages to query allowing the client to match the reply with the right query.
+		+ The *flags* field has several 1-bit flags:
+			- A *query/reply* which identifies the message as either a query with 0 or a reply with a 1.
+			- An 1-bit *authoritative flag* which is set in a reply message when the DNS server is authoritative for the queried hostname. 
+			- A 1-bit *recursion-desired flag* when a client wants the DSN server to perform recursion if the mapping is not available. 
+			- A 1-bit *recursion-available* flag is set to one if the DNS server supports.
+		+ The next four fields, namely **Number of questions**, **Number of answer RRs**, **number of authority RRs**, **number of additional RRs** refer to the numbers of records in the next 4 sections that follow the header section.
+		+ The **question section** has information about the query being made. It contains a *name* field for the name being queried and a *type* field for the type of the query such as `A` for an IP address query or MX for a mail server.
+		+ The **answer section** contains the resource records for the queried name. Such an RR was described in detail earlier. A reply can return multiple RRs in the answer because hostnames do often have multiple IP addresses, when servers are replicated for example.
+		+ The **authority section** "contains records of other authoritative servers" (*Whatever the fook this means!!!*)
+		+ The **additional section** contains extra miscellaneous data, say the IP address of a canonical hostname associated with an alias, maybe ??!!!
+- The **nslookup** program allows you to send a DNS query directly to a DNS server and see what's happening. I tried it and didn't see much!!! Maybe *Wireshark* will do the trick.
+
+#### Inserting Records into the DNS Database:
+- How do you get a *website?* in the DNS database? You will roughly follow these steps:
+	- Come up a with a domain name for your website such as `foobar.com`
+	- Register the domain name at a **registrar** which is a company that verifies the uniqueness of your domain name, enters it into the DNS database and charges a fee for these services. Network Solutions used to monopolize domain registration before 1999, but since then the monopoly was broken and there are many registrars nowadays. They get accredited by the Internet Corporation for Assigned Names and Numbers (ICANN).
+	- When registering the domain, you give the registrar domain name `foobar.com` and names and IP addresses of your primary and secondary authoritative DNS servers.
+	- The registrar enters a type NS and a type A records for each of your authoritative DNS servers into the DLT servers as follows:
+		**`foobar.com, <authoritative DNS server>, NS`**
+		**`<authoritative DNS server>, <IP address>, A`**
+- I am a little dizzy!! Maybe I should reread on DNS somewhere else!
 
 ## Peer-to-Peer Applications:
 ## Socket Programming:
