@@ -16,7 +16,7 @@
 - Like hosts, processes can also be labeled as a **client** and a **server**. To be more precise, in a *communication session*, the process that initiates the communication is the client and the process that wait to be contacted for that session is the server. This is the same in both P2P and client-server architectures. While in client-server architectures, the client process usually resides in a client host such as a web browser and the server process (web app) resides in a server host, in P2P this role gets reversed based on which process initiates the communication session. 
 
 #### The Interface between the Process and Computer Network:
-- Processes send and receive messages from the network using an Interface called a **socket**. If a process were a door, a socket would be its door.
+- Processes send and receive messages from the network using an Interface called a **socket**. If a process were a house, a socket would be its door.
 - A socket is the interface between the application layer and the transport layer. The developer has full control on the application side of the socket while the transport layer is controlled by the operating system. The developer can only choose the protocol to be used on the transport layer (TCP or UDP) and tweak a few parameters such as the maximum buffer size and maximum segment size. 
 
 ### Addressing Processes:
@@ -341,10 +341,70 @@ Content-Type: text/html
 		**`<authoritative DNS server>, <IP address>, A`**
 - I am a little dizzy!! Maybe I should reread on DNS somewhere else!
 
+### DNS and Security:
+- Root level has been DDoSed in the past but the damage was unfelt because of caching and because of some filtering mechanisms and other security messages that were part of those servers design. TLD could also be attacked but such attacks are generally futile and don't do much damage. 
+- A more destructive and more targeted type of attacks has to do with *man-in-the-middle* where a bad actor intercepts queries and returns bogus replies to the client host. **DNS poisoning** also seems to be favored by attackers. The poisons DNS by sending it bogus replies which the server gladly receives and add to its cache. The victim can then be directed to the attacker website, but this is hard to do.
+- The DNS infrastructure can be exploited to carry attacks against a specific target. The attacker sends queries to many authoritative DNS servers. These queries have spoofed addresses of the targeted end system. They will all respond to these queries which will overwhelm the target especially if these replies have large sizes. These attacks haven't been that successful, though!
+
 ## Peer-to-Peer Applications:
+- the client/server architecture relies on an always on server serving intermittently active clients. In peer-to-peer (P2P), the network is truly distributed. Hosts communicate directly with each other and there no need for always on servers. 
+- This section will be about P2P file sharing with BitTorrent.
+
+### P2P File Distribution:
+- Downloading a large file from a centralized server puts too much strain on a server's bandwidth resulting in delay and partial of total blockage of other services provided by the server. In a P2P architecture, chunks of a file can be downloaded from other peers without putting too much strain on a single node.
+- The **distribution time** is the time it would take copy of a file to be to transferred to specified number (N) of files. Let's just say that the distribution time in the client-server architecture grows linearly as the number of clients N grows. On the other hand, in P2P distribution time grows logarithmically as N gets bigger. It might be counterintuitive, but the more hosts want the file the faster its distribution becomes.
+
+#### The BitTorrent Protocol:
+- BitTorrent is one of the most successful P2P file sharing protocols. It has the following characteristics:
+	* The collection of peers involved in the distribution of a file are called a **torrent**. 
+	* Peers in a torrent download equal-sized **chunks** of the file (each chunk if 256KB in size).
+	* When a peer first becomes part of a torrent, it has no chunks. It starts accumulating chunks, however, after joining the torrent.
+	* As the peer download chunks it also uploads chunks.
+	* Once the client downloads the whole file, it has the choice of leaving the torrent or it can also stay in the torrent (uploading the file altruistically).
+	* A peer can leave the torrent before having completed downloaded the whole file and rejoin later. 
+* How does this beautiful system run under the hood? At a very high level, an important piece of a torrent is the *tracker* which tracks the peers that make part of the torrent. When a peer joins the torrent it registers itself with the tracker and keeps to inform the tracker it's still part of the torrent. A torrent can have up to a thousand or more peers at any given time. When a new peer joins the torrent, the tracker randomly selects a subset of the peers and sends their IP addresses the new peer. Let's called these peers *neighbor peers*. The new peer attempts to open parallel TCP connections with neighbor peers. neighbor peer might change frequently as new peers become neighbor peers and others leave the neighbor. Neighbor peers usually have different subsets of the file's chunks. Periodically our peers will ask its neighbors for the lists of chunks they have and receives a list from each one of its neighbors. The peer examines these chunk lists and issues another request over TCP based on this knowledge to get the chunks it needs. When our peer accumulates some chunks and has knowledge of what chunks other peers have, it has to make two important decisions: what chunks it should request first, and which one of its neighbors it should direct chunks to. As for the chunks to be requested first, it determines the chunks which have the least copies (in a process called **rarest first**). This will equalize the number of copies of each chunk. As for which neighbors it chooses to send chunks it, it calculates the rates at which neighbors are sending data to it and selects the 4 with highest rate (these 4 are considered **unchoked**). This recalculation happens frequently, so the list of 4 can change frequently. This *tit-for-tat* recpiprocity and trading between peers incentivises users to cooperate rather than be idle freeriders and this might be the reason behind the success of BitTorrent.
+- P2P streaming applications have been inspired by BitTorrent such as PPLive and ppstream.
+
 ## Socket Programming:
+- The application protocols we looked at so far are said to be *open protocols* which are the ones described in an RFC such as FTP, HTTP or SMTP. Any developer or team who implements the protocol correctly can create a server or client application that can communicate with other applications that use the same protocol. There is another class of applications where you develop your own protocols and create your own client and server that implement this protocol.
+- While the developer is not limited by an existing protocol, since she is creating her own brand new protocol, there are a few things to consider before doing so: specifically, the developer should carefully choose what transport level protocol to use, the connection-oriented reliable TCP or the connectionless UDP that offers no guarantee of reliability. The developer should also not accidentally use a well-known port like port 80 which is normally reserved for HTTP.
+- We have seen earlier that *sockets* are the main interface between the application layer and the transport layer. They also act as a door to the application. The developer can control the application side of the socket while the transport side is mostly a black box. 
 
+### Socket Programming with UDP:
+- For a UDP packet to be transported over the Internet, the sending process must supply it with a destination address before pushing out of the socket's door. The Internet will take care of routing the packet until it reaches the process indicated in the destination address. The receiving process can do what it wants with the packet.
+- The destination address consists of the IP address of the host where the intended process runs and the port number of the process. The IP address is used to find the host while the port address is used to identify the receiving process. The the source address is also added to the packet but this is done automatically by the underlying system and not added by the developer.
+- To illustrate how socket programming is done in general, we examine a little program that uses a UDP socket in Python. The program is very simple. The user inputs some text, the client sends that text to the server, the server converts the text it receives to upper case and sends it back to the client.   
+- The following snippet shows the client program.
+```python
+from socket import *
 
+serverName = "127.0.0.1" 
+serverPort = 12000
+clientSocket = socket(AF_INET, SOCK_DGRAM)
+message = raw_input("Ask something!")
+clientSocket.sendto(message, (serverName, serverPort))
+response = clientSocket.recvfrom(2048)[0]
+print(response)
+clientSocket.close()
+```
+- We start by importing the standard library package `socket` which has the utilities that allow us to use sockets. We store the values of the localhost in `serverName` and the server port where the server process will be running `serverPort`. Then we create a socket using the `AF_INET` constant which denotes that we are using IPv4 and `SOCK_DGRAM` for UDP; we then store this socket in the variable `clientSocket`. We take user keyboard input with the `raw_input()` function and store that input in `message`. We then use our socket to send the message to the server specified by the IP address and port we stored earlier. The `sendto()` method is used for sending the message. The message received back from the server is stored in `response` with the use of the socket's `recvfrom` method. `recvfrom` returns a tuple that contains the response and the server's address. We get the response only which is at index 0. We print our response and the close the socket.
+- The following snippet shows the server:
+```python
+from socket import *
+
+serverPort = 12000
+serverSocket = socket(AF_INET, SOCK_DGRAM)
+serverSocket.bind(("",serverPort))
+print "Server is listening at port 12000... "
+while 1:
+	message, clientAddress = serverSocket.recvfrom(2048)
+	modifiedMessage = message.upper()
+	serverSocket.sendto(modifiedMessage, clientAddress)
+```
+- Again, we import our `socket` module, specify a port. This time we specify the port of our server rather than let the system do it for us. In the client's program we chose the destination port but the source port was chosen by the OS. We then create a socket and *bind* the specified port to the created socket. We then start a *forever* loop that will listen and respond to messages sent by clients. For each message received by the socket, we grab the `message` and the `clientAddress`, we then convert the message to upper case and tore it in `modifiedMessage`. Our socket then sends  the modified message back to the client address it just grabbed. 
+
+### Socket Programming with TCP:
+- 
 
 
 
