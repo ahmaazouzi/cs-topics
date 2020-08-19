@@ -381,7 +381,7 @@ from socket import *
 serverName = "127.0.0.1" 
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_DGRAM)
-message = raw_input("Ask something!")
+message = raw_input("Write something ...")
 clientSocket.sendto(message, (serverName, serverPort))
 response = clientSocket.recvfrom(2048)[0]
 print(response)
@@ -404,14 +404,36 @@ while 1:
 - Again, we import our `socket` module, specify a port. This time we specify the port of our server rather than let the system do it for us. In the client's program we chose the destination port but the source port was chosen by the OS. We then create a socket and *bind* the specified port to the created socket. We then start a *forever* loop that will listen and respond to messages sent by clients. For each message received by the socket, we grab the `message` and the `clientAddress`, we then convert the message to upper case and tore it in `modifiedMessage`. Our socket then sends  the modified message back to the client address it just grabbed. 
 
 ### Socket Programming with TCP:
-- 
+- TCP is different from UDP in that it's connection oriented. Before exchanging data, the client and server need to handshake first and establish a connection. Once the connection is established, an application simply drops data into the connection as opposed to attaching destination address to packets as in UDP????!! (*Not sure about this!!*)
+- For a connection between the client and the server sockets to be established, the server must already be on and continually on (just like our UDP sever). The client socket initiates a connection using the server's IP address and the server process's port number. The client establishes the connection after a three way handshake with the *welcoming socket* of the server. Once the handshaking is done with the welcoming socket, a new socket is created on the server specifically for this client. This is called a **connection socket**. Unlike the UDP server, the TCP server has two types of sockets: a *welcoming socket* that grants welcomes and acknowledges all clients, and *connection sockets*. There will be a connection socket for every client that has the honor of being granted a connection. Make sure to keep the distinction between these types of sockets in your mind!!
+- We can think of the connection between the two sockets as some kind of a pipe. The client or the server can send and receive arbitrary bytes to the socket. TCP takes care of transporting those bytes reliably to the other end of the pipe. 
+- We will rewrite the same application from the earlier section using TCP this time instead of UDP.
+- The following snippet shows our TCP socket client:
+```python
+from socket import *
 
+clientSocket = socket(AF_INET, SOCK_STREAM)
+clientSocket.connect(('127.0.0.1', 12000))
+message = raw_input("Write something ...")
+clientSocket.send(message)
+print(clientSocket.recv(1024))
+clientSocket.close()
+```
+- This is very similar to our UDP client except for two small details. The second argument for creating the socket is `SOCK_STREAM` which denotes that we are using TCP instead of UDP.
+- The second difference is the use of the `connect` method of the created socket. We supply this method with a tuple containing the IP address and port number of the server. A third difference is that when we send bytes to the socket, we don't need to attach the destination address to the data. In this case, the connection has been established the application needs not worry about attaching transport information to packets; well there are no packets here as the application is pushing arbitrary bytes down the socket which takes care of packetization and all that crap.
 
+```python
+from socket import *
 
+serverSocket = socket(AF_INET, SOCK_STREAM)
+serverSocket.bind(("", 12000))
+serverSocket.listen(1)
+print("Listening at 12000 ...")
 
-
-
-
-
-
-
+while 1:
+	connectionSocket, addr = serverSocket.accept()
+	message = connectionSocket.recv(1024)
+	connectionSocket.send(message.upper())
+	connectionSocket.close()
+```
+- The server also uses a TCP socket as indicated by `SOCK_STREAM` being the second argument to the `serverSocket` socket. `serverSocket` here is just the welcoming socket that is used to greet clients wanting to connect to our server. With the `listen(1)` method, we make the socket listen to incoming attempts to connect with the server. The 1 argument to `listen()` indicates the number of queuing connections (I think this refers to pending incoming connections). With the `accept()` method the handshaking is completed and a connection socket is created. The connection socket does its job which receiving a message and converting to upper case and sending it back. We close the connection socket after it finishes its job. 
