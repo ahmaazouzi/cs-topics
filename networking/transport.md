@@ -55,6 +55,41 @@
 - *A reminder*: Non-persistent HTTP might wreak havoc in a server as they require the opening and closing of much more connections with all the bloated unnecessary overhead. 
 
 ## Connectionless Transport with UDP:
+- UDP is a minimal transport protocols. It provides the bare minimum that transport can provide. The network layer is not enough for applications running on different hosts to talk to each other. The network layer can transmit packet from machine to machine, but a minimum, applications also need multiplexing and demultiplexing to direct packets to the appropriate applications. UDP does just that and some error checking! It's as minimal as a transport protocol can be. It's as if the application is talking directly to IP. 
+- Several applications reply on UDP rather than TCP such as DNS. A DNS client sends its queries through UDP and if it doesn't get a reply, it either resends the query or informs the application that it didn't get a reply.
+- Why would an application use UDP over TCP in spite of all the reliability provided by TCP? There a few reasons for doing so:
+	+ *Finer control over what data the application sends and when*: When data is passed from the application to the transport layer, it's wrapped in a UDP, then in IP and then sent immediately. TCP interferes with the timing as it implements a congestion control which slows packet transmission. TCP will also tirelessly resend the packet long after it was supposed to be sent. Real-time applications are time sensitive and can tolerate some data loss, so they prefer UDP which is usually faster than TCP. It's possible that applications implement additional functionality that makes up for the shortcomings of UDP.
+	+ *No connection establishment*: The lack of the three-way handshake needed for a connection eliminates much of the delay and overhead TCP suffers from. DNS would be a nightmare if it were built on top of TCP. 
+	+ *No connection state*: TCP keeps state through the lifetime of a connection and several pieces of data have to be exchanged and kept in sync between the two end systems communicating over TCP. This state burden is not present in UDP, making lighter and faster. 
+	+ *Small packet header overhead*: TCP has 20 bytes of header overhead while UDP has only 8.
+- The general common sense on why to favor UDP to TCP is if you can tolerate some data loss and want a faster data transmission, go for UDP. Internet phone and teleconferencing prefer UDP. Streaming multimedia has for a while relied more on UDP, but as the Internet infrastructure is getting better, TCP is increasingly replacing UDP in streaming. 
+- Using UDP for streaming is controversial because of the lack of congestion control. UDP can flood the network and doesn't care if the network is congested leading to the loss of data and turning the network useless for everybody. Some suggest forcing all end system to participate in the congestion control effort including those sending UDP packets.
+- Applications can communicate reliable over UDP if they implement their own application-level reliability mechanisms (they can take care of retransmission and all). They might not do congestion control, however which leads to the same problems discussed in the previous paragraph.
+
+### UDP Segment Structure:
+- The following figures how a UDP segment is structured:
+![UDP Segment Structure](udpformat.png)
+- The UDP segment data payload goes into the **data field**
+- The UDP header has 4 fields. Each field is 2 bytes in length. 
+	+ **Source port number**: Used as a return address.
+	+ **Destination port number**: Allows the segment to demultiplexed. 
+	+ **Length**: Is the total length of bytes in the segment (both the data and the header). It's needed because segments can differ in length.
+	+ **Checksum**: Used by the receiving end system to check if errors have been introduced to the segment while in transit. 
+
+### UDP Checksum:
+- The checksum is used to detect errors. A packet might get corrupt while in transit because of noise or in the routers, etc. The sender calculates the checksum and adds it to the segment.
+- THe checksum is obtained by performing the 1s complement of the sum of all the 16-bit words in the segment with any overflow wrapped around. Let's say we have a segment with the follow 3 16-bit words:
+	**0110 0110 0110 0000**
+	**0101 0101 0101 0101**
+	**1000 1111 0000 1100**
+- Let's first add all the three words. With wrapping the overflow around we get the following result:
+	**0100 1010 1100 0010**
+- Doing the 1s complement on this value (inverting 0s to 1s and vice-versa) results in the checksum which is:
+	**1011 0101 0011 1101**
+- The checksum is placed in the checksum field and the segment is sent. The receiving host calculates the sum of the segment including the checksum. Since the checksum is the sum of segment bits inverted, the result must be **1111 1111 1111 1111** for the segment to be deemed correct. If there is any 0s in this number, that means the packet has been corrupted. 
+- The data link layer also provides some form of data checking for packets, which makes the transport layer error checking kinda redundant. In fact, the link layer is not error proof. Only some link layer protocols like Ethernet provide error checking and some others do not. Moreover, even errors are checked through a link, bits can be corrupted in router memory (error checking is only done over single links and not end to end). What makes transport layer error checking, including the one used in UDP, is its *end-end* nature.
+- Although UDP provides error checking, it doesn't do anything to mitigate or recover from such errors. Some implementations of UDP discard corrupt segments, while other pass warnings with segments to the application. 
+
 ## Principles of Reliable Data Transfer:
 ## Connection-Oriented Transport with TCP:
 ## Principles of Congestion Control:
