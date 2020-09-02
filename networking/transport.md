@@ -156,8 +156,12 @@
 - TCP uses many of the techniques we used in GBN. 
 
 ### Selective Repeat (SR):
-- GBN fills "the pipeline". Many unacknowledged packets can be in the pipeline especially when the bandiwth-delay and window size are high for one reason or another. In this case, a single error in some packet may cause the retransmission of many packets.
-- **Selective repeat** avoids unnecessary retransmissions by retransmitting only the packets it suspects has been corrupted.
+- GBN fills "the pipeline". Many unacknowledged packets can be in the pipeline especially when the bandwidth-delay and window size are high for one reason or another. In this case, a single error in some packet may cause the retransmission of many packets.
+- **Selective repeat** avoids unnecessary retransmissions by retransmitting only the packets it suspects have been corrupted or lost. This requires the receiver to also do more work than in the case of GBN. It needs to individually acknowledge all the correctly received packets regardless of the order they've arrived in. 
+- An SR sender does also have a window that limits the number of sent but unacknowledged packets in the pipeline, but this window also contains acknowledged packets. The SR sender differs from the GBN sender in that each packet has its own timer. It also differs in how handles the pipeline's window and packet acknowledgments. When it receives an ACK, it marks the packet associated with that ACK that is inside the window as received. If the ACK equals the **`send_base`** as in the figure below, the sliding windows moves forward to the unacknowledged packet with the smallest sequence number. 
+![Sender and receiver's views of sequence numbers in SR](sr.png)
+- As for the receiver, it will acknowledge correctly received packets even if they are come out of order. out-of-order packets are buffered until any missing packets (packets with lower sequence numbers) are received. when the lower indexes of the buffer are filled with the missing packets, the buffer content is delivered as an ordered batch of packets to the application.
+- The receiver might have to reacknowledge some packets to allow its window to slide forward. This is mainly caused by the fact that the sender and receiver don't always have an identical	view of what has and hasn't been correctly. *this part needs reworking*
 
 ## Connection-Oriented Transport with TCP:
 ## Principles of Congestion Control:
