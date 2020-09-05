@@ -91,24 +91,18 @@
 - Although UDP provides error checking, it doesn't do anything to mitigate or recover from such errors. Some implementations of UDP discard corrupt segments, while other pass warnings with segments to the application. 
 
 ## Principles of Reliable Data Transfer:
-```
 - *Reliable data transfer* is one of the most important issues in networking. Reliable data transfer means that no transferred data maybe corrupted, lost or be out of the original order they were in before being sent. 
 - Before jumping to discussing TCP, we will first try to build an increasingly more complicated data transfer reliability protocol of our own and discuss the general principles of data transfer reliability along the way. 
 - This framework will recover from packet corruption and packet loss. We will assume packets will be received in order so we don't have to deal with packet ordering just to make things simple. We will also assume we have a unidirectional data channel between the two hosts with a machine that only sends that another machine that only receives data, again, to simplify things!! 
 - The following figure shows the general structure of our rtd (reliable data transfer) framework:
 ![A data-transfer reliability framework](datatransfereliability.png)
 - Our framework is composed of the following functions:
-	+ **`rtd_send()`** gets invoked from the application layer. It sends data through the channel.
-	+ **`rtd_rcv()`** gets called when a packet arrives from the network. 
+	+ **`send()`** gets invoked from the application layer. It sends data through the channel.
+	+ **`rcv()`** gets called when a packet arrives from the network. 
 	+ **`data_deliver()`** deliver the data received (reliably?!!) to the application layer.
 	+ **`udt_send()`** is used to exchange control data between the two hosts bidirectionally. This channel is unreliable. udt stands for *unreliable data transfer*. 
 
-### Building a Reliable Data Transfer Protocol:
-#### Reliable Data Transfer over a Perfectly reliable Medium: `rdt1.0`:
-- Nothin really!
-```
-
-#### RDT Over a Channel with Bit Errors `rdt2.0`:
+#### RDT Over a Channel with Bit Errors:
 - Imagine that we have a channel which transmits all packets but bits within the packets can get corrupted for a variety of reasons mostly at the physical layer: waves interference, electric interference, etc. 
 - To ensure reliability on a transport protocol that sits on such bit-messing and channel, the two communicating hosts can implement an *acknowledgments* mechanism that informs them of the status of transmitted packets. When the receiver receives a packet correctly, it can notify the sender that everything is OK through a **positive acknowledgment**. When the received packet is corrupted, the receiver notifies the sender that the packet has been corrupted and needs to be retransmitted! The protocols that perform such retransmissions are called **ARQ (automatic retransmission reQuest) protocols**. Such protocols must have the following capabilities:
 	* *Error detection*. This is basically the *checksum* operation we've seen in UDP.
@@ -161,7 +155,8 @@
 - An SR sender does also have a window that limits the number of sent but unacknowledged packets in the pipeline, but this window also contains acknowledged packets. The SR sender differs from the GBN sender in that each packet has its own timer. It also differs in how handles the pipeline's window and packet acknowledgments. When it receives an ACK, it marks the packet associated with that ACK that is inside the window as received. If the ACK equals the **`send_base`** as in the figure below, the sliding windows moves forward to the unacknowledged packet with the smallest sequence number. 
 ![Sender and receiver's views of sequence numbers in SR](sr.png)
 - As for the receiver, it will acknowledge correctly received packets even if they are come out of order. out-of-order packets are buffered until any missing packets (packets with lower sequence numbers) are received. when the lower indexes of the buffer are filled with the missing packets, the buffer content is delivered as an ordered batch of packets to the application.
-- The receiver might have to re-acknowledge some packets to allow its window to slide forward (these are the packets whose sequence numbers are not in the range [rcv_base, rcv_base+N-1]). This is mainly caused by the fact that the sender and receiver don't always have an identical	view of what has and hasn't been correctly. *this part needs reworking*
+- The receiver might have to re-acknowledge some packets to allow the sender's window to slide forward (these are the packets whose sequence numbers are in the range **` [rcv_base-N, rcv_base-1]`**. This is mainly caused by the fact that the sender and receiver don't always have an identical view of what has and hasn't been correctly. a delayed packet might. The receiver might advance far but the sender's window won't move forward without receiving acknowledgments for packets it sent.
+- The window size must be equal to or less than half the sequence number space to avoid problems associated with the window not being able to distinguish between two packets that have the same sequence number.
 
 ## Connection-Oriented Transport with TCP:
 ## Principles of Congestion Control:
