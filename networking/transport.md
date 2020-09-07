@@ -162,6 +162,15 @@
 - The TCP protocol relies on many of the principles and techniques we described in the previous section.
 
 ### The TCP Connection:
+- TCP is **connection-oriented** in the sense that before two processes can start sending data to each other, they must first *handshake* each other, i.e. send preliminary segments to "establish the parameters of the ensuing data transfer".
+- TCP lives entirely in end systems and intermediate network equipment such as routers and link layer switches are entirely oblivious to its existence and don't keep a TCP connection state. 
+- TCP is **full-duplex** meaning that data flows bidirectionally between two processes running in two different machines.TCP is also a **point-to-point** rather than a *multicasting* protocol. Only two processes can engage in a TCP connection.
+- How is a TCP connection established? When a client process wants in some host wants to initiate a connection with a server process in another host, it informs the transport layer in the server host of its wish to connect. TCP in the client then starts establishing a connection with TCP in the host. 3 special segments are exchanged between the two: the client sends the first one, the server sends the second segment, and the client sends the third one. The first two segments have no payload (application data), but the third segment might have a payload. TCP is a **three-way handshake** protocol, since it requires 3 segments to establish a connection. 
+- Once the connection is established between the client and server processes, the client passes down through the socket to TCP. TCP in the client then passes this data to the connection's **send buffer**. TCP also grabs data from the send buffer from time to time and passes it down to the network layer. TCP can send data to the network layer "at its own convenience". 
+![TCP send and receive buffers](tcpsendreceivebuffers.html)
+- The maximum data that can be grabbed from the buffer and stuffed in a segment is limited by the **maximum-segment size (MSS)**. The MSS size itself is limited by the largest link-layer frame that can be sent by the sending host which is called the **maximum transmission unit (MTU)**. The MSS refers to the amount of application layer in a segment not the size of TCP segment. The payload is added to the TCP/IP header (is this a TCP header for the segment and an IP header for the datagram??!!) which is 40 bytes in length to reach the MTU. Ethernet and PPP link-layer protocols have an MSS of 1500 bytes.
+- The receiving host has receiver buffers where received segments are placed for later processing.
+
 ### TCP Segment Structure:
 ### Round-Trip Time Estimation and Timeout:
 ### Reliable Data Transfer:
