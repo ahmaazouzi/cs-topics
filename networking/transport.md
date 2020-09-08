@@ -167,11 +167,33 @@
 - TCP is **full-duplex** meaning that data flows bidirectionally between two processes running in two different machines.TCP is also a **point-to-point** rather than a *multicasting* protocol. Only two processes can engage in a TCP connection.
 - How is a TCP connection established? When a client process wants in some host wants to initiate a connection with a server process in another host, it informs the transport layer in the server host of its wish to connect. TCP in the client then starts establishing a connection with TCP in the host. 3 special segments are exchanged between the two: the client sends the first one, the server sends the second segment, and the client sends the third one. The first two segments have no payload (application data), but the third segment might have a payload. TCP is a **three-way handshake** protocol, since it requires 3 segments to establish a connection. 
 - Once the connection is established between the client and server processes, the client passes down through the socket to TCP. TCP in the client then passes this data to the connection's **send buffer**. TCP also grabs data from the send buffer from time to time and passes it down to the network layer. TCP can send data to the network layer "at its own convenience". 
-![TCP send and receive buffers](tcpsendreceivebuffers.html)
+![TCP send and receive buffers](tcpsendreceivebuffers.png)
 - The maximum data that can be grabbed from the buffer and stuffed in a segment is limited by the **maximum-segment size (MSS)**. The MSS size itself is limited by the largest link-layer frame that can be sent by the sending host which is called the **maximum transmission unit (MTU)**. The MSS refers to the amount of application layer in a segment not the size of TCP segment. The payload is added to the TCP/IP header (is this a TCP header for the segment and an IP header for the datagram??!!) which is 40 bytes in length to reach the MTU. Ethernet and PPP link-layer protocols have an MSS of 1500 bytes.
 - The receiving host has receiver buffers where received segments are placed for later processing.
 
 ### TCP Segment Structure:
+- The following figure shows how a TCP segment is structured:
+![TCP segment structure](tcpsegment.png)
+- A TCP segment has several header fields and a data field. The data field has a chunk of application data that is limited by the MSS. When a large file like a JPEG image is sent with TCP, it is broken into chunks of MSS size, except for the last chunk which is most probably smaller than MSS. Interactive apps such Telnet packs only a very small amount of data in a segment, as little as 1 byte, probably for performance.
+- The TCP segment header has the following fields:
+	* A **source port number** and a **destination port number**, the same as UDP.
+	* A **checksum** field for checksumming.
+	* A 32-bit **sequence number** field and 32-bit **acknowledgment number** field which are used to establish reliable data transfer (as we will see later).
+	* A 16-bit **receive window** field used to indicated the number of bytes the receiver is willing to accept. 
+	* A 4-bit **header length** field which specifies the length of the header fields in 32-bit words. The TCP header length can be variable because of the optional *options* field which is usually empty making the header length 20 bytes in length. 
+	* An optional and variable-length **options** field that can be used to negotiate the MSS between the sender and receiver and some other things!
+	* The **flag** field is 6 bits in length and contains the following flags. The **ACK** bit indicates that the acknowledgment field is valid, meaning that the current segment contains an acknowledgment for a segment that has been successfully received. The **RST**, **SYN** and **FIN** are used to setup and a teardown a connection. The **PSH** bit indicates that the receiver should pass the data up to the application layer immediately. The **URG** bit indicates that the segment contains data marked by the sender as urgent. 
+	* The **urgent data pointer** field is used to indicate the last byte of urgent data.
+- PSH, URG flags and the urgent data pointer are legacy artifacts that are not actually used. 
+
+#### Sequence Number and Acknowledgment Number:
+- These two fields are some of the most important TCP header fields. TCP views data as an unstructured but order stream of bytes, so the **sequence numbers** are there to mark and order the stream of bytes, not a series of segments. So if the sender is sending a message whose size is 500,000 bytes at an MSS of 1000 bytes, the sequence number of the first segment is that of the first byte (byte 0), the second sequence number is the 1000th byte, the third is the 2000th byte, etc. 
+- **Acknowledgment numbers** can be tricky. Since TCP is full duplex, data can flow from host B to host A and vice-versa over the same connection. Each segment that arrives from host B to host A has a sequence number for the data it carries from B to A. "The acknowledgment number that host A puts in its segment is the sequence number of the next byte host A is expecting from host B". If host A receives bytes 0 through 999, the acknowledgment number it puts in the segment it sends to B is 1000. If host B receives a segment with a sequence number larger than what it expects, it will continue sending acknowledgments only for the missing sequence number until it gets it. TCP is said to provide **cumulative acknowledgments** because it only sends acknowledgments up to the first missing byte in the stream.
+- Out of order segments pose a problem. How should the receiver handle out of order segments. The TCP specification doesn't specify how such segments are handled. The implementers of TCP can choose one of two ways:
+	1. Drop out of order segments, hence simplifying the receiver logic.
+	2. Keep out of order segments and wait for earlier segments to fill in the gaps. This more efficient and is the favored approach in the real world. 
+- The actual initial sequence number is not really 0. TCP chooses a random initial sequence number to minimize that a hanging segment from an earlier connection between the same ports is confused for a segment valid for the current connection. 
+
 ### Round-Trip Time Estimation and Timeout:
 ### Reliable Data Transfer:
 ### Control Flow:
