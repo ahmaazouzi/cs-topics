@@ -209,7 +209,20 @@
 - *I was trying to avoid reading this section about timeouts and RTT but this was amazing!!*
 
 ### Reliable Data Transfer:
-### Control Flow:
+- The Network layer doesn't offer data transfer reliability. Datagram get corrupted, arrive out of order or get lost in transit between two hosts. TCP remedies these shortcomings of the IP protocol and provide solid data transfer reliability so that the segments are not corrupted, lost or out of order.
+- TCP only use on retransmission timer instead of a retransmission timer for each transmitted but not yet acknowledged segment.
+- a TCP has to handle three major events as far as segment transmissions and retransmissions is concerned
+	1. TCP receives data from the application layer, encapsulates it in a TCP segment and passes it to IP. If the timer is not running, TCP starts it when the segment is passed to IP. The timer is meant to run of the oldest transmitted but not yet acknowledged segment.
+	2. If a timeout occurs, TCP retransmits the timed-out segment and restarts the timer.
+	3. An acknowledgment (ACK) segment arrives and the corresponding segment is marked as acknowledged. The timer is restarted for another unacknowledged segment.
+- Retransmissions occur due to several reasons including lost acknowledgments. A whole segment carrying data from the sender to the receiver needs to be retransmitted because a small segment carrying an acknowledgment is lost or delayed. 
+- Remember that when a timeout occurs, the timeout for the retransmission is doubled for each retransmit. Recurring retransmissions means the network is probably congested and the doubling of the timeout provides some kind of congestion control.
+- Retransmissions can cause a lot of delay. Fortunately, TCP receivers resend acknowledgments to the sender when their receive segments with sequence numbers larger than expected. THis allows the sender to realize that a segment has been lost so the sender resends the segment before its timer expires in a process called **fast retransmit**. There is more detail to this process but this is the general idea of how it works. 
+- *This is getting a little bit messy. I am skipping the discussion of whether TCP is SR or GBN*. 
+
+### Flow Control:
+- Hosts on each side of a TCP connection set up receive buffers. Bytes from segments that are correct and in order are placed in these buffers. The application layer process doesn't have to immediately read data from this buffer but does it at "its own convenience" as mentioned before. If the process is slow reading bytes from the receive buffer, the sender can easily flood it and cause it to overflow. To mitigate this problem, TCP provides a **flow-control service**.
+
 ### TCP Connection Management:
 
 ## Principles of Congestion Control:
