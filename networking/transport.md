@@ -238,6 +238,23 @@
 		c. The server picks its own initial sequence number and places it in the segment's sequence field number.
 	This is called a **SYNACK segment**.
 	3. When the client receives the SYNACK segment, it allocates variables and buffers. It also sends a segment to the server in which it acknowledges the SYNACK segment by placing `"initial server sequence number" + 1` in the segment's acknowledgment filed. The SYN flag is set to 0 and since the connection is established, this segment might carry client-to-server data.
+- Once this **three-way handshake** is complete, the connection is officially established and the two processes can start exchanging data, but once the data exchange is also complete, either one of the two hosts can close the connection. Ending the connection leads to the deallocation of its **resources** that is its buffers and variables. Let's say the server process wants to close the connections. It issues a close command which causes the client TCP to send a special segment to the client. This special segment has its FIN flag bit set to 1. When the client receives this segment, it sends an acknowledgment to the client. The client, then, sends its own shutdown segment whose SYN bit is set to 1 to the server. The server acknowledges the client's shutdown segment.
+
+#### Problems with TCP Connection:
+- When both the client and server try to initiate or shut down a connection, some messed up stuff can happen, I believe!! This might be a reason why TCP hangs!!!
+- What happens when a host receives a TCP segment whose source IP or port number don't match with any outgoing sockets in the host? In such case, the host will respond with a special **reset segment** whose **`RST`** flag is set to 1. The host basically tells the sender "I don't have a socket for this segment. Please don't send me this segment again!!"
+
+#### Hacking, How the nmap Tool Works:
+- It's easy to understand how the port-scanning utility namp works now that we've digested all this cool TCP stuff. When npam is used to examine a specific port, it sends an a SYN segment to the given port and gets one of 3 responses:
+	1. We receive a SYNACK back from the target. This means the port is open and probably vulnerable.
+	2. We receive a RST segment. The port is not open, but the host is not running a firewall that would block unauthorized connection attempts. 
+	3. We receive nothing meaning the our segment never reached the target, probably because it was blocked by a firewall.
+- nmap allows us to the find open TCP and UDP ports and get information about the operating system and application versions. This is useful as it helps us find the vulnerabilities of our systems and fix them before we get hacked.
+
+#### SYN Flood Attacks:
+- When a server sets receives a SYN segment, it sets up variables and buffers and sends a SYNACK. It then waits for an ACK form the client. The server will spend a minute or two with a half-opened connection waiting for the ACK and will terminates after that. Hackers figured how to flood a server with SYN segments that were not followed by ACKs resulting in wasting the allocated resources. This was one of the earliest DOS attacks. 
+- To counter SYN flooding, major operating systems have implemented so called **SYN cookies**. With SYN cookies, upon receiving a SYN segment the server doesn't know if the segment is coming from a legitimate or a SYN flooding server. Instead of a creating a half-open TCP connection, it construct a sequence number that is an elaborate hash of the source and destination's IP addresses and port numbers and a secret number known only by the server. The server sends a SYNACK segment to the client with this special sequence number (which is the "cookie" this trick is named after). The server doesn't keep state of the cookie the SYN segment it responds to. A legitimate client engaging in a legitimate TCP connection sends back an ACK segment. While the server doesn't keep state about a SYN segment, it uses the cookie which has all the information it has. The acknowledgment number of the SYNACK must be equal the SYN sequence number plus 1. The server runs the same hash function on the IP addresses and port numbers of the connection and its secret number and adds 1 to the result of the hash. If this result equals the acknowledgment number, the server determines this is based on an earlier SYN segment. A full connection gets created now by the server. Bogus SYNs don't do any harm since no resources were allocated immediately following the reception of a SYN segment. 
+- *We is hacking, mate!*
 
 ## Principles of Congestion Control:
 ## Congestion Control with TCP:
