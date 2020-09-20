@@ -257,4 +257,23 @@
 - *We is hacking, mate!*
 
 ## Principles of Congestion Control:
+- Data retransmission cures network congestion symptoms. The cause of congestion is too many endpoints trying to send too much data at the same time resulting in overflowing routers which leads to data loss. 
+- This section revolves around congestion and congestion control principles. It's followed by a section on how TCP controls congestion.
+
+### Causes and Impact of Congestion:
+- The transmission rate (or capacity) of a link gets divided among the different computers/connections that are using simultaneously. A link with capacity R that is used by 10 hosts to send data to the nearest router gives these hosts a capacity of R/10 each. As the bits per second transmitted through this link approaches R/10, the amount of delay the bits experience approaches infinity. Router queuing/buffering is another problem causing (and caused) by sending too much data through a network.
+- Network routers has finite buffers which when filled up start dropping packets resulting in packet loss. The overhead associated with the transport's reliable data transmission (as in TCP) leads to even higher delay as lost data need to be retransmitted and useless data keep flowing through the network congesting the network further even to get lost at a later stage. 
+- In a complex network with many links and routers where a packets needs to make several hopes before arriving at its destination, congestion results in a lot of waste. There might be some parts of the network that are congested while others stay idle doing nothing... meehhhh!!
+
+### Approaches to Congestion Control:
+- There are two general approaches to congestion control:
+	* **End-to-end congestion control**: In this approach, the transport layer infers the presence of congestions from indicators such as packet loss and delay, etc. This is used by TCP. 
+	* **Network-assisted congestion control**: In this model, the network layer provides feedback on the congestion state of the network. A router can either send a ***choke packet*** back to the sender or it can mark a field in packet coming from the sender to the receiver. The receiver can then mark a field in the next packet it sends back to the sender telling it of the congestion state of the network. The network approach has been proposed for use in TCP. 
+
 ## Congestion Control with TCP:
+
+
+
+
+
+
