@@ -257,8 +257,8 @@
 - *We is hacking, mate!*
 
 ## Principles of Congestion Control:
-- Data retransmission cures network congestion symptoms. The cause of congestion is too many endpoints trying to send too much data at the same time resulting in overflowing routers which leads to data loss. 
-- This section revolves around congestion and congestion control principles. It's followed by a section on how TCP controls congestion.
+- Data retransmission cures network congestion symptoms. The cause of congestion is too many end-systems trying to send too much data at the same time resulting in overflowing routers which leads to data loss. 
+- This section revolves around congestion and is followed by a section on how TCP controls congestion.
 
 ### Causes and Impact of Congestion:
 - The transmission rate (or capacity) of a link gets divided among the different computers/connections that are using simultaneously. A link with capacity R that is used by 10 hosts to send data to the nearest router gives these hosts a capacity of R/10 each. As the bits per second transmitted through this link approaches R/10, the amount of delay the bits experience approaches infinity. Router queuing/buffering is another problem causing (and caused) by sending too much data through a network.
@@ -271,6 +271,19 @@
 	* **Network-assisted congestion control**: In this model, the network layer provides feedback on the congestion state of the network. A router can either send a ***choke packet*** back to the sender or it can mark a field in packet coming from the sender to the receiver. The receiver can then mark a field in the next packet it sends back to the sender telling it of the congestion state of the network. The network approach has been proposed for use in TCP. 
 
 ## Congestion Control with TCP:
+- TCP uses the *end-to-end* approach to congestion control. 
+- TCP reacts to congestion by increasing its sending rate when there is little congestion and decreasing send rate when there is congestion. In this section we will see how TCP changes the rate at which it sends data and how it perceives that there is congestion.
+- When congestion is detected, TCP uses the **congestion window** field in the sender to limit the the rate at which it sends traffic into the network. More specifically, the amount of unacknowledged segments might not the exceed the minimum of the congestion window and the receive window. 
+- The sender can infer that there is congestion in the sender-to-receiver path from "loss events" (a loss event for the sender means the occurrence of a timeout or receiving three duplicate ACKs). 
+- How can the TCP senders make efficient and full use of the network without congesting it? Can they avoid and decrease congesting, while not abstaining from using the full available bandwidth?!! How can this goal be achieved by the collective of senders? Are these senders coordinated or they adjusting their sending rates based only on local information? TCP use the following  principles to answer these questions:
+	- *A lost segment means congestion, so the sender's send rate must be decreased when a segment is lost.* 
+	- *An acknowledged segment means that the network is delivering the sender's segments to the receiver. What follows is that the sender's send rate is increased when an ACK is received for a previously unacknowledged segment.*
+	- *Bandwidth probing*: In a dynamic fashion, TCP increases the sneder's sending rate while ACKs are arriving until a segment loss occurs, at which point it starts decreasing the sending rate. 
+- The principles above are used in the **TCP congestion-control algorithm**, which has 3 major components: **slow start**, **congestion avoidance**, and **fast recovery**. Slow start and congestion avoidance are mandatory but fast recovery is recommended but no really required. 
+
+### Slow Start:
+### Congestion Avoidance:
+### Fast Recovery:
 
 
 
