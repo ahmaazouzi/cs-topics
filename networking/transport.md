@@ -290,9 +290,3 @@
 ### Congestion Avoidance:
 - In the congestion avoidance phase, TCP is careful about how it increases the congestion window. Instead of doubling it, it increases its by one MSS for every RTT. After all the "congestion could be just around the corner!"
 - *I'm DONE with this :shit:!!!!*
-
-
-
-
-
-
