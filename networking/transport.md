@@ -111,7 +111,7 @@
 - How does this scheme transmits data reliably?! When our framework receives data from the application using it, it encapsulates the data in a packet, performs a checksum, add the checksum to the packet and sends it. After sending the packet, it waits for an acknowledgment form the receiver (an ACK or a NAK). If an ACK is received by the sender, it goes back to waiting for more bits to be handed down to it by the application. If the sender receives a NACK, however, it resends the packet. 
 - This framework can't accept data from the application while it is engaged in sending and resending a packet. It can only start processing application data again after it has finished sending the packet correctly. This behavior is called **stop-and-wait**. 
 - The receiver sends back an ACK or a NAK depending on if the packet hasn't been altered in transmission. 
-- This scheme might seem great, but it's actually deeply flawed. How does the receiver know if the ACK/NAK is not not corrupted? Acknowledgments can get corrupted as well. We can add checksums to acknowledgment packets, but how can the framework recover from a corrupt acknowledgment packet? The following 3 scenarios might be thought of as solutions to the this problem:
+- This scheme might seem great, but it's actually deeply flawed. How does the receiver know if the ACK/NAK is not corrupted? Acknowledgments can get corrupted as well. We can add checksums to acknowledgment packets, but how can the framework recover from a corrupt acknowledgment packet? The following 3 scenarios might be thought of as solutions to the this problem:
 	1. If the sender receives a corrupt acknowledgment packet, it can send an acknowledgment message of its own asking the receiver to resent the acknowledgment, but what if the sender's acknowledgment packet itself arrives corrupted to the receiver? The receiver in this case has to ask for another acknowledgment!!! This is a real mess and can easily descend into an abyss of acknowledgment exchange! 
 	2. *Add enough checksum bits to allow the sender to both detect and recover from bit errors*. I don't know exactly how this would be done!!!! Anyways, provided that this succeeds, this framework can now recover from corrupt packets but not from dropped packets.
 	3.  The sender can also simply resend the packet when it receives a garbled ACK/NAK from the receiver. This will result in **duplicate packets**. The problem with duplicate packets is that the receiver doesn't know if its ACK/NAK has been garbled, so it doesn't know if the received packet is a new one or a duplicate.
@@ -282,8 +282,14 @@
 - The principles above are used in the **TCP congestion-control algorithm**, which has 3 major components: **slow start**, **congestion avoidance**, and **fast recovery**. Slow start and congestion avoidance are mandatory but fast recovery is recommended but no really required. 
 
 ### Slow Start:
+- In slow start, the initial congestion window size is 1 MSS (maximum-segment size). This makes the sending rate 1 MSS/RTT, so if MSS is 500 bytes and RTT is 200 milliseconds, then the sending rate is 20 kbp for the initial send. An MSS is added to the congestion window for every acknowledgment received by the sender. This results in increasing the sending rate exponentially. The slow start can end in one of 3 ways:
+	+ When TCP first encounters a segment-loss event, the sender's congestion window is collapsed back to size 1 MSS and a new variable called "slow start threshold" is set. The "slow start threshold" is equal to half the congestion window before the first loss event was encountered.
+	+ If the the congestion window reaches or surpasses the value of the "slow start threshold", TCP enters the *congestion avoidance phase* and stops growing uncontrollably. In the congestion avoidance phase, the congestion window grows "cautiously". 
+	+ If the sender detects 3 duplicate ACKs, TCP performs a fast retransmit and enters the fast recovery phase.
+
 ### Congestion Avoidance:
-### Fast Recovery:
+- In the congestion avoidance phase, TCP is careful about how it increases the congestion window. Instead of doubling it, it increases its by one MSS for every RTT. After all the "congestion could be just around the corner!"
+- *I'm DONE with this :shit:!!!!*
 
 
 
