@@ -62,8 +62,31 @@
 - There is talk of number theory and some big words and I have no clue!!! Might come back to this after a course on discrete math!
 
 ### Open Addressing:
-- In addition to chaining, **open addressing** is used to handle collisions. We use to this technique to store all the elements of a hash table in the array itself without resorting to external (or internal) linked lists. In open addressing, when a collision occurs, the element is placed somewhere else in the table itself hence resulting in filling up the table. ("The load factor *α* can never exceed 1"). I think the load factor means the elements in the table divided by the size *m* of the table. 
-- 
+- In addition to chaining, **open addressing** is used to resolve collisions. We use to this technique to store all the elements of a hash table in the array itself without resorting to external (or internal) linked lists. In open addressing, when a collision occurs, we search for the next open slot somewhere else in the table itself until we find such slot and insert the element. This might result in filling up the table. ("The load factor *α* can never exceed 1"). I think the load factor means the elements in the table divided by the size *m* of the table. 
+- The advantage of open addressing lies in the fact that pointers are not used. Pointers eat up too much memory and eliminating them results in the ability to place more data in the same amount of space which might also lead to fewer collisions and faster data retrieval (CLRS). We also have the potential to make full use of the space available in the array itself. 
+- In open addressing, we successively examine each slot in the table until we find an empty one and fill it with the given element. I don't know exactly if the probing start at slot 0 in the table or start with the slot directly following the current slot and wraps around when the end of the table is reached! These might be just implementation details, but the general idea is to follow a consistent scheme for searching an open slot to insert or retrieve data. 
+- Deleting elements in open addressing can be confusing, so it is better to mark deleted elements as deleted instead of making them a `null`. Not sure if I understand the previous sentence!
+- There are three common probing schemes in use:
+	* **Linear probing**
+	- Linear probing can be done with the following function:
+						***h(k, i) = (h'(k) + i) mod m***
+	where:
+		+ *m* refers to the size of the table as usual.
+		+ *i* is a number between 0 and *m* - 1. The probing function will be run in a loop with i increasing with each iteration so that the first probe will examine *T[h'(k)]* where T refers the table, the second iteration is *T[h'(k) + 1]* and this will continue until we reach the end of the tble at *T[h'(k) + m - 1]*. At this point we wrap around and start at slot *T[0]* and continue until we reach slot *T[h'(k) - 1]*.
+		+ *h* is called an *auxiliary hash function* in this context. It's the actual hashing function that determine where the pre-collision slot is located.
+	- The problem with linear probing is that it results in **primary clustering**. Long clusters of occupied slots build up in the table increasing search time.
+	* **Quadratic probing**
+	- Quadratic probing can be done with the following function:
+						***h(k, i) = (h'(k) + c<sub>1</sub>i + c<sub>2</sub>i<sup>2</sup>) mod m***
+	where:
+		+ *c<sub>1</sub>* and *c<sub>2</sub>* are some constants.
+	- Quadratic probing generally results in better results with less clustering (it results in a form of clustering called **primary clustering** which is not as bad as primary clustering). A good choice of *m*, *c<sub>1</sub>*, and *c<sub>2</sub>* can lead to good results but that's voodoo I can't understand!
+	* **Double probing**
+						***h(k, i) = (h<sub>1</sub>(k) + ih<sub>2</sub>(k)) mod m***
+	- I don't quite understand what's going on here!
+	- Anyways, the subsequent probes appear random and there is little to no clustering as in the previous two probing techniques.
+
+### Perfect Hashing:		
 
 
 
