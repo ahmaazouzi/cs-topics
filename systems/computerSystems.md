@@ -45,7 +45,7 @@ gcc -o hello hello.c
 
 ### Hardware Organization of a Systems: 
 - To really understand what happens to our `hello` program when it runs in a system, we need to know something about the hardware organization of the system where it runs. The following diagram shows system based around modern Intel processors. All or most other systems are more or less the same:
-[Hardware Organization!](img/hardware.png)
+![Hardware Organization](img/hardware.png)
 - **Buses** are electrical conduits that carry bytes between the different components of the system. Buses are designed to transfer fixed-size chunks of bytes called **words**. The **word size** (the number of bytes in a word) is a fundamental parameter of the system. Most systems today have a word size of either 4 bytes (32 bits) or 8 bytes (64 bits).
 - **I/O devices** are what connects our system to the external world. The system in our diagram, we have 4 I/O devices: a mouse and a keyboard, a display for output, and a disk for long term storage (the disk is both an input and output device). Before it runs, our `hello` program resides in the disk. I/O devices are connected to I/O bus with either **controllers** or **adapter**. Controllers are chip sets that make part of the motherboard itself, while adapters are cards that plug into a slot in the motherboard. Both are there to transfer information between the I/O bus and I/O devices. 
 - **Main memory** is a temporary storage device that holds the program and the data it manipulates while the processor executes the program. Physically, the main memory is a collection **dynamic random access memory** chips. Logically, memory is arranged as a linear array of bytes, each with its unique address (which is an array index) starting with zero. Each machine instruction of a program can consist of a variable number of bytes. This is caused by the fact that data items have different lengths which also depend on the C types they correspond to. 
@@ -73,7 +73,7 @@ gcc -o hello hello.c
 - It is easy to observe that much of a program's execution revolves around moving data from location to another. `hello` is first stored in desk. When the program is loaded it is copied from disk to memory. When the program starts executing, instructions are copied from main memory to the to the processor and data is copied from main memory to the register file then to the display. There is much of this moving of data from one location another. These movements are also costly and present a lot of overhead that drags down the speed of the actual work of the processor. System designers do a lot of work to make such copying from one location to another fast. 
 - Larger storage devices are necessarily slower than smaller storage devices. Faster storage devices are also much more expensive and harder to make. It might take the processor 10 million times longer to read directly from disk than from memory.
 - The register file can only hold a few hundred bytes large while main memory can hold billions of bytes. However, accessing registers is 100 times faster than main memory. Memory speed does sometimes seem to progress much slower than processor speed. 
-[Memory hierarchy!](img/memH.png)
+![Memory hierarchy](img/memH.png)
 
 
 
