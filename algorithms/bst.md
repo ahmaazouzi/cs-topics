@@ -21,22 +21,44 @@
 
 ### Rotation:
 - *Insert* and *delete* operations in a red-black tree with *n* keys take *lg(n)* time. These operations might also violate the red-black tree properties because they modify the tree. To restore the properties of the red-black tree, we need to change the color of some nodes and modify the pointer structure. 
-- The pointer structure can be changed with **rotation**. Rotation leads to preserving the properties of a red-black tree. 
+- The pointer structure can be changed with **rotation**. Rotation leads to preserving the properties of a red-black tree. The following diagram shows the two types of rotation that can be performed on a subtree in a red-black tree:
+```
+                z          Left rotation        x
+               / \         <------------       / \
+              x    γ                          α   z
+             / \           Right rotatation      / \
+            α   β          --------------->     β   γ
+```
+- When we do a **left rotation** around node `x`, it's assumed that its right side `z` is not a NIL. A left rotation can be performed on any node `x` in the tree whose right child is not NIL. `z` replaces `x` as the new root of the subtree. `x` becomes the left child of `z` and `β`	becomes the right side of `x`.
+- A right rotation is symmetrical to the left rotation. `x` becomes the root of the subtree and it's assumed the left child of the subtree's root is not NIL. 
+- The following snippet shows how left rotation is done:
+
+```py
+def leftRotate(tree, x):
+	z = x.right
+	x.right = z.left
+	if z.left is None:
+		z.left.p = x
+	z.p = x.p
+	if x.p is None:
+		tree.root = z
+	elif x is x.p.left:
+		x.p.left = z
+	else:
+		x.p.right = z
+	z.left = x
+	x.p = z
+```
+
+### Insertions:
+
+```py
+def rbInsert(tree, z):
+	y = None
+	x = tree.root
+	
 
 ```
-        z       Left rotation        x
-       / \      ------>             / \
-      x    γ                       α   z
-     / \        Right rotatation      / \
-    α   β       ------>              β   γ
-```
-
-
-
-
-
-
-
 
 
 

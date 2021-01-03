@@ -86,7 +86,12 @@
 	- I don't quite understand what's going on here!
 	- Anyways, the subsequent probes appear random and there is little to no clustering as in the previous two probing techniques.
 
-### Perfect Hashing:		
+### Perfect Hashing:
+- Hashing provides good average-case performance. **Perfect hashing** provides an excellent worst-case performance provided it is used with a fixed set of keys (something like reserved words in a programming language).
+- A form of hashing that guarantees an *O(1)* worst-case performance is a perfect hashing.
+- Perfect hashing is achieved with 2 levels of hashing using universal hashing in each level.
+- In the first level we construct a hash table similar to tables constructed with hashing with chaining but instead of a linked list we use a another hash table all while using universal hashing.
+- A slot from the first hash table points to a smaller hash table that also uses universal hashing. To avoid collisions in the secondary table, we need to make its size the square of the number of values that hash to the given slot. This might seem like an overkill for the amount of storage space it would eat up, but the CLRS folks prove that it's only *O(N)*. 
 
 
 
