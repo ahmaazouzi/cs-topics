@@ -145,7 +145,7 @@ gcc -o hello hello.c
 	- ***T<sub>new</sub> = (1 - α)T<sub>old</sub> + (αT<sub>old</sub>)/k***
     - ***= T<sub>old</sub>[(1 - α) + α/k]***
 - From the formula above we can compute the speedup ***S = T<sub>old</sub>/T<sub>new</sub>*** as:
-***S = 1 / ((1 - α) + α/k)***
+	- ***S = 1 / ((1 - α) + α/k)***
 - To really speed up the system, we need to improve the performance of large parts of the system. This law can be used to manage priorities and decide whether improving the performance of certain parts of the program are really worth the cost. 
 - It looks like I've been using Amdahl's law to prioritize what school subjects to spend more time studying since primary school!
 
