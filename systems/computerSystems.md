@@ -141,10 +141,9 @@ gcc -o hello hello.c
 ### Amdahl's Law:
 - Amdahl's law, formulated by Gene Amdahl, simply states that the overall effect of improving a specific part of a system depends on two factors: how that significant that part of the system is and by how much its performance has been sped up.
 - Suppose we have a system where running an application requires time ***T<sub>old</sub>***. Suppose also that a certain part of the system takes ***α*** fraction of the running time of the application and we have improved the performance of this part by a factor of ***k***. This means the program originally took 
-***αT<sub>old</sub>*** and now takes ***αT<sub>old</sub>/k***. The overall execution time is:</br>
-***T<sub>new</sub> = (1 - α)T<sub>old</sub> + (αT<sub>old</sub>)/k***
-</br>
-                ***= T<sub>old</sub>[(1 - α) + α/k]***
+***αT<sub>old</sub>*** and now takes ***αT<sub>old</sub>/k***. The overall execution time is:
+	- ***T<sub>new</sub> = (1 - α)T<sub>old</sub> + (αT<sub>old</sub>)/k***
+    - ***= T<sub>old</sub>[(1 - α) + α/k]***
 - From the formula above we can compute the speedup ***S = T<sub>old</sub>/T<sub>new</sub>*** as:
 ***S = 1 / ((1 - α) + α/k)***
 - To really speed up the system, we need to improve the performance of large parts of the system. This law can be used to manage priorities and decide whether improving the performance of certain parts of the program are really worth the cost. 
