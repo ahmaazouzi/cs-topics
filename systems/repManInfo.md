@@ -67,59 +67,59 @@ gcc -m64 hello.c
 	</thead>
 	<tbody>
 		<tr>
-			<td>[signed] `char` </td>
-			<td> `unsigned char` </td>
+			<td>[signed] <code>char</code></td>
+			<td><code>unsigned char</code></td>
 			<td>1</td>
 			<td>1</td>
 		</tr>
 		<tr>
-			<td>`short`</td>
-			<td>`unsigned short`</td>
+			<td><code>short</code></td>
+			<td><code>unsigned short</code></td>
 			<td>2</td>
 			<td>2</td>
 		</tr>
 		<tr>
-			<td>`int`</td>
-			<td>`unsigned int`</td>
+			<td><code>int</code></td>
+			<td><code>unsigned int</code></td>
 			<td>4</td>
 			<td>4</td>
 		</tr>
 		<tr>
-			<td>`long`</td>
-			<td>`unsigned long`</td>
+			<td><code>long</code></td>
+			<td><code>unsigned long</code></td>
 			<td>4</td>
 			<td>8</td>
 		</tr>
 		<tr>
-			<td> `int_32t` </td>
+			<td> <code>int_32t</code></td>
 			<td>uint32_t</td>
 			<td>4</td>
 			<td>4</td>
 		</tr>
 		<tr>
-			<td>`int_64t`</td>
-			<td>`uint_64t`</td>
+			<td><code>int_64t</code></td>
+			<td><code>uint_64t</code></td>
 			<td>8</td>
 			<td>8</td>
 		</tr>	
 		<tr>
-			<td>`char *`</td>
+			<td><code>char *</code></td>
 			<td></td>
 			<td>4</td>
 			<td>8</td>
 		</tr>
 		<tr>
-			<td>`flaot`</td>
-			<td>`float`</td>
+			<td><code>flaot</code></td>
+			<td><code>float</code></td>
 			<td>4</td>
 			<td>4</td>
 		</tr>
 		<tr>
-			<td>`double`</td>
+			<td><code>double</code></td>
 			<td></td>
 			<td>8</td>
 			<td>8</td>
-		</tr>	
+		</tr>
 	</tbody>
 </table>
 
