@@ -32,8 +32,98 @@
 	-   ***18   =    1 · 16 +  2		(2)***
 	-    ***1   =    0 · 16 +  1		(1)***
 -  The series of divisions above results in the hex **`0x1257D`**.
+- The general case of converting hexes to decimal notation is much less tedious. It involves multiplying each hex "digit" by a power of 16 and adding the results, for example:
+	- ***0x7AF = 7 · 16<sup>2</sup> + 10 · 16<sup>1</sup> + 15 · 16<sup>0</sup>***
+	- ***0x7AF = 7 · 256 + 10 · 16 + 15 · 1***
+	- ***0x7AF = 1792 + 160 + 15***
+	- ***0x7AF = 1967***
 
 ### Data Sizes:
+- A computer has a **word size** that indicate the size of a pointer and the width of data bus in that computer. The maximum size of the *virtual address space* itself is determined by the word size. For a machine with ***w***-bit word size, virtual addresses can be between ***0*** and ***2<sup>w</sup> - 1***.
+- 32-bit word size machines have access to only a 4 GB virtual address space, hile 64-bit systems have access to exabytes of virtual memory.. That's "almost infinite"!
+- 64-bit machines can run code designed for 32-bit machines and the compilers gives you the ability to target either one of the who architectures:
+```sh
+# This will run on both 32-bit and 64-bit systems
+gcc -m32 hello.c
+
+# Only runs on a 64-bit machine
+gcc -m64 hello.c
+```
+- A program can be either a 64-bit or 32-bit program, depending on how it was compiled (and not on the machine where it runs). 
+- Computers and compilers can differentiate **data types** based on their formats and lengths. The format would usually be floating point or integer and the lengths of such data types range from 1 byte and 8 bytes in the 64-bit architecture for example. 
+
+<table>
+	<thead>
+		<tr>
+			<th colspan="2">C Declarations</th>
+			<th colspan="2">Length in Bytes</th>
+		</tr>
+		<tr>
+			<th>Signed</th>
+			<th>Unsigned</th>
+			<th>32-bit</th>
+			<th>64-bit</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>[signed] `char`</td>
+			<td>`unsigned char`</td>
+			<td>1</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>`short`</td>
+			<td>`unsigned short`</td>
+			<td>2</td>
+			<td>2</td>
+		</tr>
+		<tr>
+			<td>`int`</td>
+			<td>`unsigned int`</td>
+			<td>4</td>
+			<td>4</td>
+		</tr>
+		<tr>
+			<td>`long`</td>
+			<td>`unsigned long`</td>
+			<td>4</td>
+			<td>8</td>
+		</tr>
+		<tr>
+			<td>`int_32t`</td>
+			<td>uint32_t</td>
+			<td>4</td>
+			<td>4</td>
+		</tr>
+		<tr>
+			<td>`int_64t`</td>
+			<td>`uint_64t`</td>
+			<td>8</td>
+			<td>8</td>
+		</tr>	
+		<tr>
+			<td>`char *`</td>
+			<td></td>
+			<td>4</td>
+			<td>8</td>
+		</tr>
+		<tr>
+			<td>`flaot`</td>
+			<td>`float`</td>
+			<td>4</td>
+			<td>4</td>
+		</tr>
+		<tr>
+			<td>`double`</td>
+			<td></td>
+			<td>8</td>
+			<td>8</td>
+		</tr>	
+	</tbody>
+</table>
+
+
 ### Addressing and Byte Ordering:
 ### Representing Strings:
 ### Intro to Boolean Algebra:
@@ -69,3 +159,5 @@
 ### Rounding:
 ### Floating-Point Operations:
 ### Floating Point in C:
+
+
