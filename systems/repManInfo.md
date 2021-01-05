@@ -67,8 +67,8 @@ gcc -m64 hello.c
 	</thead>
 	<tbody>
 		<tr>
-			<td>[signed] `char`</td>
-			<td>`unsigned char`</td>
+			<td>[signed] `char` </td>
+			<td> `unsigned char` </td>
 			<td>1</td>
 			<td>1</td>
 		</tr>
@@ -91,7 +91,7 @@ gcc -m64 hello.c
 			<td>8</td>
 		</tr>
 		<tr>
-			<td>`int_32t`</td>
+			<td> `int_32t` </td>
 			<td>uint32_t</td>
 			<td>4</td>
 			<td>4</td>
