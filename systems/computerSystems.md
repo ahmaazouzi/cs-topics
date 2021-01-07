@@ -45,7 +45,7 @@ gcc -o hello hello.c
 
 ### Hardware Organization of a Systems: 
 - To really understand what happens to our `hello` program when it runs in a system, we need to know something about the hardware organization of the system where it runs. The following diagram shows system based around modern Intel processors. All or most other systems are more or less the same:
-![Hardware Organization](img/hardware.png)
+![Hardware Organization](img/computerSystems/hardware.png)
 - **Buses** are electrical conduits that carry bytes between the different components of the system. Buses are designed to transfer fixed-size chunks of bytes called **words**. The **word size** (the number of bytes in a word) is a fundamental parameter of the system. Most systems today have a word size of either 4 bytes (32 bits) or 8 bytes (64 bits).
 - **I/O devices** are what connects our system to the external world. The system in our diagram, we have 4 I/O devices: a mouse and a keyboard, a display for output, and a disk for long term storage (the disk is both an input and output device). Before it runs, our `hello` program resides in the disk. I/O devices are connected to I/O bus with either **controllers** or **adapter**. Controllers are chip sets that make part of the motherboard itself, while adapters are cards that plug into a slot in the motherboard. Both are there to transfer information between the I/O bus and I/O devices. 
 - **Main memory** is a temporary storage device that holds the program and the data it manipulates while the processor executes the program. Physically, the main memory is a collection **dynamic random access memory** chips. Logically, memory is arranged as a linear array of bytes, each with its unique address (which is an array index) starting with zero. Each machine instruction of a program can consist of a variable number of bytes. This is caused by the fact that data items have different lengths which also depend on the C types they correspond to. 
@@ -74,7 +74,7 @@ gcc -o hello hello.c
 - Larger storage devices are necessarily slower than smaller storage devices. Faster storage devices are also much more expensive and harder to make. It might take the processor 10 million times longer to read directly from disk than from memory.
 - The register file can only hold a few hundred bytes large while main memory can hold billions of bytes. However, accessing registers is 100 times faster than main memory. Memory speed does sometimes seem to progress much slower than processor speed. 
 - To reduce burden of processor-memory speed gap, modern systems include smaller storage devices called **cache memories** or **caches**. Caches are as a rule much faster than main memory and they serve as a staging area for information that are likely to be used by the processor in the near future! The following figure shows the different caches that can be found in a modern system and their hierarchical arrangement:
-![Memory hierarchy](img/memH.png)
+![Memory hierarchy](img/computerSystems/memH.png)
 - **L1 cache** is built directly into the processor chip. It can hold tens of thousands of bytes and can be accessed almost as fast registers. The **L2 cache** is larger as it can hold hundreds of thousands to millions of bytes. It's connected to the processor with a special bus. It takes about 5 times slower to access data in L2 cache than L1 cache; however, L2 is some 10 times faster than main memory. L1 and L2 caches are implemented using a technology  called **SRAM (static random access memory)**. Newer and cooler systems do also use a third cache layer: L3 which is also implemented using SRAM. 
 - The motivation behind using cache is we can use both very large and very fast memory through exploiting so called **locality**. Programs tend to access data and code "in localized regions". Data that is more likely to be frequently accessed is stored in cache, thus significantly reducing the overhead of going to the main memory. 
 - The programmer can actually exploit the cache capabilities of the system and obtain some amazing performance. 
@@ -90,7 +90,7 @@ gcc -o hello hello.c
 	1. It protects the hardware from misuse by rogue applications. 
 	2. It provides applications with a simple and uniform and simple interface for manipulating complicated and differing hardware devices. 
 - Operating systems achieve these two goals with 3 fundamental abstractions: **processes**, **virtual memory**, and  **files** as the following figure shows:
-![Operating system abstraction](img/osAbstractions.png)
+![Operating system abstraction](img/computerSystems/osAbstractions.png)
 - The figure above shows how a files are an abstraction for I/O devices, virtual memory is an abstraction for main memory and I/O devices (especially other storage devices such as disk), and processes are an abstraction for the processor, main memory and I/O devices.
 
 ### a. Processes:
@@ -105,7 +105,7 @@ gcc -o hello hello.c
 - Even multi-core systems with multiple CPUs do often have more processes running at time than the numbers of CPUs they have. Systems with single CPUs can only run one program at a time. How does a system achieve concurrency with a single processor? The processor switch between multiple processes running at the same time. The OS provides the ability to switch between multiple processes through a mechanism called **context switching**.
 - The OS keeps track of every process's state information . The state of a process is called the **context**. It includes such information as the current PC value of the process, the register file and the content of the main memory. At any point in time, the processor can execute the instruction of one and only one process. When the OS decides to transfer control from one process to another , it makes a **context switch** by saving the context of the current, restoring the context of the new process and transferring control to the new process. "The new process picks up exactly where left off".
 - The following figure shows how context switching is done:
-![context switching](img/contextSwitching.png)
+![context switching](img/computerSystems/contextSwitching.png)
 - The figure above shows two processes running concurrently: Process A (shell program) and process B (our `hello` program). The shell is running waiting for input in the command line. When we ask it to run the `hello` program, the shell invokes a special function called a **system call** which passes control to the OS. The OS saves the context of the shell process and creates a new `hello` process and its context and then passes control to it. After the `hello` process terminates, the operating system restores the context of the shell process and passes control back to it. 
 - It is the OS's **kernel** that manages context switching. The kernel is the part of the system code that always resides in memory. When an application program needs something from the OS, it executes a system call instruction, thereby transferring control to the kernel. The kernel then executes that operation and returns control back to the process.
 - The kernel itself is not another process. Instead, it is a collection of code and data structures that the system uses to manage all processes.
@@ -116,7 +116,7 @@ gcc -o hello hello.c
 
 ### c. Virtual Memory:
 - **Virtual memory** is an abstraction that makes it appear as if a process has exclusive use of the main memory. Each processes has the same view of memory which is called its **virtual memory space**. The following figure shows the layout of process virtual memory space in a typical Linux system which is more or less the same for all Unix-like systems:
-![Process virtual memory space](img/virtMemSpace.png)
+![Process virtual memory space](img/computerSystems/virtMemSpace.png)
 - As you can see in the document above, the top region of the virtual memory space contains data and code from the operation system that is common to all running processes. In the lower region are the code and data defined by the process. The addresses also increase from the bottom to the top.
 - The virtual memory space of each process consists of very well defined regions, each with a specific purpose. These regions from the bottom to the top are as follows:
 	+ **Program code and data**. Code begins at the same memory address for all processes, followed by data locations corresponding to C global variables. The code and data contents of this region are initialized directly from the executable `hello`. We will see more about this content in the section about linking.
