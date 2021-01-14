@@ -256,8 +256,34 @@ ub = tb;
 - Some weird behavior can arise when unsigned and signed operands are used in the same operation. The signed operand is implicitly converted into an unsigned operation. For example, the expression `-1 < 0U` results in a `1` because `-1` becomes unsigned. This problem arises mainly when dealing with relational operators `<` and `>`.
 
 ### Expanding The Bit Representation of a Number:
+- You can convert integers between types with different sizes while retaining the numeric values of these integers. Converting an integer to a larger data type (**expanding** its bit representation) is always possible, but **truncating** the number (converting it to a smaller bit representation and retaining its value) is not always possible because the destination data type might be too small to contain all the number's bits.
+- When we convert an unsigned number to a larger data type, we simply add leading zeros in what is called **zero extension**. Converting a 4-bit number **[0111]** to an 8-bit type makes it **[0000 0111]**.
+- When converting a two's-complement to a larger data type, we add copies of the most significant bit in what is called **sign extension**. In this case, converting the 4-bit **[0111]** into an 8-bit representation yields **[0000 0111]** and **[1001]** gives us **[1111 1001]**.
+- While the sign extension preserves the numeric value of the extended value, the bit pattern changes. This is especially apparent when the leading sign is a **1**. We preserve the value even if we seem o be adding extra **1**s in the case of negative numbers, because the most significant **1**s value grows and we counterweight that with extra leading **1**s.
+- Be careful and precise when doing your conversions. The following code is a little problematic:
+```c
+short a = -5;
+unsigned b = a;
+```
+- Printing `b` in the example above gives `4294967291`. The program first converted `a` into an `int` (a 32-bit value in my machine) and then made it unsigned. The following code is more precise and more predictable:
+```c
+short a = -5;
+unsigned short b = a;
+```
+- `b` now is printed as `65531`. It is these small things that often mess our programs!
+
 ### Truncating Numbers:
+- When **truncating** a number (converting it to a smaller data type), we simply reduce the number of bits that represent it. The same simple rule applies for both signed and unsigned numbers. The problem with truncation is that alters the value of the number. When you truncate a number and then extend it, it is likely that you'd end with a different number. Cases where truncation alters the value of a number are a form of overflow.
+```c
+int a = 3233;
+char b = a; // -95
+int c = b; // -95
+```
+- In the case of the signed numbers, the sign of the number changes depending on the value of the most significant bit of the truncated number, so both the sign and absolute value of the number are susceptible to change when a signed number is truncated. 
+
 ### Advice on Signed vs. Unsigned:
+- Be extra-careful about casting and converting between different data types and lengths. These can lead to some very subtle bugs and problems. Pay attention to where implicit casting may occur and have control over it if you can!
+- The CMUtians go as far as saying "never use unsigned numbers", although they admit that unsigned numbers do have many applications especially in systems programming. 
 
 
 ## Integer Arithmetic:
