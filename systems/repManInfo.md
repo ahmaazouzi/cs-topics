@@ -196,20 +196,71 @@ void in_place_swap(int *a, int *b){
 - The C standard does not define probably which right shift to use for signed data which is can lead to portability issues. However most compilers and programmers agree that arithmetic right shifts be used for signed data and logical right shifts be used for unsigned data. 
 
 ## Integer Representations:
+- This section will deal with two ways bits are used to represent integers:
+	+ *Unsigned integers* which represents only non-negative numbers.
+	+ *Signed integers* which represents zero, negative and non-negative numbers.
+- This section will also deal with "converting" data encoded as integers between data types of different lengths. 
+
 ### Integral Data Types:
+- The C language supports a variety of *integral* data types which support different ranges of values. For example:
+	* **`[signed] char`** can represent the range ***[0..255]*** in both 32-bit and 64-bit architectures.
+	* **`short`** can represent the range ***[-32,768..32,767]*** in both 32-bit and 64-bit architectures.
+- The same type can be represented using different names. For example `long`, `long int`, `long long` `long long int` all mean the same thing.
+- The ranges that can be represented by the same data types across different platforms (at least in 64-bit vs. 32-bit), except for the `long` type which is platform dependent. It uses 4 bytes in 32-bit machines and 8 bytes in 64-bit machines, resulting in different ranges.
+- The C standard itself only defines the minimum ranges that each type can represent. For example the minimum range of the signed `int` type is ***[-32,768..32,767]*** while it is ***[−2,147,483,648..2,147,483,647]***.
+- It is also important to notice that in the 32-bit and 64-bit architectures, signed types are asymmetric around the zero in the `char` type which has the range ***[-128..127]***. This is not part of the of minimum ranges defined by the C standard!! We will see the reason for this asymmetry in the signed encoding section.
+
 ### Unsigned Encodings:
+- The book goes into some Knuthic gymnastics in pursuit of rigor, rigor that the feeble-minded like me have no use or stomach for! It concludes  that converting a decimal number using a vector of bits and vice versa is a **bijection**. There is a unique unsigned bit vector to represent a non-negative number.
+
 ### Two's-Complement Encodings:
+- **Two's-Complement** is the most popular encoding for representing signed numbers. The basic idea behind two's-complement is to use the most significant bit of a type to indicate if the number is negative or positive. 
+- The most significant bit in is called the **sign bit**. When the sign bit is ***1*** the number is negative, and when it's ***0***, the number is positive, but this bit not just a sign. There is some math behind it. 
+- I am amazed by the Knuth-type brains. The math is consistent in this type of encoding. Even when we consider the most significant bit as a number, a negative number, we get the same result when we just look at the bit sign as just a minus or plus sign. Let's say we are dealing with a 4-bit word. 
+	- To represent the positive number ***3*** we use the bit vector ***[0011]***  which is equivalent to ***-0 · 2<sup>3</sup> + 0 · 2<sup>2</sup> + 1 · 2<sup>1</sup> + 1 · 2<sup>0</sup>*** which is equivalent to ***-0 · 8 + 0 · 4 + 1 · 2 + 1 · 1*** which is ***3***.
+	- To represent the positive number ***-5*** we use the bit vector ***[1011]***  which is equivalent to ***-1 · 2<sup>3</sup> + 0 · 2<sup>2</sup> + 1 · 2<sup>1</sup> + 1 · 2<sup>0</sup>*** which is equivalent to ***-1 · 8 + 0 · 4 + 1 · 2 + 1 · 1*** which is ***-5***.
+- The bijection feature of unsigned encoding is preserved in the two's-complement encoding.
+- As noted earlier two's-complement is asymmetric in that ***| range_min | = range_max + 1***. For example a `signed char` has the range ***[-128..127]***. This is caused by the fact that **0** is one of the non-negative numbers. 
+- The asymmetric nature of two's-complement can lead to subtle bugs, especially when it comes to portability. Remember how C doesn't have this kind of asymmetry. C itself is not meant to use only two's-complement for signed numbers, so you shouldn't assume if a machine uses two's-complement if you want your program to work across different platforms. However, most machines and compilers use it.
+- The C library's `limits.h` defines the different ranges of machines where the compiler is running and can help you get over the weird portability issues. 
+- There are two other ways to represent signed integers other than two's-complement:
+	- *Ones' complement*: In this arrangement the most significant bit in an integer type is ***-(2<sup>w - 1</sup> - 1)*** rather two's-complement's ***-2<sup>w - 1</sup>***. So the `char` range would be ***[-127..127]***.
+	- *Sign magnitude*: Just like in floats, in this scheme the bit sign simply represents a sign so the number is negative if the sign is 1 and positive if it is 0. 
+- The ones'-complement and sign-magnitude schemes have two zeros, a negative zero and a positive zero!! Mmm!! Anyways, none of these two is in use anymore؛ let's just focus on two's complement.
+
 ### Conversions between Signed and Unsigned:
+- when casting an signed integer to an unsigned integer of the same word size or vice-versa, the bit pattern stays the same. Only the interpretation of the number change. When we cast the signed `char` ***2*** into an `unsigned char`, we obtain ***254***, but both numbers have the same bit vector ***[1111 1110]***.
+
 ### Signed vs. Unsigned in C:
+- C Does not specify a particular representation of signed numbers, but most modern machines use two complement. 
+- Integers in C are signed by default. A constant such **`4444`** is signed and if you want a constant to be unsigned, you append a **`U`** or **`u`** the number as in **`4444U`** and **`4444u`**.
+- C Doesn't precisely specify how a signed to unsigned conversion or vice-versa are done but most systems implement in such a away that the bit pattern is not altered during such a conversion.
+- Conversion in C can be done with explicit casting as the following example shows:
+```c
+int ta, tb;
+int ua, ub;
+
+ta = (int) ua;
+ub = (unsigned) tb;
+```
+- The same can be done implicitly without you doing the casting as in:
+```c
+```c
+int ta, tb;
+int ua, ub;
+
+ta = ua;
+ub = tb;
+```
+- Pay also attention to string formatting with the `printf` function. It uses `%d` to print signed numbers and `%u` for unsigned numbers. The `printf` function doesn't care about actual value types, so an unsigned can be printed as a signed one and vice versa.
+- Some weird behavior can arise when unsigned and signed operands are used in the same operation. The signed operand is implicitly converted into an unsigned operation. For example, the expression `-1 < 0U` results in a `1` because `-1` becomes unsigned. This problem arises mainly when dealing with relational operators `<` and `>`.
+
 ### Expanding The Bit Representation of a Number:
 ### Truncating Numbers:
 ### Advice on Signed vs. Unsigned:
 
 
 ## Integer Arithmetic:
-
-
-
 ### Unsigned Addition:
 ### Two's-Complement Addition:
 ### Two's-Complement Negation:
