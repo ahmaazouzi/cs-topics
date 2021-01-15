@@ -285,23 +285,95 @@ int c = b; // -95
 - Be extra-careful about casting and converting between different data types and lengths. These can lead to some very subtle bugs and problems. Pay attention to where implicit casting may occur and have control over it if you can!
 - The CMUtians go as far as saying "never use unsigned numbers", although they admit that unsigned numbers do have many applications especially in systems programming. 
 
-
 ## Integer Arithmetic:
+- Until I started reading about the lower-level representations of different data types, especially integer types, I was one of those poor confused and demoralized about how adding two positive numbers could result in a negative result. These problems arise from the finite nature of computer arithmetic which we will delve into here:
+
 ### Unsigned Addition:
+- Let's say we have two nonnegative integers ***x*** and ***y*** such that ***0 ≤ x, y < 2<sup>w</sup>***. Both of these values can each be represented by a ***w***-bit unsigned number but adding the two together might result in a sum that will not fit in the range ***[0..2<sup>w</sup>]***. Instead this value will be in the range ***0 ≤ x + y ≤ 2<sup>w + 1</sup> - 2***. We need ***w + 1*** bits to represent this sum. 
+- Some languages like *Lisp* support *arbitrary size* where there can be integers of any length (bounded only by the system's memory), but our peasant languages like C use *fixed size* data types making our systems arithmetic differ from its *real-world* counterpart.
+- If we restrict the result  of the sum ***0 ≤ x, y < 2<sup>w</sup>*** to length ***w*** and view it as n unsigned value, we are practically truncating this sum. This is a form of **modular arithmetic**. We are computing the sum of ***x*** and ***y*** *modulo* ***2<sup>2</sup>*** through the discard the bits that exceed ***2<sup>w - 1</sup>***. This is the so called wrap-around you see in clocks and whatnot.
+- When the sum of ***x*** and ***y*** is ***2<sup>w</sup>*** or more, meaning the sum can't fit in the word size of the given type, we say the operation **overflows**.  
+- Overflows are not errors and compilers and systems would probably not explicitly alert you that there was an overflow. We can simply detect an overflow if the sum ***s*** is ***s < x*** or ***s < y***.
+- There is some talk of the *abelian group* which I don't care about at this very moment!
+
+### Unsigned Negation:
+- The additive inverse of an unsigned integer ***x*** depends on its value. If ***x = 0***, then ***x***'s additive inverse is ***0*** itself. If ***x > 0***, then its additive inverse is ***2x<sup>w</sup> - x***
+
 ### Two's-Complement Addition:
+- Unlike unsigned addition, two's complement can result in one of two cases: a *positive overflow* where the result is too large or a *negative overflow* where the result is too small. 
+- The sum of integers ***x*** and ***y*** in the range ***-2<sup>w - 1</sup> ≤ x, y ≤ 2<sup>w - 1</sup> -1*** falls in the range ***-2<sup>w</sup> ≤ x + y ≤ 2<sup>w</sup> - 2***. This sum requires a bit vector of length ***w + 1*** to represent it. 
+- In a nutshell result of adding the sum could be one of 3 possibilities:
+	+ A positive overflow when ***2<sup>w - 1</sup> ≤ x + y***
+	+ A normal result when ***-2<sup>w - 1</sup> ≤ x + y < 2<sup>w - 1</sup>***
+	+ A negative overflow when ***x + y < -2<sup>w - 1</sup>***
+- As with unsigned number, we need to truncate the result of the addition of the two's-complement numbers ***x*** and ***y*** to represent it with ***w*** bits. Truncating the sum results in in one of 4 cases:
+	+ A normal positive value.
+	+ A normal negative value.
+	+ A value that is too large. We subtract a ***2<sup>w</sup>*** from the sum and it becomes negative.
+	+ A value that is too small. We add ***2<sup>w</sup>*** to the sum and it becomes positive. 
+- The ***w***-bit two's-complement sum of two numbers has the same bit-level representation as unsigned sum. Most machines use the same instruction for adding unsigned and two's-complement numbers. 
+- Because unsigned and two's-complement addition have the bit-level representation, two's-complement addition is done by first converting the operands into unsigned format, adding them and then converting them back to two's-complement. 
+- How do we detect two's-complement overflows? Assuming ***s*** is the truncated sum of ***x*** and ***y***:
+	+ A positive overflow happens if and only if ***x > 0*** and ***y > 0*** but ***s ≤ 0***.
+	+ A negative overflow happens if and only if ***x < 0*** and ***y < 0*** but ***s ≥ 0***. 
+
 ### Two's-Complement Negation:
+-  Depending on the value of a two's-complement integer ***x***, its additive inverse (the one you add it to to get a zero) is one of two:
+	- If the value is the minimum value that can be represented in the range, its additive inverse is itself. For example, the `char` ***-128***'s additive inverse is ***-128*** itself.
+	- The additive inverse of any other ***x*** is ***-x*** so the inverse of the `char` ***55*** is ***-55***.
+- You can get negation of a two's-complement integer using one of these two tricks:
+	+ Flip its bits with bit operator **`~`** and add ***1*** to it. For example, the value 5 has the 4-bit pattern ***[0101]***. Flipping its bits results in ***[1010]*** and adding ***1*** to that results in ***[1011]*** which is ***-5***.
+	+ Find the rightmost ***1*** in its bit vector and flip every bit to the left of it. For example, ***4*** has the 4-bit pattern ***[0100]***. To get its inverse we flip the leftmost bit because it's the only one to the left of the rightmost 1. This results in ***[1100]*** which is ***-4***.
+
 ### Unsigned Multiplication:
+-
+
 ### Two's-Complement Multiplication:
+-
+
 ### Multiplying by Constants:
+-
+
 ### Dividing by Powers of 2:
+-
+
 ### Final Thoughts on Integer Arithmetic:
+-
 
 ## Floating Point:
 ### Fractional Binary Numbers:
-### IEE Floating-Point Representation:
+### IEEE Floating-Point Representation:
 ### Example Numbers:
 ### Rounding:
 ### Floating-Point Operations:
 ### Floating Point in C:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

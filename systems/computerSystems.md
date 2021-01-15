@@ -158,6 +158,3 @@ gcc -o hello hello.c
 ### The Importance of Abstractions in Computer Systems:
 - The use of *abstractions* is fundamental in computer systems and computer science in general. An example of this is APIs which are simple functions that allow programmers use programs without having to worry about the complex internals of these programs. They serve the purpose of hiding the complexity of implementations while allowing programmers to use programs. We've seen how ISA abstracts the more complex actual implementations of processors and how something like files abstract the complexity and diversity of I/O devices. 
 - One important abstraction we haven't seen is **virtual machine** which provides an abstraction for entire computers including the OS, hardware, the processor and programs. These are becoming more and more popular.
-
-
-
