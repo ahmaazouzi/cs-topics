@@ -366,7 +366,7 @@ int c = b; // -95
 	- Very large numbrs of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 confused :confused:).
 	- Numbers very close to 0 (very small numbers) ***(| V | << 1)***.
 - In around the mid-1980's a joint effort by IEEE and Intel culminated in standardizing the representation of floating-point numbers and the operations that can be performed on them. Most modern machines use this standard and this is what we will study in this section.
-- <p style="color: red; font-weight: bold">1111111000111</p>
+- <span style="color: red; font-weight: bold">1111111000111</span>
 
 
 
