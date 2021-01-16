@@ -326,19 +326,44 @@ int c = b; // -95
 	+ Find the rightmost ***1*** in its bit vector and flip every bit to the left of it. For example, ***4*** has the 4-bit pattern ***[0100]***. To get its inverse we flip the leftmost bit because it's the only one to the left of the rightmost 1. This results in ***[1100]*** which is ***-4***.
 
 ### Unsigned Multiplication:
--
+- "Integers ***x*** and ***y*** in the range ***0 ≤ x, y ≤ 2<sup>w</sup> - 1*** can be represent as ***w***-bit [long] unsigned numbers, but their product ***x · y*** can range between ***0*** and ***(2<sup>w</sup> - 1)<sup>2</sup> = 2<sup>2w</sup> - 2<sup>w + 1</sup> + 1***." This result will require up to ***2w*** bits to represent, we truncate such a result and keep only the bits bounded by ***w***. 
+- Truncating a ***2-w*** bit is the same as computing it modulo ***2<sup>w</sup>*** as in ***(x · y) mod 2<sup>w</sup>***
 
 ### Two's-Complement Multiplication:
--
+- Like their unsigned counterparts, two's-complement integers ***x*** and ***y*** in the range ***-2<sup>w - 1</sup> ≤ x, y ≤ 2<sup>w - 1</sup> - 1*** have a product ***x · y*** whose range is between:
+	+ Minimum: ***-2<sup>w - 1</sup> · (2<sup>w - 1</sup> - 1) = -2<sup>2w - 2</sup> + 2<sup>w - 1</sup>***.
+	+ Maximum: ***(-2<sup>w - 1</sup>)<sup>2</sup> = 2<sup>2w - 2</sup>***
+- This product might need as much ***2w*** to hold its value, but as usual we truncate this product by dropping bits that don't in the lower order ***w***-bits (which is the same as performing ***(x · y) mod 2<sup>w</sup>)***. 
+- Just like with addition, the two's-complement's multiplication and truncation result is identical to the result of multiplication and truncation of an unsigned integer at the bit level. The product might be different, but truncating that product is identical between the two. Let's say we have two 3-bit vectors ***[101]*** which is an unsigned ***5*** and a two's-complement ***-3*** and ***[011]*** which a ***3*** in both unsigned and two's-complement forms. Multiplying the two vectors results in the 6-bit unsigned ***[001111]*** which is ***15*** or the 6-bit two's-complement ***[110111]*** which is a ***-9***. The bit-level representations of these two numbers are different, but after truncating them and keeping just the lower ***w*** bits, we get ***[111]*** which is ***7*** or ***-1*** depending on the representation.
+- The fact that the truncated product of two two's-complement integer is identical to that of unsigned numbers, means unsigned multiplication is used to multiply two's-complement integers. The two numbers are converted to unsigned numbers, multiplied, truncated and then converted back to two's-complement. 
+- There is no overflow only if the  ***p / x = y*** or ***x = 0*** (you can swap x and y).
+- Again, be careful about overflow and make sure to detect if there are overflows and try to mitigate them. They can lead to some serious security vulnerabilities. 
 
 ### Multiplying by Constants:
--
+- Multiplication is generally considered an expensive operation that takes multiple click cycles as opposted to addition, subtraction, shifting and other bit-level operations which typically require a single clock cycle. To optimize multiplication operations, compiler resort to replacing multiplication with constant factors by combinations of shifts and additions. This section will be about optimizing multiplication by constant powers of ***2***. This will be generalized to handle all multiplications by constants.  
+- Due to the fact the value of a bit in a bit vector is double that of the bit to its right, you can double the value of that bit merely by shifting it one position to the left; shifting that bit two positions to left increases its value by twofold, etc. Shifting a bit vector of an unsigned value left by ***x*** positions multiplies its value by ***2x*** (does an unsigned multiplication). Of course, shifting this value outside of its range results in as expected in an overflow. 
+- Since the bit level representation of unsigned and signed integers (from now on I will only use *signed* for two's-complement), the same rule applies to for both. A combination of left shifts, additions and maybe subtractions can be applied to an unsigned integer as a form of optimization for multiplication. 
+- Let's say we want to multiply a certain integer ***x*** by the number ***14***. ***14*** can be re-expressed as ***14 = 2<sup>3</sup> + 2<sup>2</sup> + 2<sup>1</sup>***. Replacing the multiplication ***x · 14*** with a combinations of left shifts and additions we have **`(x << 3) + (x << 2) + (x << 1)`** as an optimized multiplication. We can even use the property ***14 = 2<sup>4</sup> - 2<sup>1</sup>*** to perform **`(x << 4) - (x << 1)`**. 
+- The general case of replacing the multiplication of an integer ***x*** by integer ***K*** with a combination of left shifts and multiplications involves the following:
+	- Find all the ***1***s in the bit pattern of K and note their positions. For example if ***K = 21***, its 8-bit pattern is ***[0001 0101]***. The positions of ***1***s are ***0***, ***2***, and ***4***.
+	- Multiply ***x*** by each one of the positions of ***1***s from the previous step and add these products up to get the final product. If ***x = 10*** then **`(10 << 4) + (10 << 2) + (10 << 0)`** which results in ***210***. 
+- This optimization is only done if it requires a small number of shifts and additions.
 
 ### Dividing by Powers of 2:
--
-
-### Final Thoughts on Integer Arithmetic:
--
+- Integer division is much slower than multiplication. It requires 30 or clock cycles. 
+- Integer division by powers of 2 can also be performed using a shift operations, but it uses right shifts instead of left ones. Logical and arithmetic right shifts accommodate unsigned and signed numbers.
+- Integer division always rounds towards zero. In the case of unsigned numbers, a division always rounds down, while in signed integers it rounds down if the result is equal or larger than 0 and it rounds up towards zero if the result is negative.
+- Right shifting in unsigned numbers yield correct results that are consistent with the results of an actual division. the result is rounded down towards the zero.
+- Performing a right shift in a signed integer has two results:
+	+ First, if the left-most sign bit is a ***1*** then, the left side of the bit vector will be filled with ***1***s, hence the name arithmetic shift.
+	+ The result of the shift is always rounded down even when the result is negative. We know that the result of division must always be rounded towards the zero. 
+- To force rounding towards zero in signed negative results, we use so called *bias* which can be obtained by the following C code **`(x + (1 << k) - 1) >> k`** give that ***x*** is the number we want to divide through shifting right by ***k*** bits. This will only affect numbers that need to be rounded. 
+- The problem with adding bias is that it results in rounding up positive results that don't need rounding up (rounding gives wrong results for this). To mitigate this situation we use the following C code:
+```c
+(x<0 ? x+(1<<k)-1 : x) >> k
+```
+- In the example above, we check if the ***x*** is negative and only then we add the bias, otherwise we proceed directly to right-shifting it.
+- Unfortunately, we can only divide by constant powers of 2 and not by random constants like in multiplication.
 
 ## Floating Point:
 ### Fractional Binary Numbers:
