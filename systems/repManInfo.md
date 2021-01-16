@@ -358,11 +358,7 @@ int c = b; // -95
 	+ First, if the left-most sign bit is a ***1*** then, the left side of the bit vector will be filled with ***1***s, hence the name arithmetic shift.
 	+ The result of the shift is always rounded down even when the result is negative. We know that the result of division must always be rounded towards the zero. 
 - To force rounding towards zero in signed negative results, we use so called *bias* which can be obtained by the following C code **`(x + (1 << k) - 1) >> k`** give that ***x*** is the number we want to divide through shifting right by ***k*** bits. This will only affect numbers that need to be rounded. 
-- The problem with adding bias is that it results in rounding up positive results that don't need rounding up (rounding gives wrong results for this). To mitigate this situation we use the following C code:
-```c
-(x<0 ? x+(1<<k)-1 : x) >> k
-```
-- In the example above, we check if the ***x*** is negative and only then we add the bias, otherwise we proceed directly to right-shifting it.
+- The problem with adding bias is that it results in rounding up positive results that don't need rounding up (rounding gives wrong results for this). To mitigate this situation we use the following C code: **`(x < 0 ? x + (1 << k) - 1 : x) >> k`**. In this example, we check if the ***x*** is negative and only then we add the bias, otherwise we proceed directly to right-shifting it.
 - Unfortunately, we can only divide by constant powers of 2 and not by random constants like in multiplication.
 
 ## Floating Point:
