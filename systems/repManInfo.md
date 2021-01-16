@@ -363,17 +363,26 @@ int c = b; // -95
 
 ## Floating Point:
 - Floating-point representations are a different beast. They are used to encode rational numbers (or to be more precise approximations to rational numbers) of the form ***V = x · 2<sup>y</sup>***. Floating-point representations are used to perform computations involving:
-	- Very large numbrs of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 confused :confused:).
+	- Very large numbers of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 confused :confused:).
 	- Numbers very close to 0 (very small numbers) ***(| V | << 1)***.
-- In around the mid-1980's a joint effort by IEEE and Intel culminated in standardizing the representation of floating-point numbers and the operations that can be performed on them. Most modern machines use this standard and this is what we will study in this section.
-- <span style="color: red; font-weight: bold">1111111000111</span>
+- In around the mid-1980's a joint effort by IEEE and Intel culminated in standardizing the representation of floating-point numbers and the operations that can be performed on them. 
+- Most modern machines use the IEEE floating-point standard and this is what we will study in this section. We will look at issues of rounding and precision in floating-point numbers and study the properties of operations involving floats. In a nutshell, we will demystify these nut-bags!
 
-
+### Fractional Binary Numbers:
+- How do we represent fractions in a binary form. Let's first look at how fractions are represented in decimal notation. It's done as follows: ***d<sub>m</sub> d<sub>m - 1</sub> d<sub> ... </sub>d<sub>1</sub>d<sub>0</sub> . d<sub>-1</sub> d<sub>-2</sub> ... d<sub>-n</sub>***
 
 ### IEEE Floating-Point Representation:
+-
+
 ### Example Numbers:
+-
+
 ### Rounding:
+-
+
 ### Floating-Point Operations:
+-
+
 ### Floating Point in C:
 
 
