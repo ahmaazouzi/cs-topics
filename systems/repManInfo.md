@@ -362,7 +362,14 @@ int c = b; // -95
 - Unfortunately, we can only divide by constant powers of 2 and not by random constants like in multiplication.
 
 ## Floating Point:
-### Fractional Binary Numbers:
+- Floating-point representations are a different beast. They are used to encode rational numbers (or to be more precise approximations to rational numbers) of the form ***V = x · 2<sup>y</sup>***. Floating-point representations are used to perform computations involving:
+	- Very large numbrs of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 confused :confused:).
+	- Numbers very close to 0 (very small numbers) ***(| V | << 1)***.
+- In around the mid-1980's a joint effort by IEEE and Intel culminated in standardizing the representation of floating-point numbers and the operations that can be performed on them. Most modern machines use this standard and this is what we will study in this section.
+- <p style="color: red; font-weight: bold">1111111000111</p>
+
+
+
 ### IEEE Floating-Point Representation:
 ### Example Numbers:
 ### Rounding:
