@@ -363,16 +363,52 @@ int c = b; // -95
 
 ## Floating Point:
 - Floating-point representations are a different beast. They are used to encode rational numbers (or to be more precise approximations to rational numbers) of the form ***V = x · 2<sup>y</sup>***. Floating-point representations are used to perform computations involving:
-	- Very large numbers of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 confused :confused:).
+	- Very large numbers of the form ***(| V | >> 0)***. (It looks like ***>>*** means something much larger than 0 :confused:).
 	- Numbers very close to 0 (very small numbers) ***(| V | << 1)***.
 - In around the mid-1980's a joint effort by IEEE and Intel culminated in standardizing the representation of floating-point numbers and the operations that can be performed on them. 
 - Most modern machines use the IEEE floating-point standard and this is what we will study in this section. We will look at issues of rounding and precision in floating-point numbers and study the properties of operations involving floats. In a nutshell, we will demystify these nut-bags!
 
 ### Fractional Binary Numbers:
-- How do we represent fractions in a binary form. Let's first look at how fractions are represented in decimal notation. It's done as follows: ***d<sub>m</sub> d<sub>m - 1</sub> d<sub> ... </sub>d<sub>1</sub>d<sub>0</sub> . d<sub>-1</sub> d<sub>-2</sub> ... d<sub>-n</sub>***
+- How do we represent fractions in a binary form. Let's first look at how fractions are represented in decimal notation. It's done as follows: ***d<sub>m</sub> d<sub>m - 1</sub> d<sub> ... </sub> d<sub>1</sub> d<sub>0</sub> . d<sub>-1</sub> d<sub>-2</sub> ... d<sub>-n + 1</sub> d<sub>-n</sub>***, where each decimal digit ***d<sub>i</sub>*** is in a range between ***0*** and ***9***. The values of the digits are weighted around the  decimal point ('***.***'). To the left of the decimal point, each digit ***d<sub>i</sub>*** is multiplied by a nonnegative power of 10 (***d<sub>i</sub> · 10<sup>i</sup>***). To the right of the decimal point, each digit is multiplied by a negative power of of 10 (***d<sub>i</sub> · 10<sup>i</sup>***). All these digits are summed together to give us the value of the number.
+- For example the decimal notation ***112.34*** represents the the number ***(1 · 10<sup>2</sup>) + (1 · 10<sup>1</sup>) + (2 · 10<sup>0</sup>) + (3 · 10<sup>-1</sup>) + (4 · 10<sup>-2</sup>)*** which is the same as ***100 + 10 + 2 + 3 / 10 + 4 / 100***.
+- Binary numbers can use a similar notation ***b<sub>m</sub> b<sub>m - 1</sub> b<sub> ... </sub> b<sub>1</sub> b<sub>0</sub> . b<sub>-1</sub> b<sub>-2</sub> ... b<sub>-n + 1</sub> b<sub>-n</sub>***. Just like in decimal notation, binary notation uses a digit or bit ***b<sub>i</sub>*** that ranges in value between ***0*** and ***1***. The binary notation also uses a binary point ('***.***'), to the left of which bits are multiplied by a nonnegative power of ***2*** as in ***b<sub>i</sub> · 2<sup>i</sup>***. To the right of the binary point ***b<sub>i</sub>*** is multiplied by a negative power of ***2*** as in ***b<sub>i</sub> · 2<sup>i</sup>***. 
+- The binary notation ***101.11<sub>2</sub>*** represents the number ***(1 · 2<sup>2</sup>) + (0 · 2<sup>1</sup>) + (1 · 2<sup>0</sup>) + (1 · 2<sup>-1</sup>) + (1 · 2<sup>-2</sup>)*** which is the same as ***4 + 0 + 1 + 1 / 2 + 1 / 4*** which is ***5.75***.
+- From the examples above, we can see that shifting the binary point to the left divides the number by 2 and shifting to the right doubles the number's value. 
+- considering the mismatch between binary and decimal representations of numbers and the fact that we use understand decimal while computers understand only binary but we want the computers to do decimal computations for us, binary fractions are only approximations to decimal fractions. The fraction ***1 / 5*** is exactly ***0.2*** in decimal notation, but there is no exact binary equivalent because numbers can only numbers that can be expressed as ***x · 2<sup>y</sup>*** can be represented exactly. Intead we resort to approximations as the following table illustrate the different binary approximations to the decimal ***1 / 5***
+| Binary representation | Value | Decimal |
+| --- | --- | --- |
+| 0.0<sub>2</sub> | 0 / 2 | 0.0<sub>10</sub> |
+| 0.01<sub>2</sub> | 1 / 4 | 0.25<sub>10</sub> |
+| 0.010<sub>2</sub> | 2 / 8 | 0.25<sub>10</sub> |
+| 0.0011<sub>2</sub> | 3 / 16 | 0.1875<sub>10</sub> |
+| 0.00110<sub>2</sub> | 6 / 32 | 0.1875<sub>10</sub> |
+| 0.001101<sub>2</sub> | 13 / 64 | 0.203125<sub>10</sub> |
+| 0.0011010<sub>2</sub> | 26 / 128 | 0.203125<sub>10</sub> |
+| 0.00110011<sub>2</sub> | 51 / 256 | 0.19921875<sub>10</sub> |
 
 ### IEEE Floating-Point Representation:
--
+- Positional notation is not good for representing very large number. ***4 · 2<sup>100</sup>*** would require ***100*** with a 100 zeros to the right of it: ***1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000***. Instead, a notation similar to scientific notation in the form ***x · 2<sup>y</sup>*** is more efficient. 
+- The *IEEE floating-point standard* represents a number in the form ***V = (-1)<sup>s</sup> · M · 2<sup>E</sup>***:
+	- The **sign** ***s*** determines if the number is negative (***s = 1***) or positive (***s = 0***). If the number is ***0***, the sign bit is handled as a special case!
+	- The **significand** ***M*** is a fractional binary number that ranges either between one or zero or a value larger than zero. 
+	- The **exponent** ***E*** weights the value of the number by a negative or positive power of ***2***.
+- The bit representation of an IEEE floating-point number is divided into 3 fields:
+	- "The single **sign *s*** bit directly encodes the sign ***s***."
+ 	- The ***k***-bit exponent field ***exp = e<sub>k - 1</sub> ... e<sub>1</sub> e<sub>0</sub>*** encodes the exponent ***E***.
+ 	- The ***n***-bit fraction ***frac = f<sub>n - 1</sub> ... f<sub>1</sub> f<sub>0</sub>*** field encodes the significand ***M*** but the value it encodes depends on whether the exponent field is equal to ***0*** or not.
+![IEEE floating-point numbers](img/repManInfo/ieeefloats.png)
+- The image above shows the packing of these 3 fields into two of the most common floating formats:
+	- *Single-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 8***, and ***n = 28*** bits in length each respectively. This is packed into a 32-bit word. It's equivalent to C's **`float`**.
+	- Double-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 11***, and ***n = 52*** bits in length each respectively. This is packed into a 64-bit word. It's equivalent to C's **`double`**.
+- Depending on the value of ***exp***, the value represented by flaoting-point bit pattern can be one of 3 cases. One of three cases has two variants. The following subsections will explain these cases which are illustrated in the following image:
+
+#### Case 1: Normalized Values:
+- This is the most common case. It occurs when the bit pattern for ***exp*** is not all zeros (meaning ***exp = 0***) and not all ones (meaning ***exp = 255*** for single precision and ***2047*** for double precision).
+- The exponent field in this case represents a signed integer in ***biased*** form. This means that the exponent value is..
+
+
+#### Case 2: Denormalized Values:
+#### Case 3: Special Cases:
 
 ### Example Numbers:
 -
