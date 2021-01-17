@@ -401,6 +401,7 @@ int c = b; // -95
 	- *Single-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 8***, and ***n = 28*** bits in length each respectively. This is packed into a 32-bit word. It's equivalent to C's **`float`**.
 	- Double-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 11***, and ***n = 52*** bits in length each respectively. This is packed into a 64-bit word. It's equivalent to C's **`double`**.
 - Depending on the value of ***exp***, the value represented by flaoting-point bit pattern can be one of 3 cases. One of three cases has two variants. The following subsections will explain these cases which are illustrated in the following image:
+![cases of floating numbers](img/repManInfo/floatcases.png)
 
 #### Case 1: Normalized Values:
 - This is the most common case. It occurs when the bit pattern for ***exp*** is not all zeros (meaning ***exp = 0***) and not all ones (meaning ***exp = 255*** for single precision and ***2047*** for double precision).
