@@ -375,6 +375,7 @@ int c = b; // -95
 - The binary notation ***101.11<sub>2</sub>*** represents the number ***(1 · 2<sup>2</sup>) + (0 · 2<sup>1</sup>) + (1 · 2<sup>0</sup>) + (1 · 2<sup>-1</sup>) + (1 · 2<sup>-2</sup>)*** which is the same as ***4 + 0 + 1 + 1 / 2 + 1 / 4*** which is ***5.75***.
 - From the examples above, we can see that shifting the binary point to the left divides the number by 2 and shifting to the right doubles the number's value. 
 - considering the mismatch between binary and decimal representations of numbers and the fact that we use understand decimal while computers understand only binary but we want the computers to do decimal computations for us, binary fractions are only approximations to decimal fractions. The fraction ***1 / 5*** is exactly ***0.2*** in decimal notation, but there is no exact binary equivalent because numbers can only numbers that can be expressed as ***x · 2<sup>y</sup>*** can be represented exactly. Intead we resort to approximations as the following table illustrate the different binary approximations to the decimal ***1 / 5***
+
 | Binary representation | Value | Decimal |
 | --- | --- | --- |
 | 0.0<sub>2</sub> | 0 / 2 | 0.0<sub>10</sub> |
@@ -400,16 +401,26 @@ int c = b; // -95
 - The image above shows the packing of these 3 fields into two of the most common floating formats:
 	- *Single-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 8***, and ***n = 28*** bits in length each respectively. This is packed into a 32-bit word. It's equivalent to C's **`float`**.
 	- Double-precision floating-point* format where the fields ***s***, ***exp***, and ***frac*** are ***1***, ***k = 11***, and ***n = 52*** bits in length each respectively. This is packed into a 64-bit word. It's equivalent to C's **`double`**.
-- Depending on the value of ***exp***, the value represented by flaoting-point bit pattern can be one of 3 cases. One of three cases has two variants. The following subsections will explain these cases which are illustrated in the following image:
+- Depending on the value of ***exp***, the value represented by floating-point bit pattern can be one of 3 cases. One of these three cases has two variants. The following subsections will explain these cases which are illustrated in the following image:
 ![cases of floating numbers](img/repManInfo/floatcases.png)
 
 #### Case 1: Normalized Values:
 - This is the most common case. It occurs when the bit pattern for ***exp*** is not all zeros (meaning ***exp = 0***) and not all ones (meaning ***exp = 255*** for single precision and ***2047*** for double precision).
-- The exponent field in this case represents a signed integer in ***biased*** form. This means that the exponent value is..
-
+- The exponent field ***exp*** in this case represents a signed integer in ***biased*** form. This means that the exponent value is ***E = e - Bias*** where:
+	- ***e*** is the unsigned number with the bit representation ***e<sub>k - 1</sub> ... e<sub>1</sub>e<sub>0</sub>***.
+	- ***Bias*** is a bias value equal to ***2<sup>k - 1</sup> - 1***. It is ***127*** for single precision floats and ***1023*** for double. This results in exponent values ranging between ***-126*** and ***127*** for single precision and values between ***-1022*** and ***1023*** for double precision. 
+- The fraction field ***frac*** represents a fractional value ***f*** where ***0 ≤ f < 1***. It has the bit representation ***0.f<sub>n - 1</sub> ... f<sub>1</sub> f<sub>0</sub>***, with the binary point to the left of the most significant bit of the number. The significand is defined as ***M = 1 + f***. Some call this the **implied leading 1** representation because ***M = 1.f<sub>n - 1</sub> f<sub>n - 2</sub> ... f<sub>1</sub> f<sub>0</sub>***. This is a trick to get an extra bit of precision because "we can always adjust the exponent ***E*** so that the significand ***M*** is in the range ***1 ≤ M ≤ 2***." (:confused: This is a little ambiguous). This means we don't need to represent the leading bit of the significand since its always ***1***.
 
 #### Case 2: Denormalized Values:
+- This case occurs when the exponent field bits are all zeros. The exponent field in this case is ***E = 1 - Bias***. The significand value is ***M = f*** which is the value of the fraction field without an **implied leading 1**.
+- The denormalized case is used for two purposes
+	1. It is used to represent the value ***0***, because in the normalized case we must always have the significand ***M ≥ 1*** meaning zero cannot be represented in the normalized case. The floating-point represented of ***+0.0*** has a bit pattern of all zeros where the sign bit is ***0***, the exponent field is all ***0***s, and the fraction field is also all ***0***s giving ***M = f = 0***. If the sign bit is ***1***, the floating-point number represented is ***-0.0*** which is the same as ***+0.0*** in some cases and different in others.
+	2. The other function of the denormalized case is to represent numbers that are very close to zero. They provide a property called ***gradual underflow*** where numeric values are spaced evenly around zero. 
+
 #### Case 3: Special Cases:
+- This case occurs when all the exponent bits are ones. It is actually two cases:
+	1. When the fraction field is all zeros, the resulting values represent infinity. Either ***+∞*** if the sign bit is ***s = 0*** or ***-∞*** if the sign bit is ***s = 1***. Infinity is useful for representing results that overflow such when dividing by zero or when multiplying very large values. 
+	2. When the fraction field is a non-zero the represented value is a ***NaN***, which stands for **not a number**. Such values are returned when the result of a computation cannot be returned as a real number or as infinity such as ***√-1*** or ***∞ - ∞***. Some applications might use them to represent uninitialized data.
 
 ### Example Numbers:
 -
