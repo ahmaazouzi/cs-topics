@@ -455,39 +455,27 @@ int c = b; // -95
 	+ We combination the sign bit, the exponent field and the fraction field to get ***01000110010000001110010000000000***.
 
 ### Rounding:
--
+- In spite of their amazing features, the floating-point representations are limited both in range and precision making them just approximations to real numbers. We need a systematic way of representing a real value ***x*** with its closest floating-point approximation ***x'***.
+- determining the appropriate approximation is done with **rounding**. Floating-point representation offers 4 rounding modes. To examine these modes, let's assume we have a have some value ***x*** between ***1*** and ***2*** which we can round up or down. The 4 modes are as follows:
+	1. **Round-to-even:** is the default mode and it rounds to the nearest value, so ***1.4*** rounds down to ***1***, and ***1.6*** rounds up to ***2***. If the value is halfway between the two representable values, it is rounded to the even value, so ***1.5*** becomes ***2*** and ***2.5*** to ***2***.
+	2. **Round-toward-zero**.
+	3. **Round-up**.
+	4. **Round-down**.
+- Rounding to even number might not make much sense! Why not rounding up or down consistently? Rounding in one direction consistently might introduce statistical bias. Rounded up values might have an average that's slightly larger than the average of actual values and rounding down consistently might result in a smaller average than actual numbers. Even rounding towards zero suffer from the same problem because most or all values might be above or below zero. A random number happening to be even or odd is a very random thing and it's not as likely to introduce such bias.
 
 ### Floating-Point Operations:
--
+- An IEEE floating-point operation involving values ***x*** and ***y*** yields ***Round(x ⊙ y)***, where ***⊙*** stands an operation, and the result is a a rounded value of the actual result of the operation.
+- Designers use tricks to avoid expensive unnecessary operations because all that is needed is a result correctly rounded to desired threshold! Such tricks are especially useful when involving special values such as ***Nan***, and ***±∞***. For example, ***1 / -0*** yields ***-∞***.
+- Floating-point numbers are **not associative**. For example, ***(1e10 + 3.14) - 1e10 = 0*** is not the same as ***(1e10 - 1e10) + 3.14 = 3.14***. ***3.14*** is lost to rounding in the first case. 
+- The lack of associativity prevents us from indulging in optimizations that might have bad effects. Rounding can be so small that it doesn't affect the actual results or otherwise. The roundings can accumulate leading to wrong results. 
+- An important real-number property floats has is **monotonicity** where if ***a ≥ b*** then ***a + x ≥ b + x***.
+- When it comes to multiplications, floats are ***not distributive*** either.
+- Floats might seem ideal for scientific computations, but the lack of associativity and distributivity can be problematic, but being aware of such problems can help you avoid many a disaster!
 
 ### Floating Point in C:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- There is some discrepancy between how the C standard defines `float` and `double` and how these relate to the IEEE single-precision and double-precision representations. For example, C doesn't round to even like IEEE and there are no standard ways of doing so. C doesn't also provide special values such as ***-0***, ***-∞***, ***+∞***, and ***NaN***. 
+- Different systems provide libraries and ***(.h)*** files to mitigate these discrepancies. GCC for example defines constants such as **`INFINITY`** and **`NAN`** which you can use if you include the following lines into your C programs:
+```c
+#define _GNU_SOURCE 1
+#include <math.h>
+```
