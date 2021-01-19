@@ -423,7 +423,36 @@ int c = b; // -95
 	2. When the fraction field is a non-zero the represented value is a ***NaN***, which stands for **not a number**. Such values are returned when the result of a computation cannot be returned as a real number or as infinity such as ***√-1*** or ***∞ - ∞***. Some applications might use them to represent uninitialized data.
 
 ### Example Numbers:
--
+![6-bit floating-point representation](img/sixBitFloat.png)
+- The figure above shows the values that can be represented by a hypothetical 6-bit floating-point format. It has:
+	+ Exponent bits ***k = 3***.
+	+ A bias of ***n<sup>3 - 1</sup> - 1 = 3***.
+	+ A fraction of ***n = 2*** bits.
+- Part *a* in the image shows the complete representable values other than ***NaN***:
+	+ The two infinities are at the extreme ends of the representation.
+	+ The maximum magnitudes of normalized values are bounded by ±14.
+	+ Denormalized values are clustered around ***0***.
+- Part *b* of the figure shows a subset of the range bounded by ±1.0 with a focus on denormalized values. This part shows the negative and positive zeros and how values more densely clustered around the zeros.
+- The following table shows more detail about the behavior of floats:
+![8-bit float](img/e8bitfloat.png)
+- This figure shows a hypothetical 8-bit floating point format. It has the following features:
+	+ Exponent bits ***k = 4***.
+	+ A bias of ***2<sup>4 - 1</sup> - 1 = 7***.
+	+ A fraction of ***n = 3*** bits.
+- The figure is divided vertically into 3 regions representing the 3 cases of numbers that can be represented by a float. The columns show how the value can be encoded with the exponent field ***E*** and the significand field ***M***. Together, the significand and the exponent field represent the value ***V = 2<sup>E</sup> · M***.
+- Denormalized values are clustered around ***0***, including ***0*** itself. The denormalized exponent has the format ***E = 1 - 7 = -6*** giving values the weight ***2<sup>E</sup> = 1/64***. Remember that the significand ***M*** in this region is equal to zero so the significands equals fractions ***f*** which have values ***0, 1/8, ..., 7/8*** giving values ***V*** in the range ***0*** to ***1/64 · 7/8 = 7/512***. Notice how denormalized values are equally or evenly spaced due to the so-called *gradual underflow*. 
+- The smallest normalized value has the exponent ***E = 1 - 7 = -6*** giving a weight ***2<sup>-6</sup> = 1/64***. Fractions ***f*** are in the range ***0, 1/8, ..., 7/8***. The significands ***M***have values in the range ***M = 1 + 0 = 1***  to ***M = 1 + 7/8 = 15/8***. Multiplying ***2<sup>E</sup>***s by significands results in values ***V*** in the range ***8/512 = 1/64*** to ***15/512***. 
+- The reason behind the smooth transition from the largest denormalized value ***V = 7/512*** to smallest normalized value ***V = 8/512*** lies in how the denormalized exponent is defined ***E = 1 - Bias*** rather than ***-Bias***. (So far the most confusing thing to me is this ***E = 1- Bias***, in the denormalized case, but should I worry about. It's just a convention that works. It's the same as having the two numbers with the same sign being always positive. It just works but has no basis in logic :confused:).
+- An interesting property of the bit patterns of floating-point numbers is if treated like unsigned integers, they occur in ascending order. The IEEE floating-point encoding was devised on purpose to be sorted like unsigned numbers. There is the caveat of signed numbers starting with a a 1, but this can probably easily be overcome with some nerdy trick!
+
+### Converting an Unsigned Integer into IEEE Floating-Point Representation:
+- Let's convert the integer value ***12,345*** into the IEEE floating-point form:
+	+ We first obtain the  binary representation of ***12,345*** as an unsigned integer is ***11000000111001***.
+	+ We create a normalized representation by shifting the bits 13 positions to the right to get ***1.1000000111001*** to have ***1.1000000111001<sub>2</sub> · 2<sup>13</sup>***.
+	+ We create the fraction field by dropping the leading ***1*** and adding 10 zeros to the right to get ***10000001110010000000000***.
+	+ To get the exponent field, we add the *Bias* ***127*** to ***13*** to get ***140*** which is ***[10001100]*** in binary. 
+	+ The sign bit is ***0***.
+	+ We combination the sign bit, the exponent field and the fraction field to get ***01000110010000001110010000000000***.
 
 ### Rounding:
 -
