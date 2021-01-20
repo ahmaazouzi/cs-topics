@@ -15,7 +15,7 @@
 	- How floating-point data and operations work at the machine level. 
 
 ## Program Encoding:
-- We've covered what happens when a C program is compiled with the GCC compiler [here](computerSystems.md/#programs-are-translated-by-other-programs-into-different-forms).
+- We've covered what happens when a C program is compiled with the GCC compiler [here](computerSystems.md/#2-programs-are-translated-by-other-programs-into-different-forms).
 - To better understand the relationship between C code and compiled assembly, we use the **`-0g`** option with GCC to produce machine code that is not optimized and close in structure to the original C code.
 
 ### Machine-Level Code:
