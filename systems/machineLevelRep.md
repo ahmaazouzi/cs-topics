@@ -94,8 +94,8 @@ objdump -d wawa.o
    400549:	48 89 03             	mov    %rax,(%rbx)
    40054c:	5b                   	pop    %rbx
    40054d:	c3                   	retq
-   40054e:  90                   	nop
-   40054e:  90                   	nop
+   40054e:	90                   	nop
+   40054e:	90                   	nop
 ```
 - This is similar to the the isolated object dump of `wawa.o`, but does also have some important differences:
 	- Addresses on the left of each instruction in this program are different. They kinda look real as opposed to the earlier *placeholders*.
@@ -135,6 +135,16 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 - Since we live in a Unix/Linux world, we use the ATT assembly format rather than Intel's format which is encountered in Micosofty stuff and Intel's documentation. It's a little different in that has a reversed order of operands to that ATT, doesn't use size indicators such as `q` at the end of `pushq`, etc.
 
 ## Data Formats:
+| C declarations | Intel data types | Assembly-code suffix | Size in bytes |
+| --- | --- | --- | --- |
+| <code>char</code> | Byte | b | 1 |
+| short | Word | w | 2 |
+| int | Double word | l | 4 |
+| long | Quad word  | q | 8 |
+| char * | Quad word | q | 8 |
+| float | Single precision | s | 4 |
+| double | Double precision | l | 8 |
+
 ## Accessing Information:
 ## Arithmetic and Logical Operations:
 ## Control:
