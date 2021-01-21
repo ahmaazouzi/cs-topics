@@ -16,7 +16,7 @@
 
 ## Program Encoding:
 - We've covered what happens when a C program is compiled with the GCC compiler [here](computerSystems.md/#2-programs-are-translated-by-other-programs-into-different-forms).
-- To better understand the relationship between C code and compiled assembly, we use the **`-0g`** option with GCC to produce machine code that is not optimized and close in structure to the original C code.
+- To better understand the relationship between C code and compiled assembly, we use the **`-Og`** option with GCC to produce machine code that is not optimized and close in structure to the original C code.
 
 ### Machine-Level Code:
 - Two very important machine-level Programming abstractions are:
@@ -24,10 +24,115 @@
 	2. *Virtual memory* which gives the illusion the process has access to a very long array of bytes but that array is an abstraction of a combination of multiple hardware memories and operating system software.
 - However, the machine code that you see in the form of assembly is not as abstracted as high-level C and doesn't hide many of the things that you are totally oblivious to when only coding in high-level languages. Examples of these things which have to do with the processor's state include:
 	- The **program counter (PC)**: known as **`%rip`** in x86-64. It indicates the address of the next instruction to be executed. 
-	- The integer **register file** contains 16 registers storing 64-bit values. These registers can hold addresses (C pointers) and integer data. They are used to keep track of critical parts of the program's state
+	- The integer **register file** contains 16 registers storing 64-bit values. These registers can hold addresses (C pointers) and integer data. They are used to keep track of critical parts of the program's state and hold temporary data such as local function data and data to be returned.
+	- The condition code registers hold information about most recently executed logic or arithmetic instructions. These information are used for the control of data flow during loops and conditionals.
+	- A group of vector registers used to hold one or more integer or floating-point values. 
+- While your run-of-the-mill high-level language declare and allocate in memory objects of different data types, assembly only sees a large byte-addressable array. Aggregate data such as arrays and structures are collections of contiguous bytes and scalar data such as integers and floats are all the same. Assembly doesn't differentiate between signed and unsigned integers or between pointers and integers. 
+- The program's memory contains:
+	- The executable code of the program. 
+	- Information required by the OS.
+	- Run-time stack for managing procedure calls and returns.
+	- Blocks of memory allocated by the user through the `malloc` function.
+- Our assembly operates on the virtual memory which an abstraction that hides and simplifies the inner workings of hardware memory. The OS manages translating between virtual memory and the complexities of the metal.
+- Machine instructions perform very basic actions such as adding two numbers stored in registers, moving data from memory to a register or branch to a new instruction address. The compiled code is a sequence of such instructions.
 
 ### Code Examples
+```c
+long mult2(long, long);
+
+void multstore(long x, long y, long *dest){
+    long t = mult2(x, y);
+    *dest = t;
+}
+```
+- To get the assembly output of the above C program (let's say it's in a pogram named `wawa.c`), we use the following command:
+```sh
+gcc -Og -S wawa.c
+```
+- In this command we instruct the gcc to output the files's assembly equivalent. **`-Og`** as know prevents optimization. The assembly output should looks as follows:
+
+```assembly
+multstore:
+	pushq	%rbx
+	movq	%rdx, %rbx
+	call	mult2
+	movq	%rax, (%rbx)
+	popq	%rbx
+	ret
+```
+- I tried this on OS X and got a different output that shares a lot with this one. I also tried on Ubuntu Linux and it was essentially the same as this one bar the directives that I have removed. 
+- Each indented line in the assembly code represents a single machine instruction. Notice how all variable names and data types have been stripped away. 
+- Using the following command, you can generate an object code from the C file:
+```bash
+gcc -Og -c wawa.c
+```
+- The generated object file `wawa.o` contains the machine code we saw earlier but it's in binary format consisting of the following 14-byte sequence:
+```
+53 48 89 d3 e8 00 00 00 00 48 89 03 5b c3
+```
+- We can use a *disassembler* to disassemble the object file `wawa.o` to get this binary format along with its assembly mnemonics. Linux favorite disassemble is **`objdump`** which we'd use with the option **`-d`** as follows:
+```sh
+objdump -d wawa.o
+```
+- `objdump` outputs the following:
+```assembly
+0000000000000000 <multstore>:
+   0:	53                   	push   %rbx
+   1:	48 89 d3             	mov    %rdx,%rbx
+   4:	e8 00 00 00 00       	callq  9 <multstore+0x9>
+   9:	48 89 03             	mov    %rax,(%rbx)
+   c:	5b                   	pop    %rbx
+   d:	c3   
+```
+- To the left are the 14 bytes we saw earlier in the `wawa.o` object file. and to the right are the instructions they correspond to in assembly. You can notice how binary instructions range between 1 and 5 bytes in length an that they hhave a slightly different format from the assembly generated by gcc such as that gcc's `pushq` is replaced by `push`.
+- If we create a `main.c` file and populate it with a `main` function and a definition fo `mult2` function and compile it along with `wawa.c` and have everything linked together, and then disassembled we will obtain a file that contains something similar to the following code:
+```assembly
+000000000040054 <multstore>:
+   400540:	53                   	push   %rbx
+   400541:	48 89 d3             	mov    %rdx,%rbx
+   400544:	e8 00 00 00 00       	callq  40058b <mult2>
+   400549:	48 89 03             	mov    %rax,(%rbx)
+   40054c:	5b                   	pop    %rbx
+   40054d:	c3                   	retq
+   40054e:  90                   	nop
+   40054e:  90                   	nop
+```
+- This is similar to the the isolated object dump of `wawa.o`, but does also have some important differences:
+	- Addresses on the left of each instruction in this program are different. They kinda look real as opposed to the earlier *placeholders*.
+	- The address of the function to be called by `callq` instruction is filled up and `<multstore+0x9>` is replaced by `<mult2>`.
+	- The final two instructions are just fillers to grow the code to be 16 bytes instead of just 14. This will allow for a better placement of the next block of code which is better for performance :confused:. (*You can say that walking down a stair with uniform-sized steps is better than if steps had different sizes*).
+ 
 ### Formatting:
+- The following snippet is of the full assembly code generated by gcc:
+```assembly
+	.file	"lala.c"
+	.text
+	.globl	multstore
+	.type	multstore, @function
+multstore:
+.LFB0:
+	.cfi_startproc
+	pushq	%rbx 
+	.cfi_def_cfa_offset 16
+	.cfi_offset 3, -16
+	movq	%rdx, %rbx
+	call	mult2@PLT
+	movq	%rax, (%rbx)
+	popq	%rbx
+	.cfi_def_cfa_offset 8
+	ret
+	.cfi_endproc
+.LFE0:
+	.size	multstore, .-multstore
+	.ident	"GCC: (Ubuntu 7.3.0-27ubuntu1~18.04) 7.3.0"
+	.section	.note.GNU-stack,"",@progbits
+```
+- This code has a lot of information the programmer doesn't care about or need, but also lack a lot of information about how this code works or what it's doing!
+- From now on we will ignore stuff we don't need to know such as directives which start with **`.`** such as `.size	multstore, .-multstore`. On the other hand comments will be added to lines corresponding to the C code as the following example shows for a single instruction (the comment follows the symbol `#`):
+```assembly
+movq	%rax, (%rbx) # Copy dest to %rbx
+``` 
+- Since we live in a Unix/Linux world, we use the ATT assembly format rather than Intel's format which is encountered in Micosofty stuff and Intel's documentation. It's a little different in that has a reversed order of operands to that ATT, doesn't use size indicators such as `q` at the end of `pushq`, etc.
 
 ## Data Formats:
 ## Accessing Information:
