@@ -153,24 +153,24 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 ## Accessing Information:
 - x86-64 CPUs have 16 **general-purpose registers** used to store 64-bit values of integer and pointer data types. 
 
-| Functionality | 63-0| 31-0 | 15-0 | 7-0 |
+| Functionality | 63-0 | 31-0 | 15-0 | 7-0 |
 | --- | --- | --- | --- | --- | --- |
-| | <code>%rax</code> | <code>%eax</code> | <code>%ax</code> | <code>%al</code> |
-| | <code>%rbx</code> | <code>%ebx</code> | <code>%bx</code> | <code>%bl</code> |
-| |<code>%rcx</code> | <code>%ecx</code> | <code>%cx</code> | <code>%cl</code> |
-| |<code>%rdx</code> | <code>%edx</code> | <code>%dx</code> | <code>%dl</code> |
-| |<code>%rsi</code> | <code>%esi</code> | <code>%si</code> | <code>%sil</code> |
-| |<code>%rdi</code> | <code>%edi</code> | <code>%di</code> | <code>%dil</code> |
-| |<code>%rbp</code> | <code>%ebp</code> | <code>%bp</code> | <code>%bpl</code> |
-| |<code>%rsp</code> | <code>%esp</code> | <code>%sp</code> | <code>%spl</code> |
-| |<code>%r8</code> | <code>%r8d</code> | <code>%r8w</code> | <code>%r8b</code> |
-| |<code>%r9</code> | <code>%r9d</code> | <code>%r9w</code> | <code>%r9b</code> |
-| |<code>%r10</code> | <code>%r10d</code> | <code>%r10w</code> | <code>%r10b</code> |
-| |<code>%r11</code> | <code>%r11d</code> | <code>%r11w</code> | <code>%r11b</code> |
-| |<code>%r12</code> | <code>%r12d</code> | <code>%r12w</code> | <code>%r12b</code> |
-| |<code>%r13</code> | <code>%rd13</code> | <code>%r13w</code> | <code>%r13b</code> | 
-| |<code>%r14</code> | <code>%rd14</code> | <code>%r14w</code> | <code>%r14b</code> |
-| |<code>%r15</code> | <code>%rd15</code> | <code>%r15w</code> | <code>%r15b</code> |
+| Return value | <code>%rax</code> | <code>%eax</code> | <code>%ax</code> | <code>%al</code> |
+| Callee saved | <code>%rbx</code> | <code>%ebx</code> | <code>%bx</code> | <code>%bl</code> |
+| 4th argument |<code>%rcx</code> | <code>%ecx</code> | <code>%cx</code> | <code>%cl</code> |
+| 3rd argument |<code>%rdx</code> | <code>%edx</code> | <code>%dx</code> | <code>%dl</code> |
+| 2nd argument |<code>%rsi</code> | <code>%esi</code> | <code>%si</code> | <code>%sil</code> |
+| 1st argument |<code>%rdi</code> | <code>%edi</code> | <code>%di</code> | <code>%dil</code> |
+| Callee saved |<code>%rbp</code> | <code>%ebp</code> | <code>%bp</code> | <code>%bpl</code> |
+| Stack pointer |<code>%rsp</code> | <code>%esp</code> | <code>%sp</code> | <code>%spl</code> |
+| 5th argument |<code>%r8</code> | <code>%r8d</code> | <code>%r8w</code> | <code>%r8b</code> |
+| 6th argument argument |<code>%r9</code> | <code>%r9d</code> | <code>%r9w</code> | <code>%r9b</code> |
+| Caller saved |<code>%r10</code> | <code>%r10d</code> | <code>%r10w</code> | <code>%r10b</code> |
+| caller saved |<code>%r11</code> | <code>%r11d</code> | <code>%r11w</code> | <code>%r11b</code> |
+| Callee saved |<code>%r12</code> | <code>%r12d</code> | <code>%r12w</code> | <code>%r12b</code> |
+| Callee saved |<code>%r13</code> | <code>%rd13</code> | <code>%r13w</code> | <code>%r13b</code> | 
+| Callee saved |<code>%r14</code> | <code>%rd14</code> | <code>%r14w</code> | <code>%r14b</code> |
+| Callee saved |<code>%r15</code> | <code>%rd15</code> | <code>%r15w</code> | <code>%r15b</code> |
 
 
 
