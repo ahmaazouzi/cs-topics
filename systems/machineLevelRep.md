@@ -135,17 +135,45 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 - Since we live in a Unix/Linux world, we use the ATT assembly format rather than Intel's format which is encountered in Micosofty stuff and Intel's documentation. It's a little different in that has a reversed order of operands to that ATT, doesn't use size indicators such as `q` at the end of `pushq`, etc.
 
 ## Data Formats:
+- The following table shows the different x86-64 representations corresponding to C data types:
+
 | C declarations | Intel data types | Assembly-code suffix | Size in bytes |
 | --- | --- | --- | --- |
-| <code>char</code> | Byte | b | 1 |
-| short | Word | w | 2 |
-| int | Double word | l | 4 |
-| long | Quad word  | q | 8 |
-| char * | Quad word | q | 8 |
-| float | Single precision | s | 4 |
-| double | Double precision | l | 8 |
+| <code>char</code> | Byte | <code>b</code> | 1 |
+| <code>short</code> | Word | <code>w</code> | 2 |
+| <code>int</code> | Double word | <code>l</code> | 4 |
+| <code>long</code> | Quad word  | <code>q</code> | 8 |
+| <code>char *</code> | Quad word | <code>q</code> | 8 |
+| <code>float</code> | Single precision | <code>s</code> | 4 |
+| <code>double</code> | Double precision | <code>l</code> | 8 |
+
+- The first x86 processor used a 16-bit architecture, that's why 2 bytes are called a **word**, 32 bits are a **double word** and a 64-bit bit vector is called a **quad word**.
+- Instructions can operate on words of different lengths, hence the different assembly suffixes such as **`b`**, **`q`**, and **`s`**.
 
 ## Accessing Information:
+- x86-64 CPUs have 16 **general-purpose registers** used to store 64-bit values of integer and pointer data types. 
+
+| Functionality | 63-0| 31-0 | 15-0 | 7-0 |
+| --- | --- | --- | --- | --- | --- |
+| | <code>%rax</code> | <code>%eax</code> | <code>%ax</code> | <code>%al</code> |
+| | <code>%rbx</code> | <code>%ebx</code> | <code>%bx</code> | <code>%bl</code> |
+| |<code>%rcx</code> | <code>%ecx</code> | <code>%cx</code> | <code>%cl</code> |
+| |<code>%rdx</code> | <code>%edx</code> | <code>%dx</code> | <code>%dl</code> |
+| |<code>%rsi</code> | <code>%esi</code> | <code>%si</code> | <code>%sil</code> |
+| |<code>%rdi</code> | <code>%edi</code> | <code>%di</code> | <code>%dil</code> |
+| |<code>%rbp</code> | <code>%ebp</code> | <code>%bp</code> | <code>%bpl</code> |
+| |<code>%rsp</code> | <code>%esp</code> | <code>%sp</code> | <code>%spl</code> |
+| |<code>%r8</code> | <code>%r8d</code> | <code>%r8w</code> | <code>%r8b</code> |
+| |<code>%r9</code> | <code>%r9d</code> | <code>%r9w</code> | <code>%r9b</code> |
+| |<code>%r10</code> | <code>%r10d</code> | <code>%r10w</code> | <code>%r10b</code> |
+| |<code>%r11</code> | <code>%r11d</code> | <code>%r11w</code> | <code>%r11b</code> |
+| |<code>%r12</code> | <code>%r12d</code> | <code>%r12w</code> | <code>%r12b</code> |
+| |<code>%r13</code> | <code>%rd13</code> | <code>%r13w</code> | <code>%r13b</code> | 
+| |<code>%r14</code> | <code>%rd14</code> | <code>%r14w</code> | <code>%r14b</code> |
+| |<code>%r15</code> | <code>%rd15</code> | <code>%r15w</code> | <code>%r15b</code> |
+
+
+
 ## Arithmetic and Logical Operations:
 ## Control:
 ## Procedures:
@@ -153,3 +181,19 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 ## Heterogeneous Data Structures:
 ## Combining Control and Data Machine-Level Programs:
 ## Floating-Point Code:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
