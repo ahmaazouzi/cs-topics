@@ -175,12 +175,34 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 - The The table also shows the historical registers found in 32-bit and 16-bit older generations x86 processors. These older generation registers accommodating different architectures can still be used in x86-64 and their conventions show the evolution of x86 architecture. 
 - The original x86 16-bit registers were were expanded with the IA32 to hold 32 bits and names were changed so **`%ax`** became **`%eax`** and **`%bp`** became **`%ebp`**, etc. With IA64, these registers started holding 64 bits of data and names like **`%ebp`** became **`%rbp`**. 8 new registers were added and you can refer to the table above on how they were named. 
 - Instructions can use these registers to operate on different data sizes, so byte instructions operate on the least significant byte in the register, word operators can use use the least significant 16-bits, etc. 
-- The table above also shows the functionality and purposes of these registers. The stack pointer **`%rsp`** is unique. It indicates the end of the run time stack of a program, whatever that means! Some instructions are specialized to read from and write to this register. The other registers are more flexible. Some of them have specialized instructions and some are used for managing the stack such as returning values from functions or passing argumetns.. etc. We will see more about these!
+- The table above also shows the functionality and purposes of these registers. The stack pointer **`%rsp`** is unique. It indicates the end of the run time stack of a program, whatever that means! Some instructions are specialized to read from and write to this register. The other registers are more flexible. Some of them have specialized instructions and some are used for managing the stack such as returning values from functions or passing arguments.. etc. We will see more about these!
 
 ### Operand Specifiers:
+- Most instructions have one or more operands that specify the source values used in the operation and the destination location where to place the results. Source values can be constants or read from registers or memory. Results can be stored in registers or memory. 
+- The following table shows the different forms operands can take:
+
+| Type | Form | Operand value | Name |
+| --- | --- | --- | --- |
+| Immediate | *$Imm* | *Imm* | Immediate | 
+| Register | *r<sub>a</sub>* | R[r<sub>a</sub>] | Register | 
+| Memory | *Imm* | M[*Imm*] | Absolute | 
+| Memory | *(r<sub>a</sub>)* | M[R[r<sub>a</sub>]] | Indirect | 
+| Memory | *Imm(r<sub>b</sub>)* | M[*Imm* + R[r<sub>b</sub>]] | Base +  Displacement | 
+| Memory | *(r<sub>b</sub>, r<sub>i</sub>)* | M[R[r<sub>b</sub>] + R[r<sub>i</sub>]] | Indexed | 
+| Memory | *Imm(r<sub>b</sub>, r<sub>i</sub>)* | M[*Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>]] | Indexed | 
+| Memory | *(,r<sub>i</sub>, s)* | M[R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
+| Memory | *Imm(,r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
+| Memory | *(r<sub>b</sub>, r<sub>i</sub>, s)* | M[R[r<sub>b</sub>] + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
+| Memory | *Imm(r<sub>b</sub>, r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>] | Scaled Indexed | 
+
+- There are 3 types of operands:
+	- *Immediate* is used for constant values. It uses **`$`** followed by standard C notation for integers as in **`$-14`** or **`0xFD2`**. Remember that different instructions allow for different ranges of values. 
+	- *Register*
+	- *Memory*
+
 ### Date Movement Instructions:
 ### Pushing and Popping Stack Data:
-###  س
+### 
 
 ## Arithmetic and Logical Operations:
 ## Control:
