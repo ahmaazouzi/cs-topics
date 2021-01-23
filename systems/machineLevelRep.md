@@ -190,17 +190,32 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 | Memory | *Imm(r<sub>b</sub>)* | M[*Imm* + R[r<sub>b</sub>]] | Base +  Displacement | 
 | Memory | *(r<sub>b</sub>, r<sub>i</sub>)* | M[R[r<sub>b</sub>] + R[r<sub>i</sub>]] | Indexed | 
 | Memory | *Imm(r<sub>b</sub>, r<sub>i</sub>)* | M[*Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>]] | Indexed | 
-| Memory | *(,r<sub>i</sub>, s)* | M[R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
-| Memory | *Imm(,r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
+| Memory | *(, r<sub>i</sub>, s)* | M[R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
+| Memory | *Imm(, r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
 | Memory | *(r<sub>b</sub>, r<sub>i</sub>, s)* | M[R[r<sub>b</sub>] + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
-| Memory | *Imm(r<sub>b</sub>, r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>] | Scaled Indexed | 
+| Memory | *Imm(r<sub>b</sub>, r<sub>i</sub>, s)* | M[*Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>] · *s*] | Scaled Indexed | 
 
 - There are 3 types of operands:
 	- *Immediate* is used for constant values. It uses **`$`** followed by standard C notation for integers as in **`$-14`** or **`0xFD2`**. Remember that different instructions allow for different ranges of values. 
-	- *Register*
-	- *Memory*
+	- *Register* denotes the contents of registers. In the table above, an arbitrary  register ***a*** h *as the symbol**r<sub>a</sub>***. It's part of the machine's set of registers ***R*** and in this respected represented by ***R[r<sub>a</sub>]***.
+	- *Memory reference* where we access a memory location using a computed address (also called *effective address*). Memory is viewed as a large byte of array which is denoted by ***M<sub>b</sub>[Addr]***. This notation references the *b*-byte value stored in Memory starting at address ***Addr***. The subscript *b* is not necessary since we know it's all about bytes. 
+- The table above shows how there are many different *addressing modes* allowing for different ways of referencing memory. The most general form is at the bottom of the table and is denoted by ***Imm(r<sub>b</sub>, r<sub>i</sub>, s)***. It has an immediate register ***Imm***, a *base register* ***r<sub>b</sub>***, an *index register* ***r<sub>i</sub>*** and a *scale factor* ***s***. ***s*** must be either 1, 2, 4 or 8. The base and index must be 64-bit registers. The effective address is computed as ***Imm* + R[r<sub>b</sub>] + R[r<sub>i</sub>] · *s***. This form is used when referencing elements of arrays. The other forms are specialized forms of this general form where certain parts of the annotation are removed. 
 
 ### Date Movement Instructions:
+- Generally speaking, instructions that perform the same type of operation but differ in their operand sizes can be grouped together in so called *instruction classes*.
+- Much of machine code is about moving data from one location to another. The simplest data movement instructions belong to the class ***MOV***. These instructions simply copy data from a source location to a destination location without any transformation. The class has 4 instructions **`movb`**, **`movw`**, **`movl`**, **`movq`**. The only difference between the 4 instructions is that they move 1, 2, 4, 8 bytes of data respectively. The following table details their behavior:
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| MOV | *S, D*	*D ← S* | Move |
+| 	<code>movb</code> |  | Move byte |
+| 	<code>movw</code> |  | Move word |
+| 	<code>movl</code> |  | Move double word |
+| 	<code>movq</code> |  | Move quad word |
+| <code>movabsq</code> | *I, R*	*R ← I* | Move absolute quad word |
+
+
+### Date Movement Examples:
 ### Pushing and Popping Stack Data:
 ### 
 
