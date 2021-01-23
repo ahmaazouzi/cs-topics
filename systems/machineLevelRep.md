@@ -207,17 +207,68 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 
 | Instruction | Effect | Description |
 | --- | --- | --- |
-| MOV | *S,&nbsp;&nbsp;&nbsp;&nbsp;D*	*D ← S* | Move |
+| MOV *S, D* | *D ← S* | Move |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movb</code> |  | Move byte |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movw</code> |  | Move word |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movl</code> |  | Move double word |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movq</code> |  | Move quad word |
-| <code>movabsq</code> | *I, R*&nbsp;&nbsp;&nbsp;&nbsp;*R ← I* | Move absolute quad word |
+| <code>movabsq</code> *I, R* | *R ← I* | Move absolute quad word |
 
+- Let's also just establish that an instruction in Att assembly follows this general syntax:
+```assembly
+instruction    source    destination
+```
+- The source of a ***MOV*** instruction can be an immediate value or a value stored in memory or a register. The destination can only be a register or memory. You also cannot have both ***MOV*** operands as memory location. To copy data between two locations in memory, you need two instructions: One to copy (load) the data from the first memory to a register and a second one to copy data from that register to the other location in memory. 
+- Register operands can be  the named portions of these registers with sizes 1, 2 , 4 or 8 bytes. These portions must match the last character of the operation name (`b`, `w`, `l` or `q`) :confused:. Generally, ***MOV*** only updates the bytes of a register or memory indicated by the destination operand. The exception to is the **`movl`** instruction which will update the higher order 4 bytes of a register to 0. 
+- **`movq`** can only have an immediate source operand that is 32-bit long in 64-bit architecture. This value is then sign extended to produce a 64-bit value for the destination :confused:. The **`movabsq`** instead can have a 64-bit immediate source but it can also only have a register as a destination. 
+- I think the instruction's ending must match the size of the destination if the destination is a register, otherwise it matches a source register if the destination is memory.
+- The following example shows how data movement changes destination registers (note how **`movl`** changes the upper bytes to zeros):
+```assembly
+movabsq $0x0011223344556677, %rax	# %rax = 0011223344556677
+movb 	$-1, %al					# %rax = 00112233445566FF
+movw 	$-1, %ax					# %rax = 001122334455FFFF
+movl 	$-1, %eax					# %rax = 00000000FFFFFFFF
+movq 	$-1, %rax					# %rax = FFFFFFFFFFFFFFFF
+```
+- You can also copy a source value to a larger destination using two different classes of instructions. These instructions can only copy data from a register or a memory location to a register. 
+- The first of thes two classes is ***MOVZ***. It copies data and fill the higher order bytes of the destination with zeros as the following table shows. Notice there is no **`movzlq`**. The reason is that instructions with a 4-byte source and an 8-byte register as a destination fill up the upper bytes with zeros, so **`movl`** will do here. This is not the case with sign-extension, though as the sign-extended class ***MOVS*** support all 3 sizes. The following table describes these instructions:
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| MOVZ *S, R* | *R ← ZeroExtend(S)* | Move with zero extension |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movzbw</code> |  | Move zero-extended byte to word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movzbl</code> |  | Move zero-extended byte to double word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movzwl</code> |  | Move zero-extended word to  double word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movzbq</code> |  | Move zero-extended byte to quad word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movzwq</code> |  | Move zero-extended word to quad word |
+
+- THe ***MOVS*** class of instructions fill the upper bytes by sign extension, copies of the source's most significant bit. The following table describes these operations:
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| MOVS *S, R* | *R ← SignExtend(S)* | Move with sign extension |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movsbw</code> |  | Move sign-extended byte to word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movsbl</code> |  | Move sign-extended byte to double word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movswl</code> |  | Move sign-extended word to  double word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movsbq</code> |  | Move sign-extended byte to quad word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movswq</code> |  | Move sign-extended word to quad word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movslq</code> |  | Move sign-extended double word to quad word |
+| <code>cltq</code> | <code>%rax</code> ← SignExtend(<code>%eax</code>) | sign-extend <code>%eax</code> to <code>%rax</code> |
+
+- The **`cltq`** only has **`%eax`** as a source and **`%rax`** as a destination. It has the same effect as **`movslq %eax, %rax`** but is more compact.
+- The following table shows examples of how **`MOVZ`** and **`MOVZ`** change destination addresses:
+```assembly
+movabsq $0x0011223344556677, %rax	# %rax = 0011223344556677
+movb 	$0xAA, %dl					# %rax = AA (this hex for binary 1010. Bit sign is 1)
+movb 	%dl,  %al					# %rax = 00112233445566AA
+movsbq 	%dl, %rax					# %rax = FFFFFFFFFFFFFFAA
+movzbq 	%dl, %rax					# %rax = 00000000000000AA
+```
 
 ### Date Movement Examples:
+-
+
 ### Pushing and Popping Stack Data:
-### 
 
 ## Arithmetic and Logical Operations:
 ## Control:
