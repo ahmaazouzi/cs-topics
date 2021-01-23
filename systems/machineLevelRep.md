@@ -207,12 +207,12 @@ movq	%rax, (%rbx) # Copy dest to %rbx
 
 | Instruction | Effect | Description |
 | --- | --- | --- |
-| MOV | *S, D*	*D ← S* | Move |
-| 	<code>movb</code> |  | Move byte |
-| 	<code>movw</code> |  | Move word |
-| 	<code>movl</code> |  | Move double word |
-| 	<code>movq</code> |  | Move quad word |
-| <code>movabsq</code> | *I, R*	*R ← I* | Move absolute quad word |
+| MOV | *S,&nbsp;&nbsp;&nbsp;&nbsp;D*	*D ← S* | Move |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movb</code> |  | Move byte |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movw</code> |  | Move word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movl</code> |  | Move double word |
+| &nbsp;&nbsp;&nbsp;&nbsp;<code>movq</code> |  | Move quad word |
+| <code>movabsq</code> | *I, R*&nbsp;&nbsp;&nbsp;&nbsp;*R ← I* | Move absolute quad word |
 
 
 ### Date Movement Examples:
