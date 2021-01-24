@@ -253,7 +253,7 @@ movq    $-1, %rax                    # %rax = FFFFFFFFFFFFFFFF
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movsbq</code> |  | Move sign-extended byte to quad word |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movswq</code> |  | Move sign-extended word to quad word |
 | &nbsp;&nbsp;&nbsp;&nbsp;<code>movslq</code> |  | Move sign-extended double word to quad word |
-| <code>cltq</code> | <code>%rax</code> ← SignExtend(<code>%eax</code>) | sign-extend <code>%eax</code> to <code>%rax</code> |
+| <code>cltq</code> | <code>%rax</code> *←* SignExtend(<code>%eax</code>) | sign-extend <code>%eax</code> to <code>%rax</code> |
 
 - The **`cltq`** only has **`%eax`** as a source and **`%rax`** as a destination. It has the same effect as **`movslq %eax, %rax`** but is more compact.
 - The following table shows examples of how **`MOVZ`** and **`MOVZ`** change destination addresses:
@@ -292,16 +292,50 @@ exchange:
 
 ### Pushing and Popping Stack Data:
 - There are also data movement instructions specialized in pushing data to and popping it from the program's stack. I don't know what that mysterious stack is but the book states that it is important in procedure calls. 
+- The image below illustrates how an x86-64 stack works. The stack is stored in some region in memory. It grows downward such that its top element has the lowest memory address among its element addresses. The stack is usually drawn with its top in the bottom (it's upside down) as the following figure shows:
+![Stack operations](img/stackOps.png)
+- The **`%rsp`** register is the **stack pointer**. It holds the address of the top element of the program's stack. 
+- The following table shows the two stack instructions and their behavior:
 
 | Instruction | Effect | Description |
 | --- | --- | --- |
-| <code>pushq</code> *S* | R[<code>%rsp</code>] ← R[<code>%rsp</code>] - 8;<br> M[R[<code>%rsp</code>]] ← *S* | Push quad word
-| <code>popq</code> *D* | *D* ← M[R[<code>%rsp</code>]];<br> R[<code>%rsp</code>] R[<code>%rsp</code>] + 8 | Pop quad word
+| <code>pushq</code> *S* | R[<code>%rsp</code>] *←* R[<code>%rsp</code>] - 8;<br> M[R[<code>%rsp</code>]] ← *S* | Push quad word
+| <code>popq</code> *D* | *D* *←* M[R[<code>%rsp</code>]];<br> R[<code>%rsp</code>] R[<code>%rsp</code>] + 8 | Pop quad word
 
-![Stack operations](img/stackOps.png)
-
+- **`pushq`** allows you to push data onto the stack. It takes a single operand, the source data to be pushed onto the stack. This instruction involves decrementing the value of the stack pointer by 8 bytes (remember that the stack grows towards the lower memory addresses), and then writing the source data into the new top-of-stack address. This is equivalent to the following two instructions:
+```
+subq    $8, %rsp      # Decrement stack pointer
+movq    %rbp, (%rsp)  # Store %rbp on the stack
+```
+- **`popq`** plucks the top of the stack and places it in its destination operand. Like **`pushq`**, **`popq`** also takes only one operand, but it's a destination operand. This instruction reads data from the top of the stack and writes it to its destination operand and then increments the stack pointer by 8 bytes (meaning the stack's size is reduced). The data in that region of memory that is no longer part of the stack stays there until it's overwritten by another operation, probably another **`pushq`**. The top of the stack, however, is always indicated by the **`%rsp`** register.
+- The stack is part of the same memory as the rest of the program and its data. This means the program can access arbitrary parts of the stack (maybe without having to refer to the stack pointer; maybe changing parts of the stack and stack pointer not in the intended way :confused:).  
 
 ## Arithmetic and Logical Operations:
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| <code>leaq</code>&nbsp;&nbsp;*S, D* | *D ← &S* | Load effective address |
+| INC&nbsp;&nbsp;&nbsp;*D* | *D ← D + 1* | Increment |
+| DEC&nbsp;&nbsp;&nbsp;*D* | *D ← D - 1* | Decrement |
+| NEG&nbsp;&nbsp;&nbsp;*D* | *D ← -D* | Negate |
+| NOT&nbsp;&nbsp;&nbsp;*D* | *D ← ~D* | Complement |
+| ADD&nbsp;&nbsp;&nbsp;*S, D* | *D ← D + S* | Add |
+| SUB&nbsp;&nbsp;&nbsp;*S, D* | *D ← D - S* | Subtract |
+| IMUL&nbsp;&nbsp;*S, D* | *D ← D · S* | Multiply |
+| XOR&nbsp;&nbsp;&nbsp;*S, D* | *D ← D ^ S* | Exclusive-or |
+| OR&nbsp;&nbsp;&nbsp;&nbsp;*S, D* | *D ← D | S* | Or |
+| AND&nbsp;&nbsp;&nbsp;*k, D* | *D ← D & S* | And |
+| SAL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift |
+| SHL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift(Same as SAL) |
+| SAR&nbsp;&nbsp;&nbsp;*k, D* | *D ← D >> <sub>A</sub>S* | Arithmetic right shift |
+| SHR&nbsp;&nbsp;&nbsp;*k, D* | *D ← D >> <sub>L</sub>S* | Logical right shift |
+
+
+### Load Effective Address:
+### Unary and Binary Operations:
+### Shift Operations:
+### Discussion:
+### Special Arithmetic Operation
 ## Control:
 ## Procedures:
 ## Array Allocation and Access:
