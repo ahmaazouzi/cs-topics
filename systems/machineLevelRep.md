@@ -323,7 +323,7 @@ movq    %rbp, (%rsp)  # Store %rbp on the stack
 | SUB&nbsp;&nbsp;&nbsp;*S, D* | *D ← D - S* | Subtract |
 | IMUL&nbsp;&nbsp;*S, D* | *D ← D · S* | Multiply |
 | XOR&nbsp;&nbsp;&nbsp;*S, D* | *D ← D ^ S* | Exclusive-or |
-| OR&nbsp;&nbsp;&nbsp;&nbsp;*S, D* | *D ← D | S* | Or |
+| OR&nbsp;&nbsp;&nbsp;&nbsp;S, D* | *D ← D \| S* | Or |
 | AND&nbsp;&nbsp;&nbsp;*k, D* | *D ← D & S* | And |
 | SAL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift |
 | SHL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift(Same as SAL) |
