@@ -257,7 +257,7 @@ movq    $-1, %rax                    # %rax = FFFFFFFFFFFFFFFF
 
 - The **`cltq`** only has **`%eax`** as a source and **`%rax`** as a destination. It has the same effect as **`movslq %eax, %rax`** but is more compact.
 - The following table shows examples of how **`MOVZ`** and **`MOVZ`** change destination addresses:
-```
+```x86asm
 movabsq $0x0011223344556677, %rax    # %rax = 0011223344556677
 movb    $0xAA, %dl                   # %rax = AA (this hex for binary 1010. Bit sign is 1)
 movb    %dl,  %al                    # %rax = 00112233445566AA
@@ -266,9 +266,40 @@ movzbq  %dl, %rax                    # %rax = 00000000000000AA
 ```
 
 ### Date Movement Examples:
--
+- The following two snippets show an example of data movement in both C and assembly:
+```c
+long exchange(long *xp, long y){
+	long x = *xp;
+	*xp = y;
+	return x;
+}
+```
+```x86asm
+# long exchange(long *xp, long y) = xp is in %rdi, y in %rsi
+exchange:
+    movq    (%rdi), %rax    # put get value of x frm xp and sets it as return value
+    movq    %rsi, (%rdi)    # store y at xp
+    ret                     # return
+```
+- Let's dissect this program and see what is going on in assembly and how it corresponds to the C code:
+	- When the procedure begins execution, C variables **`xp`** and**`y`** are stored in registers **`%rdi`** and **`%rsi`**. 
+	- An instruction reads **`x`** pointed to in memory by register **`%rdi`** and stores it in **`%rax`**. The value stored in **`%rax`**, which is **`x`**, will be returned.
+	- The next instruction writes the value of **`%rsi`** or **`y`** into **`xp`**.
+- This code demonstrates that:
+	- Pointers are memory addresses. 
+	- Dereferencing pointers is copying memory values into registers. 
+	- Local variables are copied into registers for faster retrieval. 
 
 ### Pushing and Popping Stack Data:
+- There are also data movement instructions specialized in pushing data to and popping it from the program's stack. I don't know what that mysterious stack is but the book states that it is important in procedure calls. 
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| <code>pushq</code> *S* | R[<code>%rsp</code>] ← R[<code>%rsp</code>] - 8;<br> M[R[<code>%rsp</code>]] ← *S* | Push quad word
+| <code>popq</code> *D* | *D* ← M[R[<code>%rsp</code>]];<br> R[<code>%rsp</code>] R[<code>%rsp</code>] + 8 | Pop quad word
+
+![Stack operations](img/stackOps.png)
+
 
 ## Arithmetic and Logical Operations:
 ## Control:
