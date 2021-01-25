@@ -415,7 +415,7 @@ scale:
 | <code>setg</code>  *D*| <code>setnle</code> | *D ← <code>~(SF ^ OF) & ~ZF</code>* | (Unsigned >) |
 | <code>setge</code>  *D*| <code>setnl</code> | *D ← <code>~ (SF ^ OF)</code>* | (Unsigned >=) |
 | <code>setl</code>  *D*| <code>setnge</code> | *D ← <code>SF ^ OF</code>* | (Unsigned  <) |
-| <code>setle</code>  *D*| <code>setng</code> | *D ← <code>(SF ^ OF) | ZF</code>* | (Unsigned <=) |
+| <code>setle</code>  *D*| <code>setng</code> | *D ← <code>(SF ^ OF) \| ZF</code>* | (Unsigned <=) |
 | #### |  |  |  |
 | <code>seta</code>  *D*| <code>setnbe</code> | *D ← <code>~CF & ~ZF</code>* | Above (signed >) |
 | <code>setae</code>  *D*| <code>setnb</code> | *D ← <code>~CF</code>* | Above or equal (signed >=) |
@@ -435,7 +435,8 @@ comp:
 	movzbl	%al, %eax 	# Clear rest of %eax (and rest of %rax)
 	ret
 ```
-- An interesting feature of the of the ***SET*** class is that the same instruction might have multiple names as the table above shows. For example, **`setae`** (set above or equal) is the same as **`setb`** (set not below).
+- An interesting feature of the of the ***SET*** class is that the same instruction might have multiple names as the table above shows. For example, **`setae`** (set above or equal) is the same as **`setb`** (set not 
+below).
 
 ### Jump Instructions:
 ### Jump Instruction Encodings:
