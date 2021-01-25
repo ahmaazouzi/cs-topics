@@ -362,6 +362,88 @@ scale:
 - ***SAL*** and  ***SHL*** are identical, but ***SAR*** is for arithmetic right shifts while ***SHR*** is for logical right shifts.
 
 ## Control:
+- In addition to *straight-line* code where instructions are executed one after another, there are also loops, conditionals and switches whose execution depend one way or another on the outcomes of tests applied to data. Machine code implements conditional  behavior in two forms: it tests the data and then changes either the control flow or data flow based on the results of these tests.
+- Normally, instructions execute sequentially, but this flow can be altered with a ***JUMP*** instruction which transfers control to another part of the program based on the result of some test. 
+
+### Condition Codes:
+- We've seen one type of registers so far. The CPU does also have another set of one-bit regisers called **condition registers**. These registers describe the attributes of the latest arithmetic or logic operation. These registers are then test to perform conditional branching.
+- Some of the more common condition registers are:
+	- **`CF`**: **Carry flag**. It indicates that the most recent operation caused a carry out of the most significant bit. It is used to detect an unsigned overflow.
+	- **`ZF`**: **Zero flag**. It indicates that the most recent operation resulted in a zero.
+	- **`SF`**: **Sign flag**. It indicates that the most recent operation resulted in a negative value.
+	- **`OF`**: **Overflow flag**. It indicates that the most recent operation caused a two's-complement overflow (either positive or negative).
+- If we are testing the C expression **`t = a + b`**, you can think of these condition registers as performing following C operations:
+	- **`CF`**: **`(unsigned) t < (unsigned) a`**
+	- **`ZF`**: **`(t == 0)`**
+	- **`SF`**: **`(t < 0)`**
+	- **`OF`**: **`(a < 0 == b < 0) && (t < 0 != a < 0)`**
+
+- The logic and arithmetic operations we saw [earlier](#arithmetic-and-logical-operations) alter condition codes, except for **`leaq`** because it only manipulates addresses but not their contents. These operations alter condition codes according to certain rules that I am not sure about. For example, "`xor`, the carry and overflow flags are set to zero":confused::confused:, why??! Shifts set the carry flag to the last bit carried out, etc. 
+- There are also 2 instruction classes that only change condition codes and have no effect on their operands.
+	- The ***CMP*** instructions set the condition codes based the differences between the operands. It acts like ***SUB*** but doesn't alter the destination operand. Be careful about the order of the operands in the ATT notation we use here. These instructions set the zero flag if the two operands are equal. The other condition codes can be used to determine ordering between the operands.
+	- The ***TEST*** instructions act like ***AND*** but don't alter their destination operands. They usually involve repeating an operand as in **`tesq %rax, %rax`** or one of the operands can be a mask for testing certain bits.
+- The following table details how ***CMP*** and ***TEST*** instructions work:
+
+| Instruction | Effect | Description |
+| --- | --- | --- |
+| CMP *S<sub>1</sub>, S<sub>2</sub>* | *S<sub>2</sub> − S<sub>1</sub>* | Compare |
+| &nbsp;&nbsp;&nbsp;<code>cmpb</code> |  | Compare byte |
+| &nbsp;&nbsp;&nbsp;<code>cmpw</code> |  | Compare word |
+| &nbsp;&nbsp;&nbsp;<code>cmpl</code> |  | Compare double word |
+| &nbsp;&nbsp;&nbsp;<code>cmpq</code> |  | Compare quad word |
+| TEST *S<sub>1</sub>, S<sub>2</sub>* | *S<sub>2</sub> & S<sub>1</sub>* | Test |
+| &nbsp;&nbsp;&nbsp;<code>testb</code> |  | Test byte |
+| &nbsp;&nbsp;&nbsp;<code>testw</code> |  | Test word |
+| &nbsp;&nbsp;&nbsp;<code>testl</code> |  | Test double word |
+| &nbsp;&nbsp;&nbsp;<code>testq</code> |  | Test quad word |
+
+### Accessing Condition Codes:
+- Instead of reading condition codes directly, there are three ways they can be used:
+	- A single byte can be set to ***1*** or ***0*** based on a combination of condition codes.
+	- A jump to another part of the program can be conditionally effectuated.
+	- Data can be conditionally transferred. Transferred where?! :confused:.
+- The following table shows instructions that set a single byte to ***0*** or ***1*** based on certain combinations of condition codes:
+
+| instruction | Synonym | Effect | Set condition |
+| --- | --- | --- | --- |
+| <code>sete</code>  *D*| <code>setz</code> | *D ← <code>ZF</code>* | Equal / zero |
+| <code>setne</code>  *D*| <code>setnz</code> | *D ← <code>~ZF</code>* | Not equal / not zero |
+| #### |  |  |  |
+| <code>sets</code>  *D*|  | *D ← <code>F</code>* | Negative |
+| <code>setns</code>  *D*|  | *D ← <code>~SF</code>* | Nonnegative |
+| #### |  |  |  |
+| <code>setg</code>  *D*| <code>setnle</code> | *D ← <code>~(SF ^ OF) & ~ZF</code>* | (Unsigned >) |
+| <code>setge</code>  *D*| <code>setnl</code> | *D ← <code>~ (SF ^ OF)</code>* | (Unsigned >=) |
+| <code>setl</code>  *D*| <code>setnge</code> | *D ← <code>SF ^ OF</code>* | (Unsigned  <) |
+| <code>setle</code>  *D*| <code>setng</code> | *D ← <code>(SF ^ OF) | ZF</code>* | (Unsigned <=) |
+| #### |  |  |  |
+| <code>seta</code>  *D*| <code>setnbe</code> | *D ← <code>~CF & ~ZF</code>* | Above (signed >) |
+| <code>setae</code>  *D*| <code>setnb</code> | *D ← <code>~CF</code>* | Above or equal (signed >=) |
+| <code>setb</code>  *D*| <code>setnae</code> | *D ← <code>CF</code>* | Below (signed <) |
+| <code>setbe</code>  *D*| <code>setna</code> | *D ← <code>CF | ZF</code>* | Below or equal (signed <=) |
+
+- These instructions belong to the ***SET*** class. They differ in the combinations of condition codes that they consider. The suffixes of these instructions don't refer to operand sizes but refer to conditions so **`setl`** refers to "set less", etc. 
+- The destination of a ***SET*** instruction is either the lower-order byte of a register or a single-byte memory cell which is set to either 1 or 0. To generate a 32-bit or 64-bit value from this single byte we musts also set the higher-order bits to zeros as the following example shows:
+
+```
+# int comp(data_t a, data_t b)
+# a in %rdi, b in %rsi
+
+comp:
+	cmpq	%rsi, %rdi 	# Compare a:b
+	setl 	%al 		# Set low-order byte of %eax to 0 or 1
+	movzbl	%al, %eax 	# Clear rest of %eax (and rest of %rax)
+	ret
+```
+- An interesting feature of the of the ***SET*** class is that the same instruction might have multiple names as the table above shows. For example, **`setae`** (set above or equal) is the same as **`setb`** (set not below).
+
+### Jump Instructions:
+### Jump Instruction Encodings:
+### Implementing Conditional Branching with Conditional Control:
+### Implementing Conditional Branching with Conditional Moves:
+### Loops:
+### Switch Statements:
+
 ## Procedures:
 ## Array Allocation and Access:
 ## Heterogeneous Data Structures:
