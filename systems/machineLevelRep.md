@@ -415,7 +415,7 @@ scale:
 | <code>setg</code>  *D*| <code>setnle</code> | *D ← <code>~(SF ^ OF) & ~ZF</code>* | (Unsigned >) |
 | <code>setge</code>  *D*| <code>setnl</code> | *D ← <code>~ (SF ^ OF)</code>* | (Unsigned >=) |
 | <code>setl</code>  *D*| <code>setnge</code> | *D ← <code>SF ^ OF</code>* | (Unsigned  <) |
-| <code>setle</code>  *D*| <code>setng</code> | *D ← <code>(SF ^ OF) \| ZF</code>* | (Unsigned <=) |
+| <code>setle</code>  *D*| <code>setng</code> | *D ← <code>(SF ^ OF) OR ZF</code>* | (Unsigned <=) |
 | #### |  |  |  |
 | <code>seta</code>  *D*| <code>setnbe</code> | *D ← <code>~CF & ~ZF</code>* | Above (signed >) |
 | <code>setae</code>  *D*| <code>setnb</code> | *D ← <code>~CF</code>* | Above or equal (signed >=) |
