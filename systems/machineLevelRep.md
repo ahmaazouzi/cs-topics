@@ -311,31 +311,56 @@ movq    %rbp, (%rsp)  # Store %rbp on the stack
 - The stack is part of the same memory as the rest of the program and its data. This means the program can access arbitrary parts of the stack (maybe without having to refer to the stack pointer; maybe changing parts of the stack and stack pointer not in the intended way :confused:).  
 
 ## Arithmetic and Logical Operations:
+- The following table shows several logic and integer arithmetic instructions. The table only shows instruction classes because there are specific instructions for each data size, except for **`leaq`** which is the only instruction in its instruction class. The instruction class ***ADD*** has instructions **`addb`**, **`addw`**, **`addl`** and **`addq`** for adding bytes, words, double words and quad words respectively. As you can see there different types of instruction classes which are equivalent to their counterparts in higher-level languages such as *unary*, *binary* and *shift* instructions:
 
 | Instruction | Effect | Description |
 | --- | --- | --- |
-| <code>leaq</code>&nbsp;&nbsp;*S, D* | *D ← &S* | Load effective address |
-| INC&nbsp;&nbsp;&nbsp;*D* | *D ← D + 1* | Increment |
-| DEC&nbsp;&nbsp;&nbsp;*D* | *D ← D - 1* | Decrement |
-| NEG&nbsp;&nbsp;&nbsp;*D* | *D ← -D* | Negate |
-| NOT&nbsp;&nbsp;&nbsp;*D* | *D ← ~D* | Complement |
-| ADD&nbsp;&nbsp;&nbsp;*S, D* | *D ← D + S* | Add |
-| SUB&nbsp;&nbsp;&nbsp;*S, D* | *D ← D - S* | Subtract |
-| IMUL&nbsp;&nbsp;*S, D* | *D ← D · S* | Multiply |
-| XOR&nbsp;&nbsp;&nbsp;*S, D* | *D ← D ^ S* | Exclusive-or |
-| OR&nbsp;&nbsp;&nbsp;&nbsp;S, D* | *D ← D \| S* | Or |
-| AND&nbsp;&nbsp;&nbsp;*k, D* | *D ← D & S* | And |
-| SAL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift |
-| SHL&nbsp;&nbsp;&nbsp;*k, D* | *D ← D << S* | Left shift(Same as SAL) |
-| SAR&nbsp;&nbsp;&nbsp;*k, D* | *D ← D >> <sub>A</sub>S* | Arithmetic right shift |
-| SHR&nbsp;&nbsp;&nbsp;*k, D* | *D ← D >> <sub>L</sub>S* | Logical right shift |
-
+| <code>leaq</code> *S, D* | *D ← &S* | Load effective address |
+| INC *D* | *D ← D + 1* | Increment |
+| DEC *D* | *D ← D - 1* | Decrement |
+| NEG *D* | *D ← -D* | Negate |
+| NOT *D* | *D ← ~D* | Complement |
+| ADD *S, D* | *D ← D + S* | Add |
+| SUB *S, D* | *D ← D - S* | Subtract |
+| IMUL *S, D* | *D ← D · S* | Multiply |
+| XOR *S, D* | *D ← D ^ S* | Exclusive-or |
+| OR  S, D* | *D ← D* \| *S* | Or |
+| AND *k, D* | *D ← D & S* | And |
+| SAL *k, D* | *D ← D << S* | Left shift |
+| SHL *k, D* | *D ← D << S* | Left shift(Same as SAL) |
+| SAR *k, D* | *D ← D >> <sub>A</sub>S* | Arithmetic right shift
+| SHR *k, D* | *D ← D >> <sub>L</sub>S* | Logical right shift |
 
 ### Load Effective Address:
+- The **load effective address** **`leaq`** is similar kinda similar to **`movq`**. It loads data from memory to a register, but it does "not reference memory", whatever that means :confused:. It doesn't copy the content of that memory location but copies the effective address. For example, if register **`%rdx`** contains ***x***, the the instruction **`leaq 7(%rdx,%rdx,4), %rax`** copies the value ***5x + 7*** to **`%rax`**. The destination operand of **`leaq`** is always a register. - The compiler finds interesting ways to use **`leaq`** for all kinds of optimizations. The following C program and its assembly counterpart are an example of how **`leaq`** is used to perform basic arithmetic such as addition and multiplication. It should be fairly obvious what is happening here:
+```c
+long scale(long x, long y, long z){
+	long t = x + 4 * y + 12 * z;
+	return t;
+}
+``` 
+```
+scale:
+	leaq	(%rdi, %rsi, 4), %rax
+	leaq	(%rdx, %rdx, 2), %rdx
+	leaq	(%rax, %rdx, 4), %rax
+	ret
+```
+
 ### Unary and Binary Operations:
+- Unary instructions take one operand which functions both as a source and a destination. The operand can be a register or a memory location. **`incq (%rsp)`** increments the value of the element at at the top of the stack. It is equivalent to the **`++`** operator in C.
+- In binary operations, the second operand is both a source and a destination while the first operand is just a source. They are similar to the C construct **`x -= y`**. 
+- Binary instructions look weird in non-commutative operations such as **`subq %rax, %rdx`** which should be read as *subtract **`%rax`** from **%rdx***.
+- The first operand can be immediate, a register or memory location, but the second operand can only be a register or memory location. 
+- The two operands cannot be both memory locations. When the second operand is a memory location, the value is extracted first from memory, the operation is carried out and the result is put back in that memory location.
+
 ### Shift Operations:
-### Discussion:
-### Special Arithmetic Operation
+- In shifting instructions, the first operand is the value to make the shift with, while the second operand is the value to be shifted. 
+- You can do both an arithmetic and logical right shifts.
+- The shift amount can be specified by either an immediate or the the one-byte register **`%cl`**. This one byte register can encode ***2<sup>8</sup> - 1 = 255*** values. x86-64 determines the value of shift from the lower-order bits of register **`%cl`** so if the value of **`%cl`** is ***0xFF***, **`salb`** will cause a ***7***-bit shift,  **`salw`** will cause a ***15***-bit shift, **`sall`** will cause a ***7***-bit shift, **`sall`** will cause a ***31***-bit shift, and **`salq`** will cause a ***63***-bit shift.
+- The destination operand can be either a register or a memory location.
+- ***SAL*** and  ***SHL*** are identical, but ***SAR*** is for arithmetic right shifts while ***SHR*** is for logical right shifts.
+
 ## Control:
 ## Procedures:
 ## Array Allocation and Access:
