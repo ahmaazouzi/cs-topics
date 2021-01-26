@@ -439,6 +439,31 @@ comp:
 below).
 
 ### Jump Instructions:
+
+| instruction | Synonym | Jump Condition | Description |
+| --- | --- | --- | --- |
+| <code>jmp</code>  *Label* |  | <code>ZF</code> | Direct jump |
+| <code>jmp</code>  **Operand* |  | <code>ZF</code> | Indirect jump |
+| #####  |  |  |  |
+| <code>je</code>  *Label* | <code>jz</code> | <code>ZF</code> | Equal / zero |
+| #####  |  |  |  |
+| <code>jne</code>  *Label* | <code>jnz</code> | <code>~ZF</code> | Not equal / not zero |
+| ##### 
+| <code>js</code>  *Label* |  | <code>SF</code> | Negative |
+| <code>jns</code>  *Label* |  | <code>~SF</code> | Nonnegative |
+| #####  |  |  |  |
+| <code>jg</code>  *Label* | <code>jnle</code> | <code>~(SF ^ OF) & ~ZF</code> | Greater (signed >) |
+| <code>jge</code>  *Label* | <code>jnl</code> | <code>~(SF ^ OF)</code> | Greater or equal (signed >=) |
+| <code>jl</code>  *Label* | <code>jnge</code> | <code>SF ^ OF</code> | Less (signed <) |
+| <code>je</code>  *Label* | <code>jng</code> | <code>(SF^OF) \| ZF</code> | Less or equal (signed <=) |
+| #####  |  |  |  |
+| <code>ja</code>  *Label* | <code>jnbe</code> | <code>~CF & ~ZF</code> | Above (unsigned >) |
+| <code>jae</code>  *Label* | <code>jnb</code> | <code>~CF</code> | Above or equal (unsigned >=) |
+| <code>jb</code>  *Label* | <code>jnae</code> | <code>CF</code> | Below (unsigned <) |
+| <code>jbe</code>  *Label* | <code>jna</code> | <code>CF | ZF</code> | Below or equal (unsigned <=) |
+
+
+
 ### Jump Instruction Encodings:
 ### Implementing Conditional Branching with Conditional Control:
 ### Implementing Conditional Branching with Conditional Moves:
