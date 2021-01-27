@@ -807,9 +807,41 @@ test:
 	if (test-expr)
 	goto loop;
 ```
-- This is getting a little too repetitive. The idea is to translate everything down to do-while loop and reexpress that using gotos.So a for loop can get turned to either a jump-to-the-middle or guarded-do style while loop which involves a do-while loop. This can be re-expressed in terms of gotos. 
+- This is getting a little too repetitive. The idea is to translate everything down to do-while loop and re-express that using gotos.So a for loop can get turned to either a jump-to-the-middle or guarded-do style while loop which involves a do-while loop. This can be re-expressed in terms of gotos. 
 
 ## Procedures:
+- I can probably safely call procedure's machine-level equivalent of functions and methods in other higher-level languages. They are a way of packaging code for later reuse. They are abstractions that hide internal	 implementation details of certain code while offering a clear and concise way to interface with it. 
+- Many things are considered when in machine code that involves procedure. How do procedures call other procedures and how do their pass control to other procedures. Some of the things that need be considered when working with procedures include:
+	- *Passing control*: A program counter must be set to the starting address of the code of a called subroutine when calling it and then set in the calling program to in the instruction immediately following the called program after returning. 
+	- *Passing data*: A procedure must be able to pass parameters to a subroutine it calls. The subroutine must also be able to return some value to the calling procedure. 
+	- *Allocating and deallocating memory*: The subroutine being called must be able to allocate memory space when it begins execution and free that memory when it's done. 
+- x86-64 has several instructions and conventions in place to handle procedures. Its designers claim to emphasize reducing the overhead incurred by procedures. In this section we will look at control transfer, data transfer and memory allocation/deallocation.
+
+### The Run-Time Stack:
+- C's procedure-calling mechanism revolves around a call stack. Let's say we have a procedure ***P*** calling a procedure ***Q***. The Q procedure is placed at the top of the stack. P's execution is suspended while Q is executing. All procedures in the stack except for Q are suspended. Only Q can allocate memory for its local variables, but when it returns, it gives back control to P and all its memory is freed. The program manages procedures with this stack and registers which keep information needed to pass control and data and allocate memory. 
+- We've talked [before](#pushing-and-popping-stack-data) about how the stack grows downward toward smaller addresses, and how the *stack pointer* **`%rsp`** points to the top of the stack. Data can be stored on the stack using the **`pushq`** instruction and removed with **`popq`**. *"Space for data with no specified initial value can be allocated on the stack by simply decrementing the stack pointer by an appropriate amount."* It can also be deallocated by incrementing the stack pointer. 
+- Excess data that can't be held in registers is memory allocated in the stack. This is called the procedure's **stack frame**. The following image shows the structure of the runtime stack and how it's partitioned into stack frames. The frame for the currently running procedure is always at the top of the stack. When P calls Q, it pushes the return address onto the stack. The return address indicates where within the P procedure the program should resume executing after Q returns. The return address is part of the P procedure because it holds data relevant to P. Once control is passed to Q, it allocates space required for its own stack frame by increasing the size of the frame. In this space, Q saves values of registers, allocate memory for its local variables and sets up arguments for procedures it calls. Stack frames are fixed for most procedures but some procedures might require variable-size stack frames (We will see that later). P can pass up to 6 integral values (pointers and integers) on the stack. If P needs more arguments, they can be stored by P's stack frame before calling Q :confused:.
+![General stack frame structure](img/stackFrameStructure.png)
+- x86-64 tends to follow a minimalist approach in its handling of procedures, so it allocates only the portions of the stack that it needs. Since most functions have 6 or less arguments, the arguments are not allocated and instead are all placed in registers. Some functions do not need stack frames at all, because they may have a few local variables that can all be stored in registers and are *leaf procedures* that don't need to call any other functions. All the functions we worked with so far didn't have stack frames. 
+
+### Control Transfer:
+- One key instruction involved in transferring control from one procedure to another is the **`call`** instruction. Control is transferred from procedure P to Q through the instruction **`call Q`**. This instruction pushes an address ***A*** unto the stack and updates the PC to point to the beginning of Q. The ***A*** address is called the **return address**. It is the address of the instruction immediately following the the **`call`** address. Another instruction that cooperates with **`call`**, is the **`ret`** instruction. **`ret`** pops the address ***A*** from the stack and sets PC to ***A***. 
+- The following table illustrates the general structure and behavior of the **`call`** and **`ret`** instructions:
+
+| Instruction | Description |
+| --- | --- |
+| <cod>call</cod> *Label* | Procedure call |
+| <cod>call</cod> **Operand* | Procedure call |
+| <cod>ret</cod> | Return from call |
+
+- **`call`** and **`ret`** are referred to as **`callq`** and **`retq`** respectively in the output of objdump. This is meant to clarify that these are meant for x86-64 rather than IA32. 
+- The call instruction has one operand which indicates the address where the procedure to be called starts. Just like a jump, **`call`** can be either direct or indirect. Direct involves a label, while indirect involves an operand preceded by an asterisk **`*`** followed by an operand specifier that can be a register, memory location or maybe an immediate. 
+
+### Data Transfer:
+### Local Storage on the Stack:
+### Local Storage in Registers:
+### Recursive Procedures:
+
 ## Array Allocation and Access:
 ## Heterogeneous Data Structures:
 ## Combining Control and Data Machine-Level Programs:
