@@ -409,7 +409,7 @@ scale:
 | <code>sete</code>  *D*| <code>setz</code> | *D ← <code>ZF</code>* | Equal / zero |
 | <code>setne</code>  *D*| <code>setnz</code> | *D ← <code>~ZF</code>* | Not equal / not zero |
 | #### |  |  |  |
-| <code>sets</code>  *D*|  | *D ← <code>F</code>* | Negative |
+| <code>sets</code>  *D*|  | *D ← <code>SF</code>* | Negative |
 | <code>setns</code>  *D*|  | *D ← <code>~SF</code>* | Nonnegative |
 | #### |  |  |  |
 | <code>setg</code>  *D*| <code>setnle</code> | *D ← <code>~(SF ^ OF) & ~ZF</code>* | (Unsigned >) |
@@ -420,7 +420,7 @@ scale:
 | <code>seta</code>  *D*| <code>setnbe</code> | *D ← <code>~CF & ~ZF</code>* | Above (signed >) |
 | <code>setae</code>  *D*| <code>setnb</code> | *D ← <code>~CF</code>* | Above or equal (signed >=) |
 | <code>setb</code>  *D*| <code>setnae</code> | *D ← <code>CF</code>* | Below (signed <) |
-| <code>setbe</code>  *D*| <code>setna</code> | *D ← <code>CF | ZF</code>* | Below or equal (signed <=) |
+| <code>setbe</code>  *D*| <code>setna</code> | *D ← <code>CF OR ZF</code>* | Below or equal (signed <=) |
 
 - These instructions belong to the ***SET*** class. They differ in the combinations of condition codes that they consider. The suffixes of these instructions don't refer to operand sizes but refer to conditions so **`setl`** refers to "set less", etc. 
 - The destination of a ***SET*** instruction is either the lower-order byte of a register or a single-byte memory cell which is set to either 1 or 0. To generate a 32-bit or 64-bit value from this single byte we musts also set the higher-order bits to zeros as the following example shows:
@@ -464,12 +464,12 @@ below).
 | <code>jg</code>  *Label* | <code>jnle</code> | <code>~(SF ^ OF) & ~ZF</code> | Greater (signed >) |
 | <code>jge</code>  *Label* | <code>jnl</code> | <code>~(SF ^ OF)</code> | Greater or equal (signed >=) |
 | <code>jl</code>  *Label* | <code>jnge</code> | <code>SF ^ OF</code> | Less (signed <) |
-| <code>je</code>  *Label* | <code>jng</code> | <code>(SF^OF) OR ZF</code> | Less or equal (signed <=) |
+| <code>jle</code>  *Label* | <code>jng</code> | <code>(SF^OF) OR ZF</code> | Less or equal (signed <=) |
 | #####  |  |  |  |
 | <code>ja</code>  *Label* | <code>jnbe</code> | <code>~CF & ~ZF</code> | Above (unsigned >) |
 | <code>jae</code>  *Label* | <code>jnb</code> | <code>~CF</code> | Above or equal (unsigned >=) |
 | <code>jb</code>  *Label* | <code>jnae</code> | <code>CF</code> | Below (unsigned <) |
-| <code>jbe</code>  *Label* | <code>jna</code> | <code>CF | ZF</code> | Below or equal (unsigned <=) |
+| <code>jbe</code>  *Label* | <code>jna</code> | <code>CF OR ZF</code> | Below or equal (unsigned <=) |
 
 - The table above shows a variety of jump instruction types. The **`jmp`** instruction is *unconditional*, meaning you can use it to jump somewhere for no reason at all. It is equivalent to **`goto`**. It can be either *direct* meaning the jump target is encoded directly in the instruction with a name of the label, or indirect where the jump target is stored in a register or memory location. The syntax of direct and indirect jumps is as follows:
 	- Direct Jump: **`jmp .L`** where **`.L`** is a label.
@@ -487,14 +487,13 @@ long absdiff_se(long x, long y){
 	long result;
 	if(x < y){
 		lt_cnt++;
-        result = y - x;
-    }
-    else {
-        ge_cnt++;
-        result = x - y;
-    }
-
-    return result;
+		result = y - x;
+	}
+	else {
+		ge_cnt++;
+		result = x - y;
+	}
+	return result;
 }
 
 long gotodiff_se(long x, long y){
@@ -533,9 +532,9 @@ if (test-expr)
 else:
 	else-statement
 ```
-- For some reason the assembly flow reverses that order and starts with a negation. I don't know if this always holds or if using jump synonyms would yield something similar in structure to the traditional if-else statement. Anyways, the assembly flow expressed of an if-else statement re-expressed in C is as follows:
+- For some reason the assembly flow reverses that order and starts with a negation. I don't know if this always holds or if using jump synonyms would yield something similar in structure to the traditional if-else statement. Answer I got got from the exercise is that there are no specific reason, but it can be compact and less verbose. Anyways, the assembly flow expressed of an if-else statement re-expressed in C is as follows:
 ```
-	if (!text-expr)
+	if (!test-expr)
 		goto false;
 	then-statement
 	goto done;
@@ -544,10 +543,271 @@ false:
 done:
 	...
 ```
- 
+
 ### Implementing Conditional Branching with Conditional Moves:
+- Transferring control instead of data as we saw in the previous section is simple and is the conventional way of handling conditionals, but it can also be inefficient. 
+- The other way of branching is the conditional transfer of data. Both outcomes of a conditional operation are computed and then one of them is selected if satisfy the condition. This method can only be used in special situations. In such special situations, this method can be done with **conditional move** instructions which delivers better performance in modern processors.
+- The following snippets show code for calculating the absolute value of the difference between two numbers in normal C code, assembly transcribed in C and the compiled assembly of the normal C version: 
+```c
+long absdiff(long x, long y){
+	long result;
+	if (x < y)
+		result = y - x;
+	else
+		result = x - y;
+	return result; 
+}
+
+long cmovdiff(long x , long y){
+	long rval = y - x;
+	long eval = x - y;
+	long ntest = x >= y; 
+	if (ntest)
+		rval = eval;
+	return rval;
+}
+```
+```
+absdiff:
+	movq 	%rsi, %rax
+	subq 	%rdi, %rax
+	movq 	%rdi, %rdx
+	subq 	%rsi, %rdx
+	cmpq 	%rsi, %rdi
+	cmovge 	%rdx, %rax
+	ret
+```
+- The basic idea illustrated by the code above is that we perform possible calculations ahead of time and then take a decision later. When we decide which outcome to use, the results we need are already calculated, but how is this condition data transfer better than control transfer in modern machines? Well, it is all because of so-called **pipelining** which we haven't talked about yet. The basic idea of pipelining is that the execution of each instruction is divided into smaller stages (such as fetching the instruction from memory, determining its type, getting its operands, writing its results, etc.). Then, instead of waiting for each instruction to finish before the next one starts, stages from multiple instructions can run in parallel and there is no need for waiting until a whole instruction finishes executing. This scheme reduces idle time when the processor is doing less than it can! This scheme requires the processor to know ahead of time which instructions to execute to keep the pipeline full. With conditional jumps, the processor doesn't know ahead of time which instructions to execute causing temporary emptying of the pipeline. While, the processor can guess correct instructions to execute ahead of times when it encounters conditional jumps and usually get the guesses right at a 90% rate, it might also make wrong guesses, in which cases it must discard mis-predicted instructions which is wasteful. This results in serious degradation of the program's performance. This makes condition data moves superior to control transfers in a modern pipelined processor. 
+- The following table shows the different kinds of conditional moves and their behavior. We might consider that these instructions belong to the ***CMOV*** class! These instructions can operate on 16, 32, and 64 bit words but not on single byte words. Notice how these instructions largely mirror the behavior of the **SET** and jump instructions:
+
+| instruction | Synonym | Effect | Set condition |
+| --- | --- | --- | --- |
+| <code>cmove</code>  *S, R*| <code>cmovz</code> | <code>ZF</code> | Equal / zero |
+| <code>cmovne</code>  *S, R*| <code>cmovnz</code> | <code>~ZF</code> | Not equal / not zero |
+| #### |  |  |  |
+| <code>cmovs</code>  *S, R*|  | <code>SF</code> | Negative |
+| <code>cmovns</code>  *S, R*|  | <code>~SF</code> | Nonnegative |
+| #### |  |  |  |
+| <code>cmovg</code>  *S, R*| <code>cmovnle</code> | <code>~(SF ^ OF) & ~ZF</code> | (Unsigned >) |
+| <code>cmovge</code>  *S, R*| <code>cmovnl</code> | <code>~ (SF ^ OF)</code> | (Unsigned >=) |
+| <code>cmovl</code>  *S, R*| <code>cmovnge</code> | <code>SF ^ OF</code> | (Unsigned  <) |
+| <code>cmovle</code>  *S, R*| <code>cmovng</code> | <code>(SF ^ OF) OR ZF</code> | (Unsigned <=) |
+| #### |  |  |  |
+| <code>cmova</code>  *S, R*| <code>cmovnbe</code> | <code>~CF & ~ZF</code> | Above (signed >) |
+| <code>cmovae</code>  *S, R*| <code>cmovnb</code> | <code>~CF</code> | Above or equal (signed >=) |
+| <code>cmovb</code>  *S, R*| <code>cmovnae</code> | <code>CF</code> | Below (signed <) |
+| <code>cmovbe</code>  *S, R*| <code>cmovna</code> | <code>CF OR ZF</code> | Below or equal (signed <=) |
+
+- Conditional moves, however, are not as general as conditional jumps. Some conditional expressions cannot be turned into conditional moves. This is especially apparent when the conditional expression might cause an error condition or generate a side effect (the C code in the previous conditional control transfer section deliberately included the incrementing side effect to force the compiler to generate jumps instead of conditional moves).
+- For code where possible errors prevents the use of conditional moves, consider the following example. A conditional move compilation of the following code will still deference an invalid pointer and causes an error even before the condition is tested. In a conditional jump version of this code, the validity of the pointer is always checked before dereferencing it:
+```c
+long cread(long *xp){
+	return (xp ? *xp : 0);
+}
+```  
+- Conditional moves do not always improve performance and might even make it worse. Consider situations where the *if-then* or *if-else* require significant computations. This means a lot of wasted processing when the other cheap condition holds. The gcc compiler seems to only use conditional moves for simple instructions like additions.
+- Generally speaking, even though conditional data transfers can only be used in some situation, these situations are very common that they have a great effect on the performance of modern processors.
+
 ### Loops:
-### Switch Statements:
+- The C's *do-while*, *while* and *for* loops are translated into machine code using combinations conditional tests and jumps. We will tackle these starting with ones that have simpler machine-code implementations.
+
+#### Do-While Loops:
+- Do-whiles evaluate a body-statement and then evaluate a test-expression:
+```
+do 
+	body-statement
+	while (test-expression)
+```
+- The body-statement will execute repeatedly until the test-expression is not valid anymore. The body-statement will also execute at least once. This can be translated into a combination of a gotos and a conditionals as follows:
+```
+loop:
+	body-statement;
+	if (test-expression)
+		goto loop;
+```
+- The following code illustrates a function that calculates the factorial of a long integer ***n*** such that ***n > 0***. The code is in normal C, a goto version and the compiled code for the original C code:
+```c
+long fact_do(long n){
+	long result = 1;
+
+	do {
+		result *= n;
+		n -= 1;
+	} while (n > 1);
+
+	return result;
+}
+
+long fact_do_goto(long n){
+	long result = 1;
+
+	loop:
+		result *= n;
+		n -= 1;
+		if (n > 1)
+			goto loop;
+
+	return result;
+}
+```
+```
+fact_do:
+	movl 	$1, %eax
+.L2:
+	imulq 	%rdi, %rax
+	subq 	$1, %rdi
+	cmpq 	$1, %rdi
+	jg 		.L2
+	rep; ret
+```
+- The examples are fairly obvious and there is not much to explain here. 
+
+#### While Loops:
+- While loops are more natural and make more sense than do-while loops. I personally never used do-while to do anything useful. Their machine-level representation, however, might be a little more complex.
+- While loops follow this general format:
+```
+while (test-expression)
+	body-statement
+```
+- We see that the test-expression is evaluated before the body-statement and the loop might finish without the body-statement executing at all. There are multiple ways of translating while loops into machine code. While the loop part of the code stays the same as in do-while loops, implementing the initial test differs from an implementation to another.
+- The first method of translating a while loop into machine code is called can be referred to as a *jump to the middle*. It performs the initial test with an unconditional jump to the test which comes after the loop:
+```
+	goto test;
+loop:
+	body-statement;
+test:
+	if (test-expression)
+	goto loop;
+```
+- The following C and machine code show how the *jump to the middle* implementation of a while loop is done to calculate a factorial:         
+```c
+long fact_while(long n){
+	long result = 1;
+
+	while (n > 1){
+		result *= n;
+		n--;
+	}
+
+	return result;
+}
+
+long fact_while_goto(long n){
+		long result = 1;
+		goto test;
+	
+	loop:
+		result *= n;
+		n--;
+	
+	test:
+		if (n > 1)
+			goto loop;
+		
+		return result;
+}
+```
+```
+fact_while:
+	movl 	$1, %eax
+	jmp 	.L5
+L6:
+	imulq 	%rdi, %rax
+	subq	$1, %rdi
+L5:
+	cmpq 	$1, %rdi
+	jg 		.L6
+	rep; ret
+```
+- The second machine-level implementation of a while loop is called *guarded do*. It involves translating the code into a do-while and adding to it a test o skip the loop if the first test fails. It follows this general template:
+```
+	if (!test-expr)
+		goto done;
+	do
+		body-statement;
+		while(test-expr);
+done:
+```
+- A goto re-expression of this is as follows:
+```
+	if (!test-expr)
+		goto done;
+loop:
+	body-statement;
+	if (test-expr)
+		goto loop;
+done:
+```
+- This is probably more optimal because, we only do the initial test when that initial test doesn't hold rather than jumping and then testing. The following C and assembly examples illustrate how a *guarded do* is implemented:
+```c
+long fact_while(long n){
+	long result = 1;
+
+	while (n > 1){
+		result *= n;
+		n--;
+	}
+
+	return result;
+}
+
+long fact_while_goto(long n){
+		long result = 1;
+		
+		if (n =< 1)
+			goto done;
+	loop:
+		result *= n;
+		n -= 1;
+		if (n != 1)
+			goto loop;
+
+	done:	
+		return result;
+}
+```
+```
+fact_while:
+	cmpq 	$1, %rdi
+	jle 	.L4
+	movl 	$1, %eax
+.L3:
+	imulq 	%rdi, %rax		
+	subq 	$1, %rdi
+	cmpq 	$1, %rdi
+	jne 	.L3
+	rep; ret
+.L4:
+	movl 	$1, eax
+	ret
+
+```
+
+#### For Loops:
+- The general form of a for loop in C is as follows:
+```
+for (init-expr; test-expr; update-expr)
+	body-statement;
+```
+- This is almost identical to the following C general while-loop:
+```
+init-expr;
+while (test-expr)
+	body-statement;
+	update-expr;
+```
+- Reexpressing this in a jump-to-the middle goto style yields the following:
+```
+	init-expr;
+	goto test;
+loop:
+	body-statement;
+	update-expr;
+test:
+	if (test-expr)
+	goto loop;
+```
+- This is getting a little too repetitive. The idea is to translate everything down to do-while loop and reexpress that using gotos.So a for loop can get turned to either a jump-to-the-middle or guarded-do style while loop which involves a do-while loop. This can be re-expressed in terms of gotos. 
 
 ## Procedures:
 ## Array Allocation and Access:
