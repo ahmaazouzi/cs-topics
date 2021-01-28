@@ -857,18 +857,17 @@ test:
     400568:  48 8b 54 24 08            mov     0x8(%rsp), %rdx
 ```
 - In this code and the image above, the **`callq`** instruction at address ***0x400563*** calls the `multstore`. The **`callq`** instruction causes the return address ***0x400568*** which is the address of the instruction immediately follow the address of **`callq`** to be pushed to the stack as part b) in the images shows. It also causes execution to jump to address ***0x0400540*** which is the start of the `multstore` procedure .`multstore` then continues to execute until it hits **`retq`** at which point it pops the address ***0x400568*** from the stack jumps to it, thus resuming the execution of main starting at the instruction following **`callq`**.
-- 
-
+- The following objdump and table offer a more detailed example of of how control is passed around from one procedure to another. The code shown in the objdump consists of two procedures `top` and `leaf` and part of the `main` function. Each instruction is labeled with a comment denoting its procedure and its order of execution within the procedure itself, so T1 is the first instruction in the `top` procedure and L3 is the 3rd instruction in the `leaf` procedure. The table traces the execution of the code when `main` calls `top(100)`:
 ```
 0000000000400540 <leaf>:
-    400540: 48 8d 47 02             lea     0x2(%rdi), %rax    # L1: z + 2
-    400544: c3                      retq                       # L1: Return
+    400540: 48 8d 47 02              lea      0x2(%rdi), %rax  # L1: z + 2
+    400544: c3                       retq                      # L1: Return
                         
 0000000000400545 <top>:
-    400545: 48 83 ef 05              sub     0x5, %rdi         # T1: x - 5
-    400549: e8 f2 ff ff ff           callq   400540 <leaf>     # T2: Call leaf(x-5)       
-    40054e: 48 01 c0                 add     %rax, %rax        # T3: Double result
-    400551: c3                       retq                      # T4: Return
+    400545: 48 83 ef 05               sub     0x5, %rdi        # T1: x - 5
+    400549: e8 f2 ff ff ff            callq   400540 <leaf>    # T2: Call leaf(x-5)       
+    40054e: 48 01 c0                  add     %rax, %rax       # T3: Double result
+    400551: c3                        retq                     # T4: Return
 
 ...
     # Call to top from function main
@@ -879,7 +878,7 @@ test:
 <table>
   <tr>
     <th colspan="3">Instructions</th>
-    <th colspan="4">Satus values (at beginning)</th>
+    <th colspan="4">Status values (at beginning)</th>
     <th></th>
   </tr>
   <tr>
@@ -974,8 +973,22 @@ test:
   </tr> 
 </table>
 
+- A lot is going on in this table, but a few things stand out:
+	- Once can see the interplay between the contents of stack pointer (denoted here as * `%rsp`) and the program counter. For example, when `main` calls `top`, the address immediately following the call is added to the stack and is pointed to by the stack pointer. Another address is stacked on to of that when `top` calls `leaf`, and once `leaf` returns, that address at the stop of the stack is plucked from the stack and placed in the PC. `top` resumes execution and when it returns, the stack is again popped and the value pointed to by the sack pointer is PC again and that PC is the address of the instruction right next to the call to `top`. I know, you just witnessed the death of English and verbal communication :disappointed:.
+	- In this particular example, the stack expands and shrink based only on the return address. The stack expanded when `main` called `top` and expanded further when `top` called `leaf`. When `leaf` returned and `top` returned, the stack shrank to the original size it had before `main` called `top`. By size, I mean the number of stack frames and not necessarily the real size of the stack in bytes. 
+	- Notice also how the scope of the state of registers is kinda "global" among different procedures. For some reason, I used to have the idea that maybe some register state gets discarded each time a new procedure is entered and that previous procedure data only gets stored in memory. For example if a called procedure doesn't modify **`%rax`** it stays the same and keeps holding the same data.
 
 ### Data Transfer:
+- In addition to control transfer, data can also be passed from one procedure to another. A procedure might pass arguments to another procedure and a possible value might be returned by the called procedure. Data transfer is done mainly through registers. We have seen many examples where arguments are placed in registers **`%rdi`**, **`%rsi`** and sometimes in **`%rdx`**. We've also stored return values in **`%rax`**. When procedure P calls procedure Q, it first copies arguments to proper registers, and before Q returns control tom P it copies the return value to the **`%rax`** register. There are general conventions that govern data passing between procedures. We will study these conditions in this subsection.
+- Up to six arguments can be passed via registers. They follow a conventional order and specific registers handle specific data lengths as the following table shows:
+
+| Operand sizes in bits\ number of arguments | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 64 | rdi | rsi | rdx | rcx | r8 | r9 |
+| 32 | edi | esi | edx | ecx | r8d | r9d |
+| 16 | di | si | dx | cx | r8w | r9d |
+| 8 | dil | sil | dl | cl | r8b | r9b |
+
 ### Local Storage on the Stack:
 ### Local Storage in Registers:
 ### Recursive Procedures:
