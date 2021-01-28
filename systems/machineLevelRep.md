@@ -836,6 +836,144 @@ test:
 
 - **`call`** and **`ret`** are referred to as **`callq`** and **`retq`** respectively in the output of objdump. This is meant to clarify that these are meant for x86-64 rather than IA32. 
 - The call instruction has one operand which indicates the address where the procedure to be called starts. Just like a jump, **`call`** can be either direct or indirect. Direct involves a label, while indirect involves an operand preceded by an asterisk **`*`** followed by an operand specifier that can be a register, memory location or maybe an immediate. 
+- The following image illustrates the behavior of **`call`** and **`ret`** in a function we've seen before. Forget the details about the functions and what they are doing and focus on the transfer of control from the the calling procedure `main` and called `multstore` function:
+![call and ret](img/callret.png)
+- The following code is the disassembled version of `multstore` and `main`:
+```
+# Beginning of function multstore
+0000000000400540 <multstore>:
+	400540:  53					push 	%rbx
+	400541:  48 89 d3			mov 	%rdx, %rbx	
+
+	...
+
+	# Return from function multstore
+	40054d:  c3					retq
+
+	...
+
+	# Call to multstore from main
+	400563:  e8 d8 ff ff ff 		callq 	400540 <multstore>
+	400568:  48 8b 54 24 08		    mov 	0x8(%rsp),%rdx
+```
+- In this code and the image above, the **`callq`** instruction at address ***0x400563*** calls the `multstore`. The **`callq`** instruction causes the return address ***0x400568*** which is the address of the instruction immediately follow the address of **`callq`** to be pushed to the stack as part b) in the images shows. It also causes execution to jump to address ***0x0400540*** which is the start of the `multstore` procedure .`multstore` then continues to execute until it hits **`retq`** at which point it pops the address ***0x400568*** from the stack jumps to it, thus resuming the execution of main starting at the instruction following **`callq`**.
+- 
+
+```
+0000000000400540 <leaf>:
+	400540: 48 8d 47 02	            lea 	0x2(%rdi), %rax		# L1: z + 2
+	400544: c3 						retq 						# L1: Return
+						
+0000000000400545 <top>:
+	400545: 48 83 ef 05 			sub 	0x5, %rdi 			# T1: x - 5
+	400549: e8 f2 ff ff ff 			callq 	400540 <leaf> 		# T2: Call leaf(x-5)       
+	40054e: 48 01 c0 				add 	%rax, %rax 			# T3: Double result
+	400551: c3 						retq 						# T4: Return
+
+...
+	# Call to top from function main
+	40055b:  e8 e5 ff ff ff 		callq 	400545 <top> 		# M1: Call top(100)
+	400560:  48 89 c2 				mov 	%rax, %rdx 			# M2: Resume
+```
+
+<table>
+  <tr>
+    <th colspan="3">Instructions</th>
+    <th colspan="4">Satus values (at beginning)</th>
+    <th></th>
+  </tr>
+  <tr>
+    <th>Label</th>
+    <th>PC</th>
+    <th>Instruction</th>
+    <th><code>%rdi</code></th>
+    <th><code>%rax</code></th>
+    <th><code>%rsp</code></th>
+    <th>*<code>%rsp</code></th>
+    <th>Description</th>                    
+  </tr>
+  <tr>
+    <td>M1</td>
+    <td><code>0x40055b</code></td>
+    <td><code>callq</code></td>
+    <td>100</td>
+    <td>--</td>
+    <td><code>0x7fffffffe820</code></td>
+    <td><code>--</code></td>
+    <td>Call top(100)</td>
+  </tr>
+  <tr>
+    <td>T1</td>
+    <td><code>0x400545</code></td>
+    <td><code>sub</code></td>
+    <td>100</td>
+    <td>--</td>
+    <td><code>0x7fffffffe818</code></td>
+    <td><code>0x400560</code></td>
+    <td>Entry of top</td>
+  </tr>
+  <tr>
+    <td>T2</td>
+    <td><code>0x400549</code></td>
+    <td><code>callq</code></td>
+    <td>95</td>
+    <td>--</td>
+    <td><code>0x7fffffffe818</code></td>
+    <td><code>0x400560</code></td>
+    <td>Call <code>leaf(95)</code></td>
+  </tr>
+  <tr>
+    <td>L1</td>
+    <td><code>0x400540</code></td>
+    <td><code>lea</code></td>
+    <td>95</td>
+    <td>--</td>
+    <td><code>0x7fffffffe810</code></td>
+    <td><code>0x40054e</code></td>
+    <td>Entry of <code>leaf</code></td>
+  </tr>
+  <tr>
+    <td>L2</td>
+    <td><code>0x400544</code></td>
+    <td><code>retq</code></td>
+    <td>--</td>
+    <td>97</td>
+    <td><code>0x7fffffffe810</code></td>
+    <td><code>0x40054e</code></td>
+    <td>Return 97 from <code>leaf</code></td>
+  </tr>
+  <tr>
+    <td>T3</td>
+    <td><code>0x40054e</code></td>
+    <td><code>add</code></td>
+    <td>--</td>
+    <td>97</td>
+    <td><code>0x7fffffffe818</code></td>
+    <td><code>0x400560</code></td>
+    <td>Resume top</td>
+  </tr>
+  <tr>
+    <td>T4</td>
+    <td><code>0x400551</code></td>
+    <td><code>retq</code></td>
+    <td>--</td>
+    <td>194</td>
+    <td><code>0x7fffffffe818</code></td>
+    <td><code>0x400560</code></td>
+    <td>Return 194 from top</td>
+  </tr>
+  <tr>
+    <td>M2</td>
+    <td><code>0x400560</code></td>
+    <td><code>mov</code></td>
+    <td>--</td>
+    <td>194</td>
+    <td><code>0x7fffffffe820</code></td>
+    <td><code>--</code></td>
+    <td>Resume <code>main</code></td>
+  </tr> 
+</table>
+
 
 ### Data Transfer:
 ### Local Storage on the Stack:
