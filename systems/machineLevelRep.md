@@ -842,38 +842,38 @@ test:
 ```
 # Beginning of function multstore
 0000000000400540 <multstore>:
-	400540:  53					push 	%rbx
-	400541:  48 89 d3			mov 	%rdx, %rbx	
+    400540:  53                        push    %rbx
+    400541:  48 89 d3                  mov     %rdx, %rbx    
 
-	...
+    ...
 
-	# Return from function multstore
-	40054d:  c3					retq
+    # Return from function multstore
+    40054d:  c3                        retq
 
-	...
+    ...
 
-	# Call to multstore from main
-	400563:  e8 d8 ff ff ff 		callq 	400540 <multstore>
-	400568:  48 8b 54 24 08		    mov 	0x8(%rsp),%rdx
+    # Call to multstore from main
+    400563:  e8 d8 ff ff ff            callq   400540 <multstore>
+    400568:  48 8b 54 24 08            mov     0x8(%rsp), %rdx
 ```
 - In this code and the image above, the **`callq`** instruction at address ***0x400563*** calls the `multstore`. The **`callq`** instruction causes the return address ***0x400568*** which is the address of the instruction immediately follow the address of **`callq`** to be pushed to the stack as part b) in the images shows. It also causes execution to jump to address ***0x0400540*** which is the start of the `multstore` procedure .`multstore` then continues to execute until it hits **`retq`** at which point it pops the address ***0x400568*** from the stack jumps to it, thus resuming the execution of main starting at the instruction following **`callq`**.
 - 
 
 ```
 0000000000400540 <leaf>:
-	400540: 48 8d 47 02	            lea 	0x2(%rdi), %rax		# L1: z + 2
-	400544: c3 						retq 						# L1: Return
-						
+    400540: 48 8d 47 02             lea     0x2(%rdi), %rax    # L1: z + 2
+    400544: c3                      retq                       # L1: Return
+                        
 0000000000400545 <top>:
-	400545: 48 83 ef 05 			sub 	0x5, %rdi 			# T1: x - 5
-	400549: e8 f2 ff ff ff 			callq 	400540 <leaf> 		# T2: Call leaf(x-5)       
-	40054e: 48 01 c0 				add 	%rax, %rax 			# T3: Double result
-	400551: c3 						retq 						# T4: Return
+    400545: 48 83 ef 05              sub     0x5, %rdi         # T1: x - 5
+    400549: e8 f2 ff ff ff           callq   400540 <leaf>     # T2: Call leaf(x-5)       
+    40054e: 48 01 c0                 add     %rax, %rax        # T3: Double result
+    400551: c3                       retq                      # T4: Return
 
 ...
-	# Call to top from function main
-	40055b:  e8 e5 ff ff ff 		callq 	400545 <top> 		# M1: Call top(100)
-	400560:  48 89 c2 				mov 	%rax, %rdx 			# M2: Resume
+    # Call to top from function main
+    40055b: e8 e5 ff ff ff            callq   400545 <top>     # M1: Call top(100)
+    400560: 48 89 c2                  mov     %rax, %rdx       # M2: Resume
 ```
 
 <table>
