@@ -989,7 +989,98 @@ test:
 | 16 | di | si | dx | cx | r8w | r9d |
 | 8 | dil | sil | dl | cl | r8b | r9b |
 
+- If a function has more than 6 arguments, the excess arguments have to be passed to the stack. The stack frame should have enough storage to accommodate these extra arguments, the first argument which is argument number 7 (other 6 are in registers) should be on the top of the stack. All data sizes on the stack are "rounded up to multiples of eight" :confused:!!!! Well, not too confused. I think this is done to make pointer arithmetic and referring to memory easier. Remember that pointers in x86-64 are 8-byte long. The following image might help explain this:
+![Arguments in the stack](img/stackarguments.png)
+- Now I understand the use of immediate in referencing memory. An instruction like **`movq 16(%rsp), %rax`**, means move the operand that is 16 bytes above the stack pointer to **`%rax`**.
+
 ### Local Storage on the Stack:
+- It is possible to have procedure go about their nanoseconds without having to store any local data in the stack and stores all in registers. By local data we mean data that only the procedure needs and doesn't share with the outside world (I think :no_mouth:). There are situations, however, when the procedure needs to have local data stored in the stack:	
+	- Run out of registers to store all local data.
+	- The address operator is applied to a local variable. This means we need a memory address for it.
+	- Local aggregate data structures such as arrays and structs can only be accessed by array and structure references. We will see this complex data structures later.
+- To allocate memory space for local variables, the procedure decrements the stack pointer. Local variables have their own special space within the stack frame (You can see that in  the stack frame structure image above).
+- To illustrate how local variables are used because of the address operator **`&`**, let's study the following example:
+```c
+long swap_add(long *xp, long *yp){
+	long x = *xp;
+	long y = *yp;
+	*xp = y;
+	*yp = x;
+
+	return x + y;
+}
+
+long caller(){
+	long arg1 = 534;
+	long arg2 = 1057;
+	long sum = swap_add(&arg1, &arg2);
+	long diff = arg1 - arg2;
+	return sum * diff; 
+}
+```
+```
+caller:
+    subq    $16, %rsp        # Allocate 16 bytes for stack frame
+    movq    $534, (%rsp)     # Store 534 in arg1
+    movq    $1057, 8(%rsp)   # Store 1057 in arg2
+    leaq    8(%rsp), %rsi    # Compute &arg2 as second argument
+    movq    %rsp, %rdi       # Compute &arg1 as first argument
+    call    swap_add         # Call swap_add(&arg1, &arg2)
+    movq    (%rsp), %rdx     # Get arg1
+    subq    8(%rsp), %rdx    # Compute diff = arg1 - arg2
+    imulq   %rdx, %rax       # Compute sum * diff
+    addq    $16, %rsp        # Deallocate stack frame
+    ret
+```
+- The `caller` function creates pointers to Local variables `arg1` and `arg2`. These pointers are used as inputs to the `swap_add` function. But how does the machine do it?
+	- It first decrement the stack pointer by 16 bytes `subq    $16, %rsp`. 16 bytes because we have 2 local variables and for each variable we need a multiple of 8.
+	- It then stores `&arg2` at offset 8 from the stack pointer and `arg2` at offset 0.
+	- After the call to `swap_add` the retrieval of the two variables, the stack is then incremented by 16 bytes, thus deallocating memory. At this point the two variables are not part of the stack and meaningless to procedure `caller`.
+- The following C code and its compiled output are a more complex of the mechanics of the stack:
+```c
+long call_proc(){
+	long x1 = 1; int x2 = 2;
+	short x3 = 3; char x4 = 4;
+	proc(x1, &x1, x2, &x2, x3, &x3, x4, &x4);
+	return (x1 + x2) * (x3, x4);
+}
+```
+
+
+```
+call_proc:
+    subq     $32, %rsp          # Allocate 32-byte stack frame
+    movq     $1, 24(%rsp)       # Store 1 in &x1
+    movl     $2, 20(%rsp)       # Store 2 in &x2
+    movw     $3, 18(%rsp)       # Store 3 in &x3
+    movb     $4, 17(%rsp)       # Store 4 in &x4
+    leaq     17(%rsp), %rax     # Create &x4
+    movq     %rax, 8(%rsp)      # Store &x4 as argument 8
+    movl     $4, (%rsp)         # Store 4 as argument 7
+    leaq     18(%rsp), %r9      # Pass &x3 as argument 6
+    movl     $3, %r8d           # Pass 3 as argument 5
+    leaq     20(%rsp), %rcx     # Pass &x2 as argument 4
+    movl     $2, %  edx         # Pass 2 as argument 3
+    leaq     24(%rsp), %rsi     # Pass &x1 as argument 2
+    movl     %1, %edi           # Pass 1 as argument 1
+    call     proc               
+    movslq   20(%rsp), %rdx     # Get x2 and convert to long
+    addq     24(%rsp), %rdx     # Compute x1+x2
+    movswl   18(%rsp), %eax     # Get x3 and convert to int
+    movsbl   17(%rsp), %ecx     # Get x4 and convert to int
+    subl     %ecx, %eax         # Compute x3-x4
+    cltq                        # Convert to long! WTFFFF!
+    imulq    %rdx, %rax         # Compute (x1+x2) * (x3-x4)
+    addq     $32, %rsp          # Deallocate stack frame
+    ret   
+```
+- The `call_proc` function uses the stack for two purposes: to store local variables and to pass extra arguments (in excess of 6) to the callee function `prod`. You can see the structure of this stack frame in the following image:
+![call_proc stack frame](img/call_proc.png)
+- All the instructions before the `call proc` prepare for calling `proc`.
+- Local variables are allocated on the stack. While memory allocated should be in multiples of 8, each variable or piece of data doesn't have to go into its own 8 bytes chunk in the stack. 8 bytes on the stack can be shared by multiple pieces of data whose aggregate size is 8 bytes or less. These variables are stored in the stack with an offset relative to the stack pointer. "They occupy bytes 24–31 (`x1`), 20–23 (`x2`), 18–19 (`x3`), and 17 (`x4`)". 
+- Arguments 7 (`x4`), and 8 ( `&x4` a pointer to `x4`) are stored on the stack at offsets 0 and 8 from the stack pointer. Notice in the image how maybe we are not supposed to share an 8 byte between local variables and arguments (it might look neat but doesn't make much sense :confused:).
+- When `proc` starts executing, local variables and arguments will be pushed further down from the stack pointer because of the allocation of a return address. Once proc is done the return address is deallocated. The local variables are retrieved and the 32 bytes reserved for local variables and arguments are deallocated by incrementing the stack pointer by 32 bytes.
+
 ### Local Storage in Registers:
 ### Recursive Procedures:
 
@@ -997,6 +1088,20 @@ test:
 ## Heterogeneous Data Structures:
 ## Combining Control and Data Machine-Level Programs:
 ## Floating-Point Code:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
