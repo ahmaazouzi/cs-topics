@@ -1045,8 +1045,6 @@ long call_proc(){
 	return (x1 + x2) * (x3, x4);
 }
 ```
-
-
 ```
 call_proc:
     subq     $32, %rsp          # Allocate 32-byte stack frame
@@ -1082,9 +1080,84 @@ call_proc:
 - When `proc` starts executing, local variables and arguments will be pushed further down from the stack pointer because of the allocation of a return address. Once proc is done the return address is deallocated. The local variables are retrieved and the 32 bytes reserved for local variables and arguments are deallocated by incrementing the stack pointer by 32 bytes.
 
 ### Local Storage in Registers:
+- Registers are shared by all procedures. Only one procedure can be active at a time with full access to all registers, but when a procedure (the *caller*) calls another procedure (the *callee*), we might need to prevent some registers from being overwritten by the callee. x86-64 has established some conventions on register usage that must be respected by all procedures.
+- **`%rbx`**, **`%rbp`**, **`%r12`**, **`%r13`**, **`%r14`**, and **`%r15`** are **callee saved**, meaning they the callee must preserve the values in these registers so the caller can reuse them after the callee is returned. The callee preserves the values in these registers by either not changing them or pushing them onto the stack and then popping them before returning. these registers are placed in the spot we call *saved registers* from our stack frame [image](img/stackFrameStructure.png). Saving these registers on the stack allow each procedure to use these registers without fear of corrupting them for their callers and their callers' callers!
+- Apart from **`%rsp`** and callee-saved registers, all other registers are considered *caller-saved* registers. They can be modified by any procedure and callee can overwrite them as it will. If the caller wants to preserve the values of these register, it must store them somehow in its stack frame, hence the name, caller-saved!
+- The following code shows how a procedure pushes callee-saved register values unto the stack, does its work and then pops the values when it's done. 
+```c
+long P(long x, long y){
+	long u = Q(y);
+	long v = Q(x);
+
+	return u + v;
+}
+```
+```
+P:
+    pushq     %rbp          # Save %rbp
+    pushq     %rbx          # Save %rbx
+    subq     $8, %rsp       # Align stack frame?!!!
+    movq     %rdi, %rbp     # Save x
+    movq     %rsi, %rdi     # Move y to first argument!? What?!
+    call     Q              # Call Q(y)
+    movq     %rax, %rbx     # Save result
+    movq     %rbp, %rdi     # Move x to first argument 
+    call     Q              # Call Q(x)
+    addq     %rbx, %rax     # Add saved Q(y) to Q(x)
+    addq     $8, %rsp       # Deallocate last part of stack
+    popq     %rbx           # Restore %rbx
+    popq     %rbp           # Restore %rbp
+    ret
+```
+
 ### Recursive Procedures:
+- Through a combination of stack rules and saving registers on the stack, procedures can call themselves recursively as the following examples shows:
+```c
+long rfact(long n){
+	long result;
+
+	if (n <= 1):
+		result = 1;
+	else:
+		result = n * rfact(n - 1);
+
+	return result;
+}
+```
+```
+rfact:
+    pushq    %rbx             # Save %rbx
+    movq     %rdi, %rbx       # Store n in callee-saved register
+    movl     $1, %eax         # Set return value = 1
+    cmpq     $1, %rdi         # Compare n:1
+    jle      .L35             # If <=, goto done
+    leaq     -1(%rdi), %rdi   # Compute n-1
+    call     rfact            # Call rfact(n-1)
+    imulq    %rbx, %rax       # Multiply result by n
+.L35:                         # Base case
+    popq     %rbx             # Restore %rbx
+    ret
+```
 
 ## Array Allocation and Access:
+- C arrays are simple data structures whose machine implementation is straightforward. C allows you generate pointers to elements in arrays and perform arithmetic with these pointers. At the same time, optimized compiled code representing arrays might seem much more incomprehensible than what we've seen so far.
+
+### Basic Principles:
+- When we declare an array in C, we:
+	- allocate a contiguous region of memory of a certain length.
+	- The first index of the array is basically an pointer to the beginning of this region in memory. 
+- Accessing an element in an array with an index is done with the following memory reference **`(%rdx, %rcx, 4)`** where **`%rdx`** refers to the start of the array and **`%rcx`** refers to the index of the element we want to access while **`4`** refers to the size of the data stored in the array.
+
+### Pointer Arithmetic:
+- Pointer arithmetic is one of C powerful features where "the computed value is scaled according to the size of the data type referenced by the pointer... If ***p*** is a pointer to data of type ***T***, and the value of ***p*** is ***x<sub>p</sub>***, then the expression ***p + i*** has value ***xp +L.i***, where ***L*** is the size of data type ***T***". 
+- The unary operators **`*`** and **`&`** work as follows:
+	- If ***Expr*** is an expression denoting an object or a value, ***&Expr*** generates a pointer to it.
+	- If ***Expr*** is an address, then ***\*Expr*** deferences it, meaning it gives the value at address. This means that ***Expr*** is the same as ***&\*Expr*** and  ***\*&Expr***.
+
+### Nested Arrays:
+### Fixed-Size Arrays:
+### Variable-Size Arrays:
+
 ## Heterogeneous Data Structures:
 ## Combining Control and Data Machine-Level Programs:
 ## Floating-Point Code:
