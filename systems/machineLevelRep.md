@@ -1207,6 +1207,27 @@ union U {
 - Structure might need alignment by making the block of each field have the length of the largest data type in the structure. If you place structures in an array, you might also want them be aligned. 
 
 ## Combining Control and Data Machine-Level Programs:
+- This section will delve into interaction between control constructs and data structures at the machine level. We start with a deep look at pointers, an essential but dreaded and misunderstood topic. We'll debug some machine-code using GDb. We will also look at buffer-overflow attacks using our newly acquired debugging skills and much more:
+
+### Understanding Pointers:
+- Pointers are powerful and demoralizing. However, the concepts governing their use are fairly simple. This section will try to explain these concepts and demystify pointers.
+- **Every pointer has an associated type**. If an object is of type ***T***, then **`*T`** is a pointer to that object. **`char **pp`** is a pointer to a pointer to an object of type **`char`**. Pointer **`*void`** is a generic pointer. It is usually returned by **`malloc`** function and is then cast into a typed pointer. Pointer types are not part of machine code. They are a C abstraction to avoid addressing errors. Does it have to do with data alignment? I just found out why. It has to do with dereferencing and pointer arithmetic. It allows the machine to determine the offset, especially in the case of objects contiguous in memory.
+- **Every pointer has a value**. This value is the address of the object pointed to by the pointer. Pointers with the special value. The special value **`NULL`** or **`0`** means the pointer doesn't point anywhere.
+- **Pointers are created with the `&` operator**. This operator can be applied to any *lvalue expression*. An *lvalue* is any expression that can appear to the left side of an assignment. They include variables and elements of structs, unions and arrays. The **`leaq`** instructions is usually used to values of pointers. 
+- **Pointers are dereferenced with the `*` operator**. The result of applying this operator is the value pointed at by the pointer. This operator allows to both retrieve and store a value at the memory location pointed to. 
+- **Arrays and pointers are closely related**. "The name of an array can be referenced (but not updated) as if it were a pointer variable"???!!!!!:confused:. **`a[3]`** is the exact same thing as **`*(a + 3)`**. 
+- **Casting from one type to another changes its type but not its value**. "So, for example, if **`p`** is a pointer of type **`char *`** having value p, then the expression **`(int *) p+7`** computes p + 28, while **`(int *) (p+7)`** computes p + 7". Casting has a higher precedence than addition.
+- **Pointers can also point to functions**
+
+
+
+
+
+### Debugging Using GDB:
+### Out-of-Bounds Memory References and Buffer-Overflows:
+### Defending against Buffer-Overflows:
+### Supporting Variable-Size stack Frames:
+
 ## Floating-Point Code:
 
 
