@@ -1153,12 +1153,59 @@ rfact:
 - The unary operators **`*`** and **`&`** work as follows:
 	- If ***Expr*** is an expression denoting an object or a value, ***&Expr*** generates a pointer to it.
 	- If ***Expr*** is an address, then ***\*Expr*** deferences it, meaning it gives the value at address. This means that ***Expr*** is the same as ***&\*Expr*** and  ***\*&Expr***.
+- Suppose we have the starting address of an array ***E*** and and index ***i*** stored in registers **`%rdx`** and **`%rcx`** respectively. The following table shows several expressions featuring the array ***E*** and how its elements can be referenced using indexes and pointers. It also shows the machine implementations of instructions involving these expressions. Integers are stored in **`%eax`** and pointers are stored in **`%rax`**. 
 
-### Nested Arrays:
-### Fixed-Size Arrays:
-### Variable-Size Arrays:
+| Expression | Type | Value | Assembly Code |
+| --- | --- | --- | --- |
+| <code>E</code> | <cod>int *</cod> | x<sub>E</sub> | <cod>movl %rdx,%rax</cod> |
+| <code>E[0]</code> | <cod>int</cod> | M[x<sub>E</sub>] | <cod>movl (%rdx),%eax</cod> |
+| <code>E[i]</code> | <cod>int</cod> | M[x<sub>E</sub> + 4i] | <cod>movl (%rdx, %rcx, 4),%eax</cod> |
+| <code>&E[2]</code> | <cod>int *</cod> | x<sub>E</sub> + 8 | <cod>leaq 8(%rdx),%rax</cod> |
+| <code>E + i - 1</code> | <cod>int *</cod> | x<sub>E</sub> + 4i − 4 | <cod>leaq -4(%rdx, %rcx, 4),%rax</cod> |
+| <code>*(E + i - 3)</code> | <cod>int</cod> | M[x<sub>E</sub> + 4i - 12] | <cod>movl -12(%rdx, %rcx, 4),%eax</cod> |
+| <code>&E[i] - E</code> | <cod>long</cod> | i | <cod>movq %rcx, %rax</cod> |
 
 ## Heterogeneous Data Structures:
+- C allows us to create data types which are combinations of objects of different data types:
+	- **Structures**: defined by the keyword **`struct`**, allows the packaging of multiple objects of different data types in a single unit.
+	- ***Unions***: defined using the keyword **`union`** allows an object to be represented by several different data types.
+
+### Structures:
+- A struct creates something similar to a Java object or class. The different components of a struct can be referenced by name. It is similar to an array in that it its components are placed in a contiguous region in memory and a pointer references its first byte. Each field of a structure can be a referenced using an offset from that first byte. That offset is the sum of the data lengths that precedes that element. Take the following C code representing a stuck and the following image representing the structure of this struct in memory:
+```c
+struct rec {
+	int i;
+	int j;
+	int a[2];
+	int *p;
+};
+```
+![rec struct](img/struct.png)
+- The numbers on top of the image show the byte offsets of each field of the struct. If a variable **`r`** of type **`struct rec *`** is stored in register **`%rdi`**, then copying **`r->i`** to **`r->j`** will be done with the following code:
+```
+something:
+    movl     (%rdi), %eax       # Get r->i
+    movl     %eax, 4(%rdi)      # Store in r->j
+```
+- Field **`i`** is at offset 0, so we access it at **`(%rdi)`** , the address of **`r`** while **`j`** has offset 4 so we access it at **`4(%rdi)`**, the address of **`r`** plus 4 bytes.
+
+### Unions:
+- A union looks like a struct but it ain't one. It allows you to circumvent the C type system and represent one object using different data types. The different fields of a union reference the same block. Examine the following code:
+```c
+union U {
+	char c;
+	int i[2];
+	double v;
+}
+```
+- The total size of the union in bytes is the size of the its largest field. In this example, two fields v and i are 8-byte long.
+- *I find this a little boring!*
+
+### Data Alignment:
+- Data alignment refers to having the addresses of objects are multiples of some value such as 2,4 or 8. If a system has an 8-byte alignment restriction on addresses, it might only take a single instruction to retrieve or write data instead of probable two, because and 8-byte object might be split among 2 8-byte blocks!
+- x86-64 works fine regardless of alignment, but for better memory performance, it's recommended addresses for data objects of ***K*** lengths be multiples of ***K***. 
+- Structure might need alignment by making the block of each field have the length of the largest data type in the structure. If you place structures in an array, you might also want them be aligned. 
+
 ## Combining Control and Data Machine-Level Programs:
 ## Floating-Point Code:
 
