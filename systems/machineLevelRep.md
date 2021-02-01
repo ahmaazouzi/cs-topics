@@ -1217,14 +1217,55 @@ union U {
 - **Pointers are dereferenced with the `*` operator**. The result of applying this operator is the value pointed at by the pointer. This operator allows to both retrieve and store a value at the memory location pointed to. 
 - **Arrays and pointers are closely related**. "The name of an array can be referenced (but not updated) as if it were a pointer variable"???!!!!!:confused:. **`a[3]`** is the exact same thing as **`*(a + 3)`**. 
 - **Casting from one type to another changes its type but not its value**. "So, for example, if **`p`** is a pointer of type **`char *`** having value p, then the expression **`(int *) p+7`** computes p + 28, while **`(int *) (p+7)`** computes p + 7". Casting has a higher precedence than addition.
-- **Pointers can also point to functions**
-
-
-
-
+- **Pointers can also point to functions**. It sounds to me like function pointers can be used like a good way of passing functions as arguments. You can choose at run time what function to run given that function options have a similar structure. I might come back to this later! At the moment I have no idea about how and when to use a function pointer.
 
 ### Debugging Using GDB:
+- GDB is amazing! I am going through some online tutorials. I can't reproduce a GDB tutorial here.
+
 ### Out-of-Bounds Memory References and Buffer-Overflows:
+- C doesn't offer any out-of-the-box checks for out-of-bound array references.  It also stores critical data such as saved registers and return values in the stack. This combinations can lead to bad results. The state stored in the stack can get deleted by writes to out-of-bounds array elements and things can go wrong when procedures return.
+- **Buffer overflows** a notorious example of out-of-bounds writes that corrupt memory. It happens when in a character-array is allocated to hold a string on the stack, but the size of the string exceeds the space allocated to it in memory. Examine the following code and the image following it:
+```c
+#include <stdio.h>
+
+char* gets(char *s){
+    int c;
+    char *dest = s;
+
+    while ((c = getchar()) != '\n' && c != EOF)
+        *dest++  = c;
+
+    if (c == EOF && dest == s)
+        return NULL;
+
+    *dest++ = '\0';
+
+    return s;
+}
+
+void echo(){
+    char buf[8];
+    gets(buf);
+    puts(buf);
+}
+```
+![Echo stack organization](img/echostack.png)
+```
+echo:
+    subq     $24, %rsp       # Allocate 24 bytes on stack! Why 24?
+    movq     %rsp, %rdi      # Compute buf as %rsp
+    call     gets          
+    movq     $24, %rsp       # Compute buf as %rsp
+    call     puts           
+    addq     $24, %rsp       # Deallocate stack space
+    ret
+```
+- The **`gets`** function in the code above is problematic. It copies characters from standard input into a location named **`s`**. The problem with it, is that has no way of determining if enough space has been allocated for **`s`**. In our example, we made the **`s`** buffer 8-character long. The function can only take 7 characters, plus the terminating NULL before the input overflows the space allocated to it. The assembly code shows that 24 bytes have been allocated on the stack. Bytes 8 to 23 are unused stack space, but beyond that we have important saved state such as the return address which splaced between bytes 24 and 31 away from the stack pointer. Starting at pointer 32, there might be other state data that can get corrupted. Maybe caller stack frames might also be corrupted. You can see what can happen and how badly things can go.
+- A better version of **`gets`** has an arguments that puts a limit on the maximum number of characters that can be input into it. It's sad that some very commonly used library functions such as **`gets`**, **`sprintf`**, **`strcat`**, and **`strcopy`** suffer from this problem. Avoid using these functions. 
+- Buffer overflow are used by attackers to force a program to do stuff it's not supposed to do. Attackers usually use the network to deliver to the program a string containing executable code (called *exploit code* by security junkies) and bytes to overwrite the return address with a pointer to this executable code. Instead of returning, the function would jump to this code. 
+- In some attacks, the exploit code uses a system call to start a shell program allowing the attacker to mess around and use the operating system. Smarter have code do bad stuff and repair damage to the stuck and return normally with nobody suspecting anything. 
+- Buffer overflows have been a favorite of attackers for several decades. It still leads to successful damaging attacks. It is mainly the responsibility of programmer who should strive to make their interfaces to the external world "bulletproof".
+
 ### Defending against Buffer-Overflows:
 ### Supporting Variable-Size stack Frames:
 
