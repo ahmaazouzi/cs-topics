@@ -7,7 +7,10 @@
 	+ [Binary Search Trees](algorithms/bst.md) :arrows_counterclockwise:
 - Computer Systems:
 	+ [A Tour of Computer Systems](systems/computerSystems.md) :white_check_mark:
-	+ [Representing and Manipulating Information](systems/repManInfo.md) :arrows_counterclockwise:
+	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
+	+ [Machine-Level Representation of Programs](systems/machineLevelRep.md) :white_check_mark:
+	+ [processor Architecture](systems/processorArchitecture.md) :arrows_counterclockwise: 
+	
 
 - Networking:
 	+ [A Tour of the Internet and Networking](networking/networking-and-internet.md) :white_check_mark:
