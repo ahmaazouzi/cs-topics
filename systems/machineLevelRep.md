@@ -1267,15 +1267,66 @@ echo:
 - Buffer overflows have been a favorite of attackers for several decades. It still leads to successful damaging attacks. It is mainly the responsibility of programmer who should strive to make their interfaces to the external world "bulletproof".
 
 ### Defending against Buffer-Overflows:
+- Modern operating systems and compilers have devised news ways to make it hard to exploit buffer overflows and limit the ability to seize control of a system based on such attacks. This section presents an overview of some of these techniques.
+
+#### Stack Randomization:
+- Mounting a buffer-overflow attack requires injecting executable code and a pointer to that code. To generate this pointer we need to know where the code string is located and generally know the structure of the memory stack. The structure of the stack used to be highly predictable for a combination of an operating system version and a program. Stack addresses were all the same across many systems. Once an attacker determines the stack addresses of a system, the high similarity in stack structure  made it very easy to replicate the attack across a bunch of similar systems.
+- **Stack randomization** makes the 'position of the stack' :confused: different from one run of the program run to another. Different machines will have different stack addresses even if they run the same OS and program. This randomization is done with allocating a random amount of space between 0 and *n* at the start of the program (such an allocation of memory can be done with a function like **`alloca`** which allocates space of a certain size in bytes). This allocated space has a different size from one execution to another. It needs to be large enough to allow for enough variability in size from one execution to the next and also not too large as to waste memory.
+- Stack randomization is part of class of techniques the nerds call *address-space layout randomization (ASLR)*. These techniques, which has become a standard practice in Linux OS, include randomizing "different parts of the program, including program code, library code, stack, global variables, and heap data", which are "are loaded into different regions of memory each time a program is run."
+- ASLR techniques made buffer-overflow attacks harder and limit the spread of viruses based on them but didn't eliminate them. Attackers have learnt to use so-called *nop sled* to overcome stack randomization. It involves inserting sequences of the **`nop`** (no operation) instructions. The only effect `nop` has is increasing the stack pointer. Rerunning the attack with increasing size of nop sequences just a few thousand times will crack the correct position of the executable code. It might be a little harder on a 64-bit system, but it's doable! These freaking hackers main weapon is their stubborn persistence!
+
+#### Stack Corruption Detection:
+- The next line of defense is done through detecting if memory has been corrupted. As there is no effective way of preventing writing outside the bounds of a local buffer, we need at least to detect that such writes have taken place and then prevents further damage. 
+- Newer versions of GCC started inserting a mechanism called *stack protector* into compiled code to detect buffer overruns. It involves inserting a specially canary value called the *guard value* in the stack frame between any local buffer and the rest of the stack data. This value is randomly generated so it's hard for the attacker to know. Before registered are restored and the procedure returns, the programs checks if the value has been altered and if it has the program aborts with an error.   
+![Canary](img/canary.png)
+- GCC now can even determine if a program is susceptible to stack corruption, so when run with a stack protection flag such as **`-fstack-protector-all`**, it generates code containing warnings such as **`___stack_chk_guard`**.
+- Canary values are stored in special addressing called *segmented addressing*  and marked as read-only so hackers can't change it. The program examine the the canary value and if it's been altered, the program exits with an error. 
+
+#### Limiting Executable Code Regions:
+- A third line of defense involves the elimination or reduction of the attacker to insert executable code. This can be done through limiting the regions in memory where code can be executed while some other regions can be used for writing and reading. Virtual memory, for example, is divided into pages where different forms of *memory protection* allow different types and levels of access. 
+- Historically, x86 allowed readable regions of memory to also be executable, but recently both AMD and Intel added so-called NX (no-execute) bit into their memory protection. A region of memory now can be both readable and writable but not executable. 
+
 ### Supporting Variable-Size stack Frames:
+- The compiler can determine in advance the amount of space that needs to be allocated for a stack frame. In certain situations, however, the compiler can't know a priori how much space is needed by a frame. This occurs for example when a call is made to the standard library function **`alloca`** which allocates an arbitrary number of memory bytes. 
+- Up to this point, we've used the stack pointer as a point of reference to how much memory we allocate or deallocate, but with a variable size stacks, the stack pointer is a shifty beast. It keeps track of the whole frame size but not of other local variables that should not be affected by the variable size chunk of memory introduced into the frame . Instead, we use the *base pointer* **`%rbp`**, also called *frame pointer*. which is at the bottom of the frame on the opposite side from the stack pointer. The base pointer can be used to reference fixed-length variables. 
 
 ## Floating-Point Code:
+- *I will just skim over this section and be extremely brief, focusing only on things that are strikingly different from their integral counterparts*.
+- **Floating-point architecture** for a processor maps into the machine programs that operate on floats. This includes:
+	- How floats are stored and accessed, which is done through specific registers.
+	- Instructions that operate on floats.
+	- How floats are input and returned from function.
+	- How registers storing floats are preserved during a function call, basically the caller-saved vs callee-saved thing.
 
+### A History Primer on x86 Support for Floats:
+- Starting with Pentium/MMX in 1997, Intel and AMD started offering *media* instructions that support graphics and image processing. Such instructions operated in **single instruction multiple data (SIMD)** mode. In this mode, the same instruction would operate on multiple data in parallel.
+- MMX evolved into **SSE** *(streaming SIMD extensions)*. SSE evolved into **AVX** *(advanced vector extensions)*.
+- Each generation of these extensions managed floats through set of registers called:
+	- **MM** in MMX and are 64-bit long.
+	- **XMM** in SSE and are 128-bit long.
+	- **YMM** in AVX and are 256-bit long.
+- A YMM register can hold 8 32-bit values or 4 64-bit values.
+- Original registers were meant to be processed in packs, but starting in 2000 with **SSE2**, media instructions started to also operate on *scalar* floats which is the "standard" way other processors support floats. 
+- This section will focus on scalar floats in the **AVX2** flavor which can be obtained with the **`-mavx2`** option to gcc. 
 
+### Floating-Point Movement and Conversion Operations:
+- The integral MOV class of instructions has an floating equivalent family. These instructions differ based on the size of data they operate on and their sources and destinations. For, example  **`vmovss`** moves sing-precision scalar data from an XMM register to memory or vice-versa, while **`vmovsd`** does the same thing but for double-precision floats. **`vmovaps`** moves aligned packed single-precision data from one XMM register to another. **`vmovapd`** does the same thing for double-precision data. 
+- There are other classes of instructions for performing different conversions on scalar floats, conversions between different floating types or from floats to integers. Some of these might convert data from XMM registers or memory and write the result in general-purpose registers. When converting flaots into integers, standard truncation and rounding are performed as well. 
+- Other instructions convert integral types into floats and these might have 3 operands. 
 
+### Floating-Point Code in Procedures:
+- XMM registers are used to pass arguments to functions and to return values accord
+ing to the following general rules: 
+	- Up to 8 XMM registers (**`%xmm0`** to **`%xmm7`**) can be used to pass arguments to a procedure. Excess arguments can be passed on the stack. 
+	- Returning a floating-point value is done in the **`%xmm0`** register. 
+	- All XMM caller saved: The callee can overwrite them without first saving them.
+- When passing a combination of floats and other types (integral types and pointers), floats are passed in XMM registers and the rest in general-purpose registers, the register choice depends both on ordering and type. If we have 3 arguments where arguments 1 and 2 are floats and argument 3 is an integer, then argument 1 and 2 go into **`%xmm0`** and **`$xmm1`**, while argument 3 goes into **`%rdi`**.
 
+### Floating-Point Arithmetic, Bitwise-Operations, etc.:
+- This seems like a long listing of different floating operations which seem mostly similar in their mechanics to integral operations with a few differences here and there. 
+- The authors of the book too seem a little demoralized and reluctant to spend more pages on the subject. 
 
-
+## Final Thoughts:
 
 
 
