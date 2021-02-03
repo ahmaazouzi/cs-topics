@@ -21,16 +21,29 @@ The following table summarizes how CISC differs from RISC:
 | CISC | RISC (Early) |
 | --- | --- |
 | Many many instructions | Very few instructions |
-| Arithmetic/logic operations on registers and memory operands | Arithmetic and logic operations on register operands only |
-|  |  |
-|  |  |
-|  |  |
-|  |  |
-|  |  |
-|  |  |
-
+| Arithmetic/logic operations on registers and memory operands | Arithmetic and logic operations on register operands only. Referencing memory is only done with limited number of instructions such as those storing register content in memory or copying memory content to registers, etc. This is called *load/store architecture* |
+| The ISA hides implementation *artifacts*, whaat :confused:. What the programs sees is a simple clean surface hiding some nasty stuff | Artifacts are exposed to to machine-level. Programmers can optimize their code against these artifacts |
+| Condition codes are built-in side effects for branching | No condition codes. Explicit test instructions are stored in normal registers and used for testing |
+| Major use of the stack by procedures for passing arguments and return addresses | Registers are used for passing arguments and return addresses. Some processes don't use any memory references. These usually have more registers (32) |
+- Overtime, CISC and RISC got closer to each other. RISC started incorporating many more instructions, though not too many. CISC also moved towards RISC and started translating instructions into RISC-like instructions that could be easily pipelined. However, CISC processors, represented by by x86 dominated laptops and desktops mainly because of its backward compatibility, while RISC dominated smart phones due to its power efficiency and weak-hardware friendliness
 
 ## Logic Design and the Hardware Design Language:
+- A digital system consists of 3 major components: *combinatorial logic* to do computations on bits, *memory elements* to store bits, and *clock signals* to regulate updates to memory elements. 
+- This section will briefly go over these three elements and introduce HCL (hardware control language) which is a toy HDL *(hardware description language)*. It's probably not as real as Verilog and VHDL which are actually used in the process of creating microprocessors, but the point to be exposed to logic design and the work of hardware designers (though at a superficial level).
+
+### Logic Gates:
+### Combinatorial Circuits and Boolean HCL Expressions:
+### Word-Level Combinational Circuits and HCL Integer Expressions:
+### Set Membership:
+### Memory and Clocking:
+
 ## Sequential Y86-64 Implementations:
 ## General Principles of Pipelining:
 ## Pipelined Y86-64 Implementations:
+
+
+
+
+
+
+
