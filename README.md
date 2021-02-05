@@ -9,7 +9,8 @@
 	+ [A Tour of Computer Systems](systems/computerSystems.md) :white_check_mark:
 	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
 	+ [Machine-Level Representation of Programs](systems/machineLevelRep.md) :white_check_mark:
-	+ [processor Architecture](systems/processorArchitecture.md) :arrows_counterclockwise: 
+	+ [processor Architecture](systems/processorArchitecture.md) :x: 
+	+ [Optimizing Program Performance](systems/optimizingPerformance.md) :arrows_counterclockwise: 
 	
 
 - Networking:
