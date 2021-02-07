@@ -153,24 +153,26 @@ for (x = 0; x < 100; x++)
 - When optimizing، make sure to not alter the program's behavior. Subtle bugs and alteration to the program's behavior can easily creep in, especially when messing with array bounds and for the fact that optimization generally makes code more unreadable and complex.
 - Employ more tests on optimized code and code in general to check for all sorts of mistakes that might be introduced during the optimization process.
 
-## Identifying and Eliminating Performance Bottlenecks:
+## Profiling:
 - It might be hard to identify parts of a large program that really need optimization. Optimization can cost time and make our programs less readable and less extendable. **Profilers** are tools programmers use to monitor the performance of  
 
-### Profiling:
 - *Profiling* means the use of special tools that analyze how much time different parts of a program take while running.
 - UNIX's *GPROF* is one popular profiler that does two things. It tells us how much CPU time a function takes to run, and tells us how many times a function has been called (categorized by the calling function).
+- Profiling a program with GPROF can be done in 3 steps:
+	1. First compile your program with the **`-pg`** option as in **`gcc -O1 -pg prog.c`**.
+	2. Run your program as usual **`./a.out`**. This will generate a `gmon.out` file which contains profiling data.
+	3. Run GPROF with the program as its input **`gprof a.out`**. This will analyze `gmon.out` file and give you the details of the profiling. 
+- Profiling can quickly show you bottlenecks in your program especially a large one. You can quickly see functions that get called too often or those that take too long to finish. These information can help identify possible opportunities for more optimization.
 
-```sh
-gcc -O1 -pg prog.c -o prog
-```
-```sh
-./prog file.txt
-```
-```sh
-gprof prog
-```
-
-### Guiding Optimization with Profiling:
 ### Amdahl's Law:
+- Amdahl's law, formulated by Gene Amdahl, simply states that the overall effect of improving a specific part of a system depends on two factors: how significant that part of the system is and by how much its performance has been sped up.
+- Suppose we have a system where running an application requires time ***T<sub>old</sub>***. Suppose also that a certain part of the system takes ***α*** fraction of the running time of the application and we have improved the performance of this part by a factor of ***k***. This means the program originally took 
+***αT<sub>old</sub>*** and now takes ***αT<sub>old</sub>/k***. The overall execution time is:
+	- ***T<sub>new</sub> = (1 - α)T<sub>old</sub> + (αT<sub>old</sub>)/k***
+    - ***= T<sub>old</sub>[(1 - α) + α/k]***
+- From the formula above we can compute the speedup ***S = T<sub>old</sub>/T<sub>new</sub>*** as:
+	- ***S = 1 / ((1 - α) + α/k)***
+- To really speed up the system, we need to improve the performance of large parts of the system. This law can be used to manage priorities and decide whether improving the performance of certain parts of the program are really worth the cost. 
+- It looks like I've been using Amdahl's law to prioritize what school subjects to spend more time studying since primary school!
 
 
