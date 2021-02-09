@@ -11,7 +11,7 @@
 
 #### SRAM:
 |  | Transistors per bit | Relative Access Time | Persistent | Sensitive | Relative cost | Applications |
-| --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- |
 | SRAM | 6 | 1x | Yes | No | 100x | Cache Memory |
 | DRAM | 1 | 10x | No | Yes | 1x | Main memory, frame buffers |
 

@@ -10,7 +10,8 @@
 	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
 	+ [Machine-Level Representation of Programs](systems/machineLevelRep.md) :white_check_mark:
 	+ [processor Architecture](systems/processorArchitecture.md) :x: 
-	+ [Optimizing Program Performance](systems/optimizingPerformance.md) :arrows_counterclockwise: 
+	+ [Optimizing Program Performance](systems/optimizingPerformance.md) :white_check_mark:
+	+ [The Memory Hierarchy](systems/memoryHierarchy.md):arrows_counterclockwise: 
 	
 
 - Networking:
