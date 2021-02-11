@@ -43,12 +43,57 @@
 - Programs stored in ROMs are what is called *firmware*. Some systems offer some basic IO functionality in the firmware which is the first programs to run when a a computer starts up such BIOS (basic input output system)  
 
 #### Accessing Main Memory:
+![Computer system](img/hardware.png)
 - Data flows between the CPU and main memory through **buses** which are sets of parallel wires that carry address, data and control signals between CPU, main memory and I/O devices. Transfer of data between the CPU and main memory is called a *transaction*. A *read transaction* is movement of data from memory to the CPU and the opposite of that is a *write transaction*.
 - Address and data might flow in the same wires or have their own dedicated wires. In all cases, there are also control wires whose signal manages how data is moved through the bus: is it a read or a write? Does data move between memory and the CPU or between the latter and and an I/O device?
-- An *I/O bridge*, a chipset that lies between the CPU, main memory and IO is attached to the bus. The bus that connects it to the CPU is *CPU bus* and the one connecting it to the main memory is *memory bus*. The IO bridge also contains memory control.
+- An *I/O bridge*, a chipset that lies between the CPU, main memory and IO is attached to the bus. The bus that connects it to the CPU is *system bus* (which is connected to the rest of the CPU by a *bus interface*) and the one connecting it to the main memory is *memory bus*. The IO bridge also contains memory control.
+- What happens we *load* data from memory to a register through the following instruction?
+```
+movl     A, %eax
+```
+- The bus interface chip on the CPU initiates a read transaction on the bus. The read transaction consists of 3 steps:
+	- CPU places address A on the system bus.
+	- The IO bridge passes the address to the memory bus.
+	- The main memory receives the read transaction signal through the memory bus, fetches the data at the given address from DRAM and writes it on the memory bus. The data follows the same path backward until it is written up on the register.
+- Writing register data to memory involves a write transaction and it follows the same path.
 
 ### Disk Storage:
+- Disks are a cheap storage technology which can store huge amounts of data, but they are very slow. THey can access data in the order of milliseconds which is millions of times slower than SRAM.
+
+#### Disk Geometry:
+- A typical disk consists of one or two *platters*, each with two *surfaces* coated with magnetic recording material. A spindle in the middle of platters spins at a fixed rotation rate that is a few thousand *revolutions per minutes (RPM)*. 
+- A platter surface is divided into eccentric rings called *tracks*. Each track is cut in length into *sectors*. Each sector contains an equal amount of data bits encoded in its magnetic coating. Sectors are separated from each other by little gaps that don't store data, but store information identifying sectors. 
+- *Cylinders* refer to  tracks that are equidistant from the center of the disk: a cylinder on 1-platter disk is the two overlapping tracks on the two surfaces of the platter. On a 2-platter disk, a cylinder contains 4 tracks.
+
+#### Disk Capacity:
+- The *capacity* of a disk refers to how much data can be stored in a disk. It is determined by the following factors:
+	- *Recording density (bits/in)*: the number f bits that can be squeezed into a 1-inch segment of a track.
+	- *Track density (tracks/in)*: The number of tracks that can be squeezed into an inch of the disk's radius. 
+	- *Areal Density (bits/in<sup>2</sup>)*: equal to product of recording density but track density.
+
+#### Disk Operation:
+- Bits on the surface of a platter are read and written using a *read/write head* placed at the end of an *actuator arm*. The arm moves back and forth over the surface (performing a *seek*) while the disk rotates around to the spindle allowing the arm head to reach any spot on the disk surface. When the head is over the desired track it can either alter bits during a *write* or read the bits during a *read*. Disks usually have multiple platters and hence multiple arms and read/write heads. 
+- "The read/write head at the end of the arm flies (literally) on a thin cushion of air over the disk surface at a height of about 0.1 microns and a speed of about 80 km/h. This is analogous to placing the Sears Tower on its side and flying it around the world at a height of 2.5 cm (1 inch) above the ground, with each orbit of the earth taking only 8 seconds!"
+- Data is read and written into sector-sized blocks. The **access time** of a sector has 3 components:
+	- **Seek time**: the time it takes an arm to move over the disk before hitting the track containing the target sector. It depends on the arm's speed and the head's previous position. It is usually between 3 and 9 ms and can be as high as 20 ms.  
+	- **Rotational latency**: the time the head spends on the track containing the right sector before the first bit of that sector is read or written. This depends on the position of the surface before the head arrives at the track and the rotational speed of the disk. 
+	- **Transfer time**: from when the head starts reading or writing the first bit of the sector until the end of the sector. It depends on two factors: the rotational speed of the disk, and the number of sectors on a track. 
+- The total access time of a disk is the sum of the average times of the 3 factors above. The seek time and rotational latency dominate the access time and are almost the same so we can safely say that ***access time =  2 x  seek time***. 
+
+#### Logical Disk Blocks:
+- Disks have complex geometries. They have multiple surfaces with tracks and sectors, etc. They are just too complex!! They hide this complexity from the OS by showing it a a simpler geometry that is a sequence of ***B*** sector-sized **logical blocks** numbered ***1, 2, ..., B - 1***. The **disk controller**, a hardware/firmware mechanism in the disk translates between logical blocks and the actual physical sectors in the disk.
+- When the OS wants to load certain data from the disk to RAM, it sends a command to the disk controller asking it for data in a certain logical block. The controller translates the lgical block into a (surface, track, sector) triplet that identify the given sector. The disk hardware uses this triplet to move the head to that sector and put its content into a buffer in the disk controller which then sends it back up to memory. 
+
+#### Connecting IO Devices:
+- Some waffling about IO bus! One important component that is connected to the IO bus is the *host bus adapter* which is used to connect one or more disks to the system. It is controlled by a communication protocol *host bus interface*. There are two famous host bus interfaces: *SCSI* (:speaker: 'scuzzy') and *SATA* (:speaker: 'sat-uh').SCSI is more expensive, faster and can connect more disks to the system. SATA can only connect one disk to the system. 
+
+#### Accessing Disks:
+- The CPU in a typical system manages IO devices through a technique called **memory-mapped IO**. In such a system, a block of addresses is reserved for communicating with IO devices. Each IO devices is mapped to one or more of these addresses (called **IO ports**) when it's attached to the IO bus. 
+- If the disk were mapped to address `0x44`, the CPU sends 3 instructions to that address. The first instruction tells the disk to initiate a read, the second instruction tells the disk the logical block that needs to be read, and the third instruction indicates where in memory the content should be placed. The disk controller does its thing and sends the data directly to memory. By the way, the process whereby an IO device reads or writes into memory without CPU involvement is called **direct memory access (DMA)**. This transfer of data is called a **DMA transfer**. After the transfer is completed, the disk controller might send an interrupt signal to the CPU notifying it of the transfer completion (we will see interrupts later). 
+
 ### Solid State Disks:
+- Solid state disks (SSD) is based on the non-volatile flash memory we saw [earlier](#non-volatile-memories) that can be a better alternative to rotting disks. An SSD can be attached to a slot on the system's IO bus (USB or SATA mostly) and acts like a normal disk.  
+
 ### Storage Technology Trends:
 
 ## Locality:
