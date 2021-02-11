@@ -92,12 +92,23 @@ movl     A, %eax
 - If the disk were mapped to address `0x44`, the CPU sends 3 instructions to that address. The first instruction tells the disk to initiate a read, the second instruction tells the disk the logical block that needs to be read, and the third instruction indicates where in memory the content should be placed. The disk controller does its thing and sends the data directly to memory. By the way, the process whereby an IO device reads or writes into memory without CPU involvement is called **direct memory access (DMA)**. This transfer of data is called a **DMA transfer**. After the transfer is completed, the disk controller might send an interrupt signal to the CPU notifying it of the transfer completion (we will see interrupts later). 
 
 ### Solid State Disks:
-- Solid state disks (SSD) is based on the non-volatile flash memory we saw [earlier](#non-volatile-memories) that can be a better alternative to rotting disks. An SSD can be attached to a slot on the system's IO bus (USB or SATA mostly) and acts like a normal disk.  
-
-### Storage Technology Trends:
+- Solid state disks (SSD) is based on the non-volatile flash memory we saw [earlier](#non-volatile-memories) that can be a better alternative to rotting disks. An SSD can be attached to a slot on the system's IO bus (USB or SATA mostly) and acts like a normal disk. SSD storage comes in SSD packages which consists of one or more flash chips and *flash translation layers* which translate requests for logical blocks into flash physical voodoo. 
+- Sequential reads and writes to an SSD are relatively fast. Random reads are also comparably fast, but random writes are much slower. 
+- *I don't even know what a sequential vs. random access are as far as SSDs go*. Anyways, the reason why random writes are slow lies in how SSDs are built and work. An SSD consists of a sequence of **blocks** and each block is made of a sequence of **pages**. The reading and writing in SSD are expressed in units of pages. Before data can be written to a page, the whole block it belongs to must be first erased by setting all its bits to 1. Once erased, data can be written to the block's pages with no further erasing. Knowing that SSDs are ROMs, blocks do wear out after 100k writes. 
+- Two factors make random SSD writes slower:
+	- Erasing a block is a slow operation! It takes an average of 1ms.
+	- If the write occurs in a page that contains other useful data, then all pages in that block must be copied to another erased block before data can be written (*this is a little probaly misworded! What if I write to an erased page in a block containing pages with useful data? adn Should this block also be erased before we can start writing into it?*). 
+- SSDs beat rotating in disks in that they use semiconductor memory which uses less power, is much faster and much rugged (doesn't get affected by shocks like moving disks). The big disadvantage of SSD is that they wear out of many writes. Manufacturers implement logic in SSDs to achieve *wear leveling*, meaning that erasures are spread evenly over all blocks to maximize of lives of these blocks. SSDs are also more expansive than rotating disks, but this gaps has been getting smaller over the last decades. 
 
 ## Locality:
+### Locality of References to Program Data:
+### Locality of Instruction Fetches:
+### Summary of Locality:
+
 ## The Memory Hierarchy:
+
 ## Cache Memories:
+
 ## Writing Cache-Friendly Programs:
+
 ## The Impact of Caches on Program Performance:
