@@ -43,7 +43,7 @@
 - Programs stored in ROMs are what is called *firmware*. Some systems offer some basic IO functionality in the firmware which is the first programs to run when a a computer starts up such BIOS (basic input output system)  
 
 #### Accessing Main Memory:
-![Computer system](img/hardware.png)
+![Computer system](img/computerSystems/hardware.png)
 - Data flows between the CPU and main memory through **buses** which are sets of parallel wires that carry address, data and control signals between CPU, main memory and I/O devices. Transfer of data between the CPU and main memory is called a *transaction*. A *read transaction* is movement of data from memory to the CPU and the opposite of that is a *write transaction*.
 - Address and data might flow in the same wires or have their own dedicated wires. In all cases, there are also control wires whose signal manages how data is moved through the bus: is it a read or a write? Does data move between memory and the CPU or between the latter and and an I/O device?
 - An *I/O bridge*, a chipset that lies between the CPU, main memory and IO is attached to the bus. The bus that connects it to the CPU is *system bus* (which is connected to the rest of the CPU by a *bus interface*) and the one connecting it to the main memory is *memory bus*. The IO bridge also contains memory control.
