@@ -101,11 +101,52 @@ movl     A, %eax
 - SSDs beat rotating in disks in that they use semiconductor memory which uses less power, is much faster and much rugged (doesn't get affected by shocks like moving disks). The big disadvantage of SSD is that they wear out of many writes. Manufacturers implement logic in SSDs to achieve *wear leveling*, meaning that erasures are spread evenly over all blocks to maximize of lives of these blocks. SSDs are also more expansive than rotating disks, but this gaps has been getting smaller over the last decades. 
 
 ## Locality:
-### Locality of References to Program Data:
-### Locality of Instruction Fetches:
-### Summary of Locality:
+- The fundamental principle of **locality** refers to the tendency of a program to:
+	+ Reference data near other data that has been recently referenced.
+	+ Reference data that has been recently referenced. 
+- Locality appears in two forms: **temporal locality** and **spatial locality**. In a program with good temporal locality, a memory location that is referenced once is likely to referenced again maybe multiple times in near future. In a program with good spatial locality, if a memory location is referenced once, then a nearby memory location is likely to be referenced soon. 
+- Programs with good locality are by definition faster than those with poor locality. The programmer needs to understand the mechanics of locality because hardware, OS and applications are designed in such a way as to make best use of it:
+	- At the hardware level, the faster cache memories store the most recently accessed data and instructions from main memory.
+	- The OS uses the main memory as a cache for recently accessed disk blocks and also as a cache for recently accessed virtual address space.
+	- At the application level, examples of temporal locality exploitation include web browsers caching recently accessed pages and web servers using front-end servers that cache recently accessed documents. 
+- Examine the following code:
+```c
+int sumvec(int v[N]){
+	int i, sum = 0;
+
+	for (i = 0; i < N; i++)
+		sum += v[i];
+
+	return sum;
+}
+```
+- The `sum` variable has good temporal locality because it's referenced many times inside the loop, but it has no spatial locality.
+- The elements of `v`, however, exhibit good spatial locality because they are in adjacent locations in memory but have bad temporal locality because they are accessed only once. 
+- The loop in the function above has a **stride-1 reference pattern** because it iterates of the elements of an array one adjacent element at a time. We can have a **stride-k reference pattern**, but the larger the ***k*** the poorer spatial locality we have because the programs have to hop around memory away from data that have been recently accessed. 
+- Spatial locality can be an even bigger issue in multidimensional arrays. If we iterate over the rows (inner arrays, which we usually do and I thought that's the only way to do it) we have good spatial locality because we are accessing adjacent memory locations. If we instead columns first (read all first elements from all inner arrays, then all second elements from each array, etc.), then we have a poorer locality.
+- Instruction fetches can also enjoy locality. the instruction inside the loop body in the code above has both temporal and spatial locality because it is called repeatedly. Keep in mind that the smaller the loop body and the larger the number of iteration, the better the locality.
+- We haven't discussed why a better locality produces faster programs. This has to do with caches which we will see later. It's good, however, to assess the locality of a program by simply looking at the code. 
 
 ## The Memory Hierarchy:
+- Locality along with the availability of multiple storage mechanisms with varying speeds and costs in a system gave rise to **memory hierarchy**, an approach to organizing storage that is used in most modern systems.The following figure gives a high-level view of memory hierarchy in a typical modern system:
+![Memory hierarchy](img/computerSystems/memH.png)
+- Generally speaking, such a hierarchy starts at the highest level (L0) with a handful of registers that can be accessed in a single clock cycle. These are followed by larger SRAM that can be accessed in a few clock cycles, then comes the much larger DRAM which can be accessed in a few tens to hundreds of clock cycles, and then comes the huge and much slower disks. Beyond the disk are files in remote machines that can be accessed through the network which include the *World Wide Web* and distributed file systems such as *Andrew File System (AFS)* and *Network File System (NFS)*.
+
+### Caching in the Memory Hierarchy:
+![Principles of memory hierarchy](img/princMemHier.png)
+- The image above illustrates how memory caching works. The storage at level ***k + 1*** is divided into contiguous chunks of data called **blocks**. Blocks mostly have the same size, but can also be of varied sized such as HTML documents on the Web. The image shows 16 fixed-size blocks numbered 0 to 15. Level ***k*** also contains a smaller set of similar fixed-size blocks. At any point of time, level ***k*** contains copies of a subset of blocks from level ***k + 1***. The image can contain 4 blocks and it has copies of blocks 4, 9, 14 and 3. 
+- Data is always copied back and forth between levels ***k*** and ***k + 1*** in block-sized **transfer-units**. The block size is the same between any two adjacent levels, but different pairs of levels can have different block sizes. Block size between **L0** and **L1** is one-word, between **L1** and **L2** (and **L3** and **L2**, and **L4** and **L3**) is several words, and between **L4** and **L5** it is hundreds of thousands of bytes. Lower access time in lower levels is countered by transferring data in larger blocks. 
+
+#### Cache Hits:
+- When a program needs a data object ***d*** from level ***k + 1***, it first looks for it in one of the blocks currently stored in ***k***. If ***d*** is in level ***k*** then this is a **cache hit**. The program reads ***d*** from level ***k*** which is faster then if **d**, were read from ***k + 1***. Trying to access block 14 from level ***k*** in the image will result in a cache hit.
+
+#### Cache Misses:
+- If ***d*** is not in level ***k*** then the search results in a **cache miss**. When a miss occurs, ***k*** fetches the block containing ***d*** in ***k + 1*** and copies it to itself, overwriting existing data if it is full.
+- Overwriting existing data in the cache is called **evicting** or **replacing** the block. The evicted block is called the **victim block**. The cache's **replacement policy** decides which block to evict. Example replacement policies include: **random replacement policy** and **least-recently used (LRU)** replacement which picks the block that "was last accessed the furthest in the past." The block will stay in and be accessed from ***k*** in the next reads.
+
+#### Kinds of Cache Misses:
+#### Cache Management 
+### Summary of Memory Hierarchy Concepts:
 
 ## Cache Memories:
 

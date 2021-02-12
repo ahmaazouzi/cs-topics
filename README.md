@@ -11,10 +11,11 @@
 	+ [Machine-Level Representation of Programs](systems/machineLevelRep.md) :white_check_mark:
 	+ [processor Architecture](systems/processorArchitecture.md) :x: 
 	+ [Optimizing Program Performance](systems/optimizingPerformance.md) :white_check_mark:
-	+ [The Memory Hierarchy](systems/memoryHierarchy.md):arrows_counterclockwise:
-	+ [Exception Control Flow](systems/exceptionalControlFlow.md):black_circle: 
-	+ [Virtual Memory](systems/virtualMemory.md):black_circle: 
-	+ [System-Level IO](systems/systemLevelIO.md):black_circle:   
+	+ [The Memory Hierarchy](systems/memoryHierarchy.md) :arrows_counterclockwise:
+	+ [Exception Control Flow](systems/exceptionalControlFlow.md) :black_circle: 
+	+ [Virtual Memory](systems/virtualMemory.md) :black_circle: 
+	+ [System-Level IO](systems/systemLevelIO.md) :black_circle:   
+	+ [Concurrency](systems/concurrent.md) :black_circle:  
 	
 
 - Networking:
