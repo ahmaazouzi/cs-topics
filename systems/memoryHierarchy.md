@@ -145,8 +145,44 @@ int sumvec(int v[N]){
 - Overwriting existing data in the cache is called **evicting** or **replacing** the block. The evicted block is called the **victim block**. The cache's **replacement policy** decides which block to evict. Example replacement policies include: **random replacement policy** and **least-recently used (LRU)** replacement which picks the block that "was last accessed the furthest in the past." The block will stay in and be accessed from ***k*** in the next reads.
 
 #### Kinds of Cache Misses:
-#### Cache Management 
+- There are different kinds of cache misses:
+	- **Cold miss** or **compulsory miss**: happens when ***k*** is empty (is a **cold cache**). Every access attempt results in a miss until the cache is filled again (*warmed up*) after repeated accesses.
+	- **Conflict miss**: When a miss occurs, a **placement policy** is needed to place the block retrieved from ***k + 1*** at the cache ***k***. This can be done at random where any block from ***k + 1*** can be placed anywhere in ***k***. This is will result in expensive lookups in the cache level. Instead a restricted placement policy is adopted such as ***(i mod j)*** where ***i*** is the block position or address :confused: and ***j*** is the number of blocks in ***k***. This arrangement will cause a type of misses called ***conflict miss*** which is similar to hash map collisions. Blocks which have such collisions will always suffer from them. Every time you ask the cache for a result you will have a conflict miss. 
+	- **Capacity misses** happens when the data being cached is larger than the cache itself.. Something like the *working set* of an inner loop 🙃.
+
+#### Cache Management
+- So what logic manages all this mess? The system contains is operated by a form of logic that:
+	- Partitions cache into blocks
+	- Transfers blocks between levels. 
+	- Decides when there are hits and misses and handles them.
+- This logic can be done in the hardware, software or a combination of the two! For example:
+	- Registers (L0 cache) are managed by the compiler which decides when loads occur, when there are misses and what data go to what registers.
+	- L1, L2 and L3 are managed entirely by the hardware. 
+	- In systems that have virtual memory, DRAM is managed by a combination of the OS and address translation software on the CPU.
+	- In distributed file systems such as AFS, an AFS client processes running on the local machine manages the local disk as a cache for the distributed system.
+- Most cache operates automatically and requires no intervention from the program or programmer. 
+
 ### Summary of Memory Hierarchy Concepts:
+- Demystification time:
+	- Good *temporal locality* makes your program faster because data recently used has been cached.
+	- *Spatial locality* speeds our programs because a cached block contains multiple data objects and accessing the next data object is very likely to be from this cached block. 
+- Cache is everywhere! It is a crucial part of modern systems especially in distributed networked systems which are the present and future of computing. The following tables gives a summary of different levels of caches (some terms in the table we haven't covered yet):
+
+| Type | What cached | Where cached | Latency (cycles) | Managed by |
+| --- | --- | --- | --- | --- |
+| CPU Registers | 4-byte or 8-byte word | On-chip CPU registers | 0 | Compiler |
+| TLB | Address translations | On-chip TLB | 0 | Hardware MMU |
+| L1 cache | 64-byte block | On-chip L1 cache | 1 | Hardware |
+| L2 cache | 64-byte block | On/off-chip L2 cache | 10 | Hardware |
+| L3 cache | 64-byte block | On/off-chip L3 cache | 30 | Hardware |
+| Virtual memory | 4-KB page | Main memory | 100 | Hardware + OS |
+| Buffer cache | Parts of files | Main memory | 100 | OS |
+| Disk cache | Disk sectors | Disk controller | 100,000 | Controller firmware |
+| Network cache | Parts of files | Local disk | 10,000,000 | AFS/NFS client |
+| Browser cache | Web pages | Local disk | 1,000,000,000 | Web browser |
+| Web cache | Web pages | Remote server disk | 1,000,000,000 | Web proxy server |
+
+
 
 ## Cache Memories:
 
