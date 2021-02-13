@@ -182,9 +182,50 @@ int sumvec(int v[N]){
 | Browser cache | Web pages | Local disk | 1,000,000,000 | Web browser |
 | Web cache | Web pages | Remote server disk | 1,000,000,000 | Web proxy server |
 
-
-
 ## Cache Memories:
+- Traditional computer systems consisted of only 3 cache levels: CPU registers, main memory and disk. Due to the ever-widening gap between CPU registers and main memory speeds, designers thought of mitigating the problem by inserting tiny SRAMs into CPUS as a cache for main memory called **L1 cache memory**. L1 is almost as fast as registers at a rate of 2 to 4 clocks cycles: 
+![L1 cache](img/L1.png)
+- Designers later supplemented computer systems with **L2** which sits between L1 and main memory and has an access time of about 10 cycles. Later an **L3** was inserted between L2 and main memory. L3 has an access time of 30 to 40 cycles. Caching systems are generally based on the same principles.
+- The next section will discuss the principles governing cache memories but will assume the existence of a single L1 cache between the CPU and main memory (these same principles apply in other systems with more cache layers). 
+
+### Generic Cache Memory Organization:
+- Examine the following image showing how cache memory is organized:
+![General cache organization](img/cacheorg.png)
+- In a computer system where each memory address has ***m*** bits that form ***M = 2<sup>m</sup>*** a cache's organization can be represented by a tuple ***(S, E, B, m)*** where:
+	- The cache for such a machine is an array of ***S = 2<sup>s</sup>*** *cache sets*.
+	- Each cache set consists of ***E** cache lines*.
+	- Each line consists of:
+		+ Data block of ***B = 2<sup>b</sup>** bytes*.
+		+ A *valid bit* indicating if the line contains meaningful information.
+		+ ***t = m - (b + s)** tag bits* which is a subset of the bits from the current block's memory address that uniquely identify the block stored in the line.
+- The size of this cache ***C*** is the aggregate size of the all the blocks, ***C = S · E · B***. Tag bits and valid bits are not included in the cache size.
+- When the CPU receive a load instruction to read a word from address ***A*** from main memory, it sends the address ***A*** to the cache. If the cache has the given word at address ***A***, it sends it to the CPU. The cache examines the bits of address ***A*** and does a lookup similar to searches in a hashmap with a simple hash function. Parameters ***B*** and ***S*** of the tuple representing the cache are the reason the ***m*** bits (as shown in part (b) of the image above) of ***A*** address are partitioned into 3 parts:
+	- The *s set index bits*: is an index into the array of ***S*** sets of the cache. The first set is 0, the next 1, etc. 
+	- The *t* tag bits: tells us in which line within the set the address ***A*** is located. A line in the set contains the address only if the valid bit is set and the tag bits in the line match tag bit in the address.  
+	- The *b block offset bits*: gives us the offset of the word in the ***B***-byte data block. 
+- The previous paragraphs had too much confusing information. The following two tables kinda summarize these information. The first table illustrates the fundamental parameters of a cache memory, and the second one shows quantities derived from these parameters:
+
+| Parameter | Description |
+| --- | --- |
+| S = 2<sup>s</sup> | Number of sets |
+| E | Number of lines per set |
+| B = 2<sup>s</sup> | Block size (bytes) |
+| m = log<sub>2</sub>(M) | Number of physical (main memory) address bits |
+
+| Parameter | Description |
+| --- | --- |
+| M = 2<sup>m</sup> | Maximum number of unique memory addresses |
+| s = log<sub>2</sub>(S) | Number of set index bits |
+| b = log<sub>2</sub>(B) | Number of block offset bits |
+| t = m - (s + b) | Number of tag bits |
+| C = B · E · S | Cache size (bytes) not including overhead such as the valid and tag bits |
+
+### Direct-Mapped Caches:
+### Set Associative Caches:
+### Fully Associative Caches:
+### Issues with Writes:
+### Anatomy of a Real Cache Hierarchy:
+### Performance Impact of Cache Parameters:
 
 ## Writing Cache-Friendly Programs:
 
