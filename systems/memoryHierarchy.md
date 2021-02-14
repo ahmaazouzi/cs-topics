@@ -242,7 +242,7 @@ int sumvec(int v[N]){
 - *At least the authors admit that this can be confusing!!!*, but whatever, dude! This is an example-based recounting of the previous voodoo!
 - Supposed we have a direct-mapped cache described by ***(S, E, B, m) = (4, 1, 2, 4)***, meaning it has 4 sets, 1 line per set, 2 bytes per block and 4-bit addresses. In this system, each word is one byte long. The following table shows the entire address space for this cache and its bits partitioning:
 
-| Address (decimal) | Tag bits (t = 1) | Index bits (s = 2) | Offset bits (b = 1) | Block number (decimal) |
+| Address<br>(decimal) | Tagbits<br>(t = 1) | Index<br>bits (s = 2) | Offset bits<br>(b = 1) | Block number<br>(decimal) |
 | --- | --- | --- | --- | --- |
 | 0 | 0 | 00 | 0 | 0 |
 | 1 | 0 | 00 | 1 | 0 |
