@@ -240,9 +240,9 @@ int sumvec(int v[N]){
 
 #### Putting It Together: A Direct-Mapped Cache in Action:
 - *At least the authors admit that this can be confusing!!!*, but whatever, dude! This is an example-based recounting of the previous voodoo!
-- Supposed we have a direct-mapped cache described by ***(S, E, B, m) = (4, 1, 2, 4)***, meaning it has 4 sets, 1 line per set, 2 bytes per block and 4-bit addresses. In this system, each word is one byte long. The following table shows the entire address space for this cache and its bits partitioning:
+- Suppose we have a direct-mapped cache described by ***(S, E, B, m) = (4, 1, 2, 4)***, meaning it has 4 sets, 1 line per set, 2 bytes per block and 4-bit addresses. In this system, each word is one byte long. The following table shows the entire address space for this cache and its bits partitioning:
 
-| Address<br>(decimal) | Tagbits<br>(t = 1) | Index<br>bits (s = 2) | Offset bits<br>(b = 1) | Block number<br>(decimal) |
+| Address<br>(decimal) | Tag bits<br>(t = 1) | Index bits<br>(s = 2) | Offset bits<br>(b = 1) | Block number<br>(decimal) |
 | --- | --- | --- | --- | --- |
 | 0 | 0 | 00 | 0 | 0 |
 | 1 | 0 | 00 | 1 | 0 |
@@ -261,6 +261,27 @@ int sumvec(int v[N]){
 | 14 | 1 | 11 | 0 | 7 |
 | 15 | 1 | 11 | 1 | 7 |
 
+- A few things that jump at one from examining the table above:
+	- Concatonating the tag bit and index bits uniquely identifies each block in memory.
+	- Since there are 8 memory blocks, but only 4 cache sets, multiple blocks are placed in the same cache set.
+	- Blocks that map to the same set are uniquely identified by their tag. 
+- *I feel a little relieved the authorس admit students might trip when it comes to this caching voodoo!* They suggest that we go through a sequence of reads that our hypothetical CPU performs and track the behavior of our cache to really understand how it works:
+	- 0. Initially our cache looks as follows:
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 0 |  |  |  |
+	| 1 | 0 |  |  |  |
+	| 2 | 0 |  |  |  |
+	| 3 | 0 |  |  |  |
+
+	- 1.
+
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 0 |  |  |  |
+	| 1 | 0 |  |  |  |
+	| 2 | 0 |  |  |  |
+	| 3 | 0 |  |  |  |
 
 ### Set Associative Caches:
 ### Fully Associative Caches:
