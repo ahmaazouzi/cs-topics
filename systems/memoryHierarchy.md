@@ -191,13 +191,13 @@ int sumvec(int v[N]){
 ### Generic Cache Memory Organization:
 - Examine the following image showing how cache memory is organized:
 ![General cache organization](img/cacheorg.png)
-- In a computer system where each memory address has ***m*** bits that form ***M = 2<sup>m</sup>*** a cache's organization can be represented by a tuple ***(S, E, B, m)*** where:
+- In a computer system where each memory address has ***m*** bits that form ***M = 2<sup>m</sup>*** unique addresses, a cache's organization can be represented by a tuple ***(S, E, B, m)*** where:
 	- The cache for such a machine is an array of ***S = 2<sup>s</sup>*** *cache sets*.
 	- Each cache set consists of ***E** cache lines*.
 	- Each line consists of:
 		+ Data block of ***B = 2<sup>b</sup>** bytes*.
-		+ A *valid bit* indicating if the line contains meaningful information.
-		+ ***t = m - (b + s)** tag bits* which is a subset of the bits from the current block's memory address that uniquely identify the block stored in the line.
+		+ A *valid bit* indicating if the line contains meaningful information. For this stuff to make sense, let's call ***m*** the minimum number of bits needed to represent the given address. 
+		+ ***t = m - (s + b)** tag bits* which is a subset of the bits from the current block's memory address that uniquely identify the block stored in the line.
 - The size of this cache ***C*** is the aggregate size of the all the blocks, ***C = S · E · B***. Tag bits and valid bits are not included in the cache size.
 - When the CPU receive a load instruction to read a word from address ***A*** from main memory, it sends the address ***A*** to the cache. If the cache has the given word at address ***A***, it sends it to the CPU. The cache examines the bits of address ***A*** and does a lookup similar to searches in a hashmap with a simple hash function. Parameters ***B*** and ***S*** of the tuple representing the cache are the reason the ***m*** bits (as shown in part (b) of the image above) of ***A*** address are partitioned into 3 parts:
 	- The *s set index bits*: is an index into the array of ***S*** sets of the cache. The first set is 0, the next 1, etc. 
@@ -209,7 +209,7 @@ int sumvec(int v[N]){
 | --- | --- |
 | S = 2<sup>s</sup> | Number of sets |
 | E | Number of lines per set |
-| B = 2<sup>s</sup> | Block size (bytes) |
+| B = 2<sup>b</sup> | Block size (bytes) |
 | m = log<sub>2</sub>(M) | Number of physical (main memory) address bits |
 
 | Parameter | Description |
@@ -221,6 +221,47 @@ int sumvec(int v[N]){
 | C = B · E · S | Cache size (bytes) not including overhead such as the valid and tag bits |
 
 ### Direct-Mapped Caches:
+- There are different types of caches based on ***E*** (the number of lines in a set). A cache with one line per set (***E = 1***) is a **direct-mapped cache**. We will use it to explain general concepts of caching because it is simple to implement and easy to understand.
+- Let's say we have system with a CPU, register file, an L1 cache and a main memory. When the CPU wants a word ***w***, it requests it from L1 cache. If L1 has the word, the request results in a cache hit; otherwise we have a cache miss and the CPU has to wait until L1 requests a copy of the block contains ***w***, it places it in one of its lines, extracts ***w*** and returns it to the CPU. To determine if a request is a hit or a miss and then request the requested word is done by the cache in 3 steps: **set selection**, **line matching**, and **word extraction**.
+
+#### Set Selection in Direct-Mapped Caches:
+- In this step, the cache extracts the ***s*** set index bits from the middle of the address of word ***w***. These bits are read as an unsigned number which is a set number. Our cache is an array of sets. This number is an index into this array:
+![Set selection in direct-mapped caches](img/setSelection.png)
+
+#### Line Matching in Direct-Mapped Caches:
+- After selecting a set ***i***, we need to find if a copy of the word ***w*** is in a line in the set. We only have one line per set in our setup. We know that the word is in the line only if the valid bit is set and the tag in the cache line matches the tag in the address of the word ***w***. If the valid bit is set (has value 1) and the tag bits of the ***w*** address match those of the line's tag, we have a cache hit. Otherwise, we have cache miss!
+
+#### Word Selection in Direct-Mapped Caches:
+- Once we match our line, we know that the word ***w*** is somewhere in the block contained in the line. This step determines with the ***w*** word start (knowing that the block contains multiple words). The offset bits in the word tells us where the first byte of the word starts in the block. The block can be thought of as an array of bytes and block offset as an index into that array. The definition of a word here must be clear, is it a 4-byte or 8-byte word?!  The following image shows how line matching and word selection are done:
+![Line matching and word Selection](img/lineMatchwordSel.png) 
+
+#### Line Replacement on Misses in Direct-Mapped Caches:
+- What if a cache miss occurs? The cache then will retrieve the given block from the lower memory layer and store the new block in the appropriate line. If the cache is full of valid cache lines, one of them has to be evicted. The replacement policy for a direct-mapped cache where each set has one line is simple, replace the old line with the new one. 
+
+#### Putting It Together: A Direct-Mapped Cache in Action:
+- *At least the authors admit that this can be confusing!!!*, but whatever, dude! This is an example-based recounting of the previous voodoo!
+- Supposed we have a direct-mapped cache described by ***(S, E, B, m) = (4, 1, 2, 4)***, meaning it has 4 sets, 1 line per set, 2 bytes per block and 4-bit addresses. In this system, each word is one byte long. The following table shows the entire address space for this cache and its bits partitioning:
+
+| Address (decimal) | Tag bits (t = 1) | Index bits (s = 2) | Offset bits (b = 1) | Block number (decimal) |
+| --- | --- | --- | --- | --- |
+| 0 | 0 | 00 | 0 | 0 |
+| 1 | 0 | 00 | 1 | 0 |
+| 2 | 0 | 01 | 0 | 1 |
+| 3 | 0 | 01 | 1 | 1 |
+| 4 | 0 | 10 | 0 | 2 |
+| 5 | 0 | 10 | 1 | 2 |
+| 6 | 0 | 11 | 0 | 3 |
+| 7 | 0 | 11 | 1 | 3 |
+| 8 | 1 | 00 | 0 | 4 |
+| 9 | 1 | 00 | 1 | 4 |
+| 10 | 1 | 01 | 0 | 5 |
+| 11 | 1 | 01 | 1 | 5 |
+| 12 | 1 | 10 | 0 | 6 |
+| 13 | 1 | 10 | 1 | 6 |
+| 14 | 1 | 11 | 0 | 7 |
+| 15 | 1 | 11 | 1 | 7 |
+
+
 ### Set Associative Caches:
 ### Fully Associative Caches:
 ### Issues with Writes:
