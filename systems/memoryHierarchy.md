@@ -317,12 +317,47 @@ int sumvec(int v[N]){
 - The authors suggest pad arrays where such a problem by a number of bytes to make the two arrays map to different sets. 
 
 ### Set Associative Caches:
--
+- The reason behind the common conflict misses in direct-mapped caching is that each set has exactly one line meaning that ***E = 1***. In **set associative caches** a set can have multiple lines which (maybe) reduces conflict misses. Caches with ***1 < E < (C / B)*** are called **E-way set associate caches**, meaning such a cache can be *2-way*, or 3-way, etc. 
+- Searching an E-way associative cache is similar to a direct-mapped one but differs form it in the line matching step. The tags and valid bits of multiple lines have to be checked "in order to determine if the requested word is in the set." 
+- A conventional memory is an array of values that takes an address as an input and returns a value indexed by the memory address. An *associative memory* is an array of key-value pairs that takes the key as an input and returns the value paired with it. Each set in a set associative cache can be thought of as a small associative memory "where the keys are the concatenation of the tag and valid bits, and the values are the contents of a block." Any line in the matching set might contain the given value, so each line of that set must be searched for valid line containing the matching concatenation of the valid bit and tag bits. 
+- If the requested word is not in any of the set lines, we have a cache miss and the cache must retrieve the appropriate blocks from memory, but which line will it replace? Replacement policy in a set associative cache is kinda complicated. The simplest policy to replace a random line in the set, but the more ambitious policies use the principle of locality and vie to minimize the chances of replacing a line that might be used in the near future. Examples of such policies include:
+	- The **least-frequently used (LFU)** policy which replaces a lines that has been used the fewest times over a past window. 
+	- The **least-recently used (LRU)** policy replaces a line that has been last referenced the furthest in the past. 
 
 ### Fully Associative Caches:
+- A **fully associative cache** is one giant set containing all the lines (***E = C / B***). It looks as follows:
+![Fully associative cache](img/fullyasoc.png)
+- In this set up, lines don't have set index bits. There is only one set and no need to search for one. The line and word matching in fully associative cache are the same as set associative cache but on a bigger scale! 
+- Fully associative caches can be expensive and slow if they get too large, so they are used in limited situations for small caches.
+
 ### Issues with Writes:
+- Cache reads are simple. We search the cache and if we get a hit, we return the value. If a miss occurs, we retrieve the block containing the address from the lower memory level, etc., and replace a possibly valid line and get the value back to the CPU.
+- Writes are more complicated. If we write an already cached word (*write hit*), how does the cache update lower memory levels?
+	- The most straightforward way is a **write-through** where the cache updates the memory level under it. The downside of this approach is that it incurs a *bus traffic* with every write.
+	- A **write-back** defers writes updating the lower level of memory as long as possible until it is time for the block to be evicted by the replacement policy. This approach reduces bus traffic significantly, but has the downside of added complexity. Each line must also have a *dirty bit* which indicates if the block has been modified (so that it gets used to replace lower memory when it's about being evicted).
+- When it comes to *write misses* approaches used include:
+	- **Write-allocate** loads the corresponding memory block every time a write miss occurs. It exploits spatial locality, but suffers from having to perform a block transfer from memory for every miss.
+	- **No-write-allocate** bypasses the cache and wries directly to the lower memory level. Write-through caches are usually no-write-allocate, while write-back caches are write-allocate.
+- How modern cache designs works is proprietary and poorly documented, but it might be safe to assume that they use write-backs instead of write-through.
+
 ### Anatomy of a Real Cache Hierarchy:
+- We've been assuming that cache holds only data, but in a real system it holds both data and instructions. A cache that only holds data is called **d-cache** while cache holding only instructions is called **i-cache**. Cache that holds both data and instructions is called **unified cache**. Modern systems tend to use separate specialized d-caches and i-caches. Reasons for this split include:
+	- The processor can read an instruction word and a data word at the same time.
+	- I-caches are read-only making them simpler, meaning they can have their own ways of optimization based on their access patterns.
+- The following diagram shows one the Intel i7 processors and the organization of its cache (notice the separation of i-cache and d-cache):
+![i7 cache](img/i7cache.png)
+
 ### Performance Impact of Cache Parameters:
+- Cache performance is evaluated with the following metrics:
+	- *Miss rate* = ***1 - references***.
+	- *Hit rate* = ***hits / references***
+	- *Hit time* is the time it takes to deliver word in cache to the CPU. It includes time for set selection, line matching and word selection. It is a few clock cycles for L1.
+	- *Miss penalty* is the additional time caused by a cache miss. The penalty for misses from L2 to L1 is about 10 clock cycles.
+- Cache performance is generally affected by cache parameters in different ways:
+	- A larger **cache size** increase the hit rate of the cache but decreases its speed. It generally increases the hit time which is bad.
+	- Larger **block sizes** is good for spatial locality, but might mean fewer lines which is bad for temporal locality. Larger blocks might also increase miss penalty because it takes longer to transfer a larger block. Modern caches have 32 to 64 byte blocks.
+	- **Associativity** refers to *E*, the number of lines per set. Higher associativity means less vulnerability to thrashing because of conflict misses, but it's costly to implement and hard to make fast. it has increased complexity that might contribute to increased miss penalty. 
+	- L1 prefers a write-through **writing strategy** for its simplicity and the fact that it includes faster reads because a read wouldn't trigger an update of lower memory. Lower cache layers prefer write-back that trigger less transfers because data movement is slower. 
 
 ## Writing Cache-Friendly Programs:
 
