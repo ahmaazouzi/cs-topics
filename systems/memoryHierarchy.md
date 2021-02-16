@@ -265,16 +265,8 @@ int sumvec(int v[N]){
 	- Concatonating the tag bit and index bits uniquely identifies each block in memory.
 	- Since there are 8 memory blocks, but only 4 cache sets, multiple blocks are placed in the same cache set.
 	- Blocks that map to the same set are uniquely identified by their tag. 
-- *I feel a little relieved the authorس admit students might trip when it comes to this caching voodoo!* They suggest that we go through a sequence of reads that our hypothetical CPU performs and track the behavior of our cache to really understand how it works:
-	- 0. Initially our cache looks as follows:
-	| Set | Valid | Tag | block[0] | block[1] |
-	| --- | --- | --- | --- | --- |
-	| 0 | 0 |  |  |  |
-	| 1 | 0 |  |  |  |
-	| 2 | 0 |  |  |  |
-	| 3 | 0 |  |  |  |
-
-	- 1.
+- *I feel a little relieved the authors admit students might trip when it comes to this caching voodoo!* They suggest that we go through a sequence of reads that our hypothetical CPU performs and track the behavior of our cache to really understand how it works. In the following tables, each row represents one of the 4 cache lines. The first column is not really part of a cache line be is used here just to make things easy. T:
+	- **0. Initially our cache looks as follows:**
 
 	| Set | Valid | Tag | block[0] | block[1] |
 	| --- | --- | --- | --- | --- |
@@ -282,8 +274,51 @@ int sumvec(int v[N]){
 	| 1 | 0 |  |  |  |
 	| 2 | 0 |  |  |  |
 	| 3 | 0 |  |  |  |
+
+	- **1. Read word at address 0**. The valid is not set. This is a cache miss. The cache retrieves block 0 from memory and stores it in set 0. The cache reaturns to the CPU m[0] from block[0] of the newly fetched line.
+
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 1 | 0 | m[0] | m[1] |
+	| 1 | 0 |  |  |  |
+	| 2 | 0 |  |  |  |
+	| 3 | 0 |  |  |  |
+
+	- **2. Read word at address 1**. This is a cache hit (block 0 has this as its second word). m[1] from block[1] is immediately return from cache. This request doesn't change the cache state. 
+	- **3. Read word at address 13**. This results in a miss because the cache line in set 2 is not valid. Block 6 is loaded into set 2. m[13] of block[1] of the new cache line is returned to the CPU.
+
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 1 | 0 | m[0] | m[1] |
+	| 1 | 0 |  |  |  |
+	| 2 | 1 | 1 | m[12] | m[13] |
+	| 3 | 0 |  |  |  |
+
+	- **4. Read word at address 8**. This is a cache miss. Even though the cache line 0 is valid, the tag doesn't match. The cache loads block 4 into line 0 (replacing the older one we got when reading address 0). It then returns m[8] from block[0] of the new cache line.
+
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 1 | 1 | m[8] | m[9] |
+	| 1 | 0 |  |  |  |
+	| 2 | 1 | 1 | m[12] | m[13] |
+	| 3 | 0 |  |  |  |
+
+	- **5. Read word at address 0**. This is a miss because of the previous request. This is a conflict miss. The cache might still have more room for more values, but we keep alternating values in certain lines.
+
+	| Set | Valid | Tag | block[0] | block[1] |
+	| --- | --- | --- | --- | --- |
+	| 0 | 1 | 0 | m[0] | m[1] |
+	| 1 | 0 |  |  |  |
+	| 2 | 0 |  |  |  |
+	| 3 | 0 |  |  |  |
+
+#### Conflict Misses in Direct-Mapped Caches:
+- Situations where you can never exploit caching and every request would result in a conflict miss are possible. This can be especially more likely when trying to access arrays whose sizes are powers of 2 with direct-mapped caches. Chunks of such arrays that map to the same cache sets will keep overwriting each other in a process called *thrashing*. This will be really bad for performance and reduce it by a factor of 2 or 3. Having a good spatial locality will not help here.
+- The authors suggest pad arrays where such a problem by a number of bytes to make the two arrays map to different sets. 
 
 ### Set Associative Caches:
+-
+
 ### Fully Associative Caches:
 ### Issues with Writes:
 ### Anatomy of a Real Cache Hierarchy:
