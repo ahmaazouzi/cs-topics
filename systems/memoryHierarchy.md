@@ -7,7 +7,7 @@
 
 ## Storage Technologies:
 ### Random-Access Memory:
-- Random-access memory (RAM) exists in two types: **static RAM (SRAM)** which is faster and much more expensive and used for caching in the CPU and outside of it, and **dynamic RAM (DRAM)** which is used for main memory and the *frame buffer for graphics* :confused:! The system used to type this document has a couple megabytes of SRAM and sever gigabytes of DRAM. 
+- Random-access memory (RAM) exists in two forms: **static RAM (SRAM)** which is faster and much more expensive and used for caching in the CPU and outside of it, and **dynamic RAM (DRAM)** which is used for main memory and the *frame buffer for graphics* :confused:! The system used to type this document has a couple megabytes of SRAM and sever gigabytes of DRAM. 
 
 #### SRAM:
 - SRAM stores data in a *bistable* cells where a cell can only be stable in one of two states. Any intermediate state is unstable and will quickly change to one of the two stable states which makes it a persistent type of memory holding its state as long as the power is on. An SRAM cell is made of a 6-transistor circuit. It has fast access and is resilient to electric disturbances.
@@ -357,8 +357,26 @@ int sumvec(int v[N]){
 	- A larger **cache size** increase the hit rate of the cache but decreases its speed. It generally increases the hit time which is bad.
 	- Larger **block sizes** is good for spatial locality, but might mean fewer lines which is bad for temporal locality. Larger blocks might also increase miss penalty because it takes longer to transfer a larger block. Modern caches have 32 to 64 byte blocks.
 	- **Associativity** refers to *E*, the number of lines per set. Higher associativity means less vulnerability to thrashing because of conflict misses, but it's costly to implement and hard to make fast. it has increased complexity that might contribute to increased miss penalty. 
-	- L1 prefers a write-through **writing strategy** for its simplicity and the fact that it includes faster reads because a read wouldn't trigger an update of lower memory. Lower cache layers prefer write-back that trigger less transfers because data movement is slower. 
+	- L1 prefers a write-through **writing strategy** for its simplicity and the fact that it includes faster reads because a read wouldn't trigger an update of lower memory. Lower cache layers prefer write-back that triggers less transfers because data movement is slower. 
 
-## Writing Cache-Friendly Programs:
+## Cache-Friendly Programs:
+- *Cache-friendly* code is code with good locality. To ensure your code is cache-friendly:
+	- *Make the common case go fast*. Programs spend most time on a few core functions and such core functions might revolve about some loops. The programmer should focus and optimize such loops and especially if they were inner loops and "ignore the rest". Loops with better miss rates always run faster!
+	- *Minimize the number of cache misses in each inner loop*
+- Consider the following function which we've seen before:
+```c
+int sumvec(int v[N]){
+	int i, sum = 0;
+
+	for (i = 0; i < N; i++)
+		sum += v[i];
+
+	return sum;
+}
+```
+- Local variables `i` and `sum` have excellent temporal locality. The compiler optimize these and puts them in the register file, the highest caching level. Repeated references to local variables result in excellent cache-friendliness!
+- Stride-1 references in loop are very cache friendly. In a cache with 4-words per block and where z word is 4 bytes, referencing words would on average result in one 1 miss and 3 hits. Stride-1 references are good because caches store data in contiguous blocks. 
+- Spatial locality is even more important in nested arrays.Iterating over the rows of an array first has better locality. 
+
 
 ## The Impact of Caches on Program Performance:
