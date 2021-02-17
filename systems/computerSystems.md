@@ -1,4 +1,26 @@
-# An Overview of Computer Systems: 
+# An Overview of Computer Systems:
+
+* [Introduction](#introduction)
+* [1. Information is Bits Plus Context](#1-information-is-bits-plus-context)
+* [2. Programs Are Translated by Other Programs into Different Forms](#2-programs-are-translated-by-other-programs-into-different-forms)
+* [3. The Importance of Understanding How Compilation Systems Work](#3-the-importance-of-understanding-how-compilation-systems-work)
+* [4. Processors Read and Interpret Instructions Stored in Memory](#4-processors-read-and-interpret-instructions-stored-in-memory)
+	+ [Hardware Organization of a Systems](#hardware-organization-of-a-systems)
+	+ [Running the `hello` Program](#running-the-hello-program)
+* [5. Cache is the Shit](#5-cache-is-the-shit)
+* [6. Storage Devices Form a Hierarchy](#6-storage-devices-form-a-hierarchy)
+* [7. The Operating System Manages the Hardware](#7-the-operating-system-manages-the-hardware)
+	+ [a. Processes](#a-processes)
+	+ [b. Threads](#b-threads)
+	+ [c. Virtual Memory](#c-virtual-memory)
+	+ [d. Files](#d-files)
+* [8. Systems Communicate with Each Other through Networks](#8-systems-communicate-with-each-other-through-networks)
+* [9. Important Themes](#9-important-themes)
+	+ [Amdahl's Law](#amdahls-law)
+	+ [Concurrency and Parallelism](#concurrency-and-parallelism)
+	+ [The Importance of Abstractions in Computer Systems](#the-importance-of-abstractions-in-computer-systems)
+
+## Introduction:		 
 - **Computer systems** consists of the hardware and systems software that allow application software to work. Computers are very diverse from mainframes to personal computers to smart watches.. etc. However, they all consist of almost the same basic components. 
 - Learning about computer systems concepts can make one a power programmer with an eye for performance and security. These concepts are consistent across different implementations and keep resurfacing whether one is dealing with low or high level programs. 
 - In this document, we will run a survey of what computer systems are all about using the following program. We will follow the lifetime of this program from the moment its created until it's executed and shows a `Hello, world!` on the terminal:

@@ -1,4 +1,22 @@
 # Optimizing Program Performance:
+
+* [introduction](#introduction)
+* [Capabilities and Limitations of Optimizing Compilers](#capabilities-and-limitations-of-optimizing-compilers)
+* [Eliminating Loop Inefficiencies](#eliminating-loop-inefficiencies)
+* [Reduction in Strength](#reduction-in-strength)
+* [Reducing Procedure Calls](#reducing-procedure-calls)
+* [Eliminating Unneeded Memory References](#eliminating-unneeded-memory-references)
+* [Understanding Modern Processors](#understanding-modern-processors)
+* [Loop Unrolling](#loop-unrolling)
+* [Enhancing Parallelism](#enhancing-parallelism)
+	+ [Multiple accumulators](#multiple-accumulators)
+	+ [Reassociation Transformations](#reassociation-transformations)
+* [Some Limiting Factors](#some-limiting-factors)
+* [A Performance Improvement Strategy](#a-performance-improvement-strategy)
+* [Profiling](#profiling)
+	+ [Amdahl's Law](#amdahls-law)
+
+## Introduction:
 - This document is not about effective data structures or algorithms. It's mostly about how to make the compiler generate more optimized code. It also advises you on the general etiquette of optimization. Don't wholesale sacrifice the readability and extendability of your programs, be open to using trial and error and optimize  mostly when necessary, etc. 
 - Topics we will discuss in the document include (in no particular order):
 	- Identifying and eliminating or reducing *optimization blockers*, aspects of a program that depend largely on the execution environment and the compiler have no idea about.
