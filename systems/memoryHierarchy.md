@@ -1,4 +1,46 @@
 # The Memory Hierarchy:
+
+* [Introduction](#introduction)
+* [Storage Technologies](#storage-technologies)
+	+ [Random-Access Memory](#random-access-memory)
+	+ [SRAM](#sram)
+	+ [DRAM](#dram)
+	+ [Enhanced DRAMs](#enhanced-drams)
+	+ [Non-Volatile Memories](#non-volatile-memories)
+	+ [Accessing Main Memory](#accessing-main-memory)
+	+ [Disk Storage](#disk-storage)
+	+ [Disk Geometry](#disk-geometry)
+	+ [Disk Capacity](#disk-capacity)
+	+ [Disk Operation](#disk-operation)
+	+ [Logical Disk Blocks](#logical-disk-blocks)
+	+ [Connecting IO Devices](#connecting-io-devices)
+	+ [Accessing Disks](#accessing-disks)
+	+ [Solid State Disks](#solid-state-disks)
+* [Locality](#locality)
+* [The Memory Hierarchy](#the-memory-hierarchy)
+	+ [Caching in the Memory Hierarchy](#caching-in-the-memory-hierarchy)
+	+ [Cache Hits](#cache-hits)
+	+ [Cache Misses](#cache-misses)
+	+ [Kinds of Cache Misses](#kinds-of-cache-misses)
+	+ [Cache Management](#cache-management)
+	+ [Summary of Memory Hierarchy Concepts](#summary-of-memory-hierarchy-concepts)
+* [Cache Memories](#cache-memories)
+	+ [Generic Cache Memory Organization](#generic-cache-memory-organization)
+	+ [Direct-Mapped Caches](#direct-mapped-caches)
+	+ [Set Selection in Direct-Mapped Caches](#set-selection-in-direct-mapped-caches)
+	+ [Line Matching in Direct-Mapped Caches](#line-matching-in-direct-mapped-caches)
+	+ [Word Selection in Direct-Mapped Caches](#word-selection-in-direct-mapped-caches)
+	+ [Line Replacement on Misses in Direct-Mapped Caches](#line-replacement-on-misses-in-direct-mapped-caches)
+	+ [Putting It Together A Direct-Mapped Cache in Action](#putting-it-together-a-direct-mapped-cache-in-action)
+	+ [Conflict Misses in Direct-Mapped Caches](#conflict-misses-in-direct-mapped-caches)
+	+ [Set Associative Caches](#set-associative-caches)
+	+ [Fully Associative Caches](#fully-associative-caches)
+	+ [Issues with Writes](#issues-with-writes)
+	+ [Anatomy of a Real Cache Hierarchy](#anatomy-of-a-real-cache-hierarchy)
+	+ [Performance Impact of Cache Parameters](#performance-impact-of-cache-parameters)
+* [Cache-Friendly Programs](#cache-friendly-programs)
+
+## Introduction:
 - *Virtual memory*, an OS abstraction, gives the illusion that memory is just a long linear byte-array that holds instructions and data for the CPU which can access different parts of this memory at a constant time, but the reality is much more complicated. 
 - The actual hardware that constitutes a system's memory is divided up into a hierarchy of different storage devices that differ in their speed and cost, and each one of these storage devices acts as a caching facility for the device that lies under it in this hierarchy. The CPU registers hold most used data, while *cache memories* act as a staging area for main memory. Main memory act as a staging area for storage disk and the latter is a cache for the network. 
 - This hierarchical setup allows well-written programs to both exploit the high speed of the costly small memories and have access to the vast cheap memories. To have a 'well-written' program that makes use of this hierarchy, you need understand how a system moves data up and down this hierarchy (this is what we will be doing here)!
@@ -377,6 +419,3 @@ int sumvec(int v[N]){
 - Local variables `i` and `sum` have excellent temporal locality. The compiler optimize these and puts them in the register file, the highest caching level. Repeated references to local variables result in excellent cache-friendliness!
 - Stride-1 references in loop are very cache friendly. In a cache with 4-words per block and where z word is 4 bytes, referencing words would on average result in one 1 miss and 3 hits. Stride-1 references are good because caches store data in contiguous blocks. 
 - Spatial locality is even more important in nested arrays.Iterating over the rows of an array first has better locality. 
-
-
-## The Impact of Caches on Program Performance:
