@@ -8,7 +8,7 @@
 	- At the OS level, the kernel transfers control from once user process to another through context switches.
 	- "At the application level, a process can send a signal to another process that abruptly transfers control to a signal handler in the recipient".
 	- "An individual program can react to errors by sidestepping the usual stack discipline and making **nonlocal jumps** to arbitrary locations in other functions." *(:confused: A lot of big words).*
-- Reasons why ECF is importantut include:
+- Reasons why ECF is important include:
 	- Understanding ECF is an important prerequisite to understanding important systems and OS concepts. ECF is  fundamental building block in IO, processes and virtual memory.
 	- Understanding ECF is important to understand how applications interact with the OS. Applications use **traps** (also called **system calls**) to request services from the OS such as writing/retrieving data from disk and network, creating and terminating processes, etc. Such system calls are based on ECF.
 	- Understanding ECF allows you to go beyond the basics to create interesting applications that fully exploit the services provided by the OS. Example applications include shell programs and web servers.
@@ -33,7 +33,7 @@
 - When a system boots, the OS allocates and initializes a jump table called **exception table**. Each entry ***k*** in the exception table contains the address of the handler of exception ***k***. The following image shows the structure and functionality of an exception table:
 ![Exception table](img/exceptionTable.png)
 - At run time (when the system is executing a program), the processor detects an event has occurred and determines the corresponding exception number ***k***. The processor then triggers the exception by making an indirect procedure call, through entry ***k*** from the exception table, to the corresponding handler. The following image shows how the exception table is used to get the memory address of the appropriate exception handler. The exception number ***k*** is an index into the exception table whose starting address (address of what??!!! table or the first address in the table) is in a special CPU address called the **exception table base register**
-![Generating exception handler address](img/excepHandAddr)
+![Generating exception handler address](img/excepHandAddr.png)
 - An exception is similar to a procedure call but with a few differences:
 	- The processor pushes a return address on the stack before starting the handler just as in a procedure call, but the return address is either the current instruction or the next instruction depending on the type of the exception. 
 	- The processor pushes additional processor stack on the stack that is necessary to restart the interrupted program when the handler returns. For example, IA32 pushes the EFLAGS register which contains current condition codes and other things onto the stack. 
@@ -77,37 +77,55 @@
 
 #### Faults and Aborts in Linux/IA32:
 - **Divide error** (exception 0) occurs when attempting to divide by zero, or when the result of a divide is too big for the destination operand. Unix aborts programs causing divide errors while Linux reports them as "Floating exceptions."
-- **General protection fault** (exception 13) is common and occurs for many reasons but it usually occurs when trying to reference undefined a virtual memory area or write to a read-only area. Linux doesn't try to recover from such errors and reports them as *segmentation fault*.
+- **General protection fault** (exception 13) is common and occurs for many reasons but it usually occurs when trying to reference a undefined virtual memory area or write to a read-only area. Linux doesn't try to recover from such errors and reports them as *segmentation fault*.
 - **Page fault** (exception 14). We've described this earlier. 
-- **Machine check** (exception 18) occurs when a fatal hardware error is detected when executing the faulting instruction. Machine check handlers never return control to the application program.
+- **Machine check** (exception 18) occurs when a fatal hardware error is detected while executing the faulting instruction. Machine check handlers never return control to the application program.
 
-#### Linux/IA32 System Calls
+#### Linux/IA32 System Calls:
+- Linux has hundreds of system calls doing all kinds of things from process management to IO and file access, etc. 
+- C programs can invoke any system call directly through the **`int` *n*** function (This is **`syscall`** in x86-64), but this is rarely used because the C standard library provides function wrappers around system calls. "The wrapper functions package up the arguments, trap to the kernel with the appropriate system call number, and then pass the return status of the system call back to the calling program." From now on, we will call system calls and their wrapper functions *system-level functions*.
+- By studying how system calls work inn Linux, we might have a better understanding of the inner workings of the system. Arguments are all passed onto registers rather than the stack. "The stack pointer %esp cannot be used because it is overwritten by the kernel when it enters kernel mode." Consider the following program that prints something to standard output, but using the system-level functions `write` instead of the familiar wrapper `println`:
+```c
+int main(){
+    write(1, "Hello, world!\n", 13); // For Some reason new line is not printed
+    exit(0);
+}
+```
+```
+.section .data
+string:
+    .ascii "hello, world\n"
+string_end:
+    .equ len, string_end - string
 
+.section .text
+.globl main
+main:
+        # First, call write(1, "hello, world\n", 13)
+        movl     $4, %eax        # System call number 4   
+        movl     $1, %ebx        # stdout has descriptor 1
+        movl     $string, %ecx   # Hello world string
+        movl     $len, %edx      # String length
+        int      $0x80           # System call code
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # Next, call exit(0)
+        movl     $1, %eax        # System call number 0  
+        movl     $0, %ebx        # Argument is 0     
+        int      $0x80           # System call code       
+```
+- The system call `write` has 3 arguments:
+	- The first argument `1` sends output to `stdout` (standard output).
+	- The second argument is the sequence of bytes to write.
+	- The third argument is the number of bytes to write. 
+- In the compiled code we see how the system call numbers `$4` for the `write` system call and `$0` for the `exit` system call are pushed into register `%eax`. The system calls themselves are done with `int $0x80`.
 
 ## Processes:
+### Logical Control Flow:
+### Concurrent Control Flow:
+### Private Address Space:
+### User and Kernel Mode:
+### Context Switches:
+
 ## System Call Error Handling:
 ## Process Control:
 ## Signals:
