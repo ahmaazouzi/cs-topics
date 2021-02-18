@@ -7,8 +7,8 @@
 	- At the hardware level, "events detected by the hardware trigger abrupt control transfers to exception handlers."
 	- At the OS level, the kernel transfers control from once user process to another through context switches.
 	- "At the application level, a process can send a signal to another process that abruptly transfers control to a signal handler in the recipient".
-	- "An individual program can react to errors by sidestepping the usual stack discipline and making nonlocal jumps to arbitrary locations in other functions." *(:confused: A lot of big words).*
-- Reasons why ECF is important include:
+	- "An individual program can react to errors by sidestepping the usual stack discipline and making **nonlocal jumps** to arbitrary locations in other functions." *(:confused: A lot of big words).*
+- Reasons why ECF is importantut include:
 	- Understanding ECF is an important prerequisite to understanding important systems and OS concepts. ECF is  fundamental building block in IO, processes and virtual memory.
 	- Understanding ECF is important to understand how applications interact with the OS. Applications use **traps** (also called **system calls**) to request services from the OS such as writing/retrieving data from disk and network, creating and terminating processes, etc. Such system calls are based on ECF.
 	- Understanding ECF allows you to go beyond the basics to create interesting applications that fully exploit the services provided by the OS. Example applications include shell programs and web servers.
@@ -17,6 +17,96 @@
 - The previous chapters were about application interaction with the hardware, but from now on we will focus more on application interaction with the OS. This chapter will start discussing exceptions which are an application-hardware form of ECF. We then move on to system calls which give apps access to the the OS. We then describe processes and signals, and then wrap up with nonlocal jumps which are app-level exceptions.
 
 ## Exceptions:
+- An **exception** is an *abrupt* change in control flow in response to a change in the process's state. It is a form of ECF that is implemented partly by the hardware (HW) and partly by the OS. Exception implementations differ from system to system but the general principles of exceptions and exception handling the same. *Warning: exceptions can be a confusing!!!*
+- The following image illustrates how an exception works:
+![Exception](img/exception.png)
+- The processor in the image is executing the current instruction ***I<sub>curr</sub>*** when a change in the processor's *state* occurs. e processor's state is encoded in various bits and signals. This change in state is called an **event**. The event might be directly related to the current instructions; for example, the instruction might incur an arithmetic overflow or tries to divide by zero. The event might also be unrelated to the current instruction such as an IO request or a system timer going off!! :confused: *What!!*
+- When the processors detects an event, it makes an *indirect procedure call (the exception)* through a jump table called the **exception table**, to an OS subroutine called the **exception handler** which is designed to handle this kind of event.
+- When the exception handler finishes processing, one of 3 things can happen depending on the type of event that caused the exception:
+	1. The exception returns control to the current instruction ***I<sub>curr</sub>*** that was executing before the exception occurred.
+	2. The exception handler returns control to ***I<sub>next</sub>***, the instruction that was going to execute after ***I<sub>curr</sub>*** if the exception hadn't occurred.
+	3. The handler aborts the interrupted program.
+
+### Exception Handling:
+- Exception handling can be confusing because it requires a close cooperation between the hardware and the OS and it's not always easy to tell which part is doing what. 
+- Each exception is assigned a unique nonnegative integer called an **exception number**. Some exception numbers are assigned by the processor designers such as "divide by zero, page faults, memory access violations, break- points, and arithmetic overflows." Other exception numbers are designed by OS kernel designers such system calls and IO signals. 
+- When a system boots, the OS allocates and initializes a jump table called **exception table**. Each entry ***k*** in the exception table contains the address of the handler of exception ***k***. The following image shows the structure and functionality of an exception table:
+![Exception table](img/exceptionTable.png)
+- At run time (when the system is executing a program), the processor detects an event has occurred and determines the corresponding exception number ***k***. The processor then triggers the exception by making an indirect procedure call, through entry ***k*** from the exception table, to the corresponding handler. The following image shows how the exception table is used to get the memory address of the appropriate exception handler. The exception number ***k*** is an index into the exception table whose starting address (address of what??!!! table or the first address in the table) is in a special CPU address called the **exception table base register**
+![Generating exception handler address](img/excepHandAddr)
+- An exception is similar to a procedure call but with a few differences:
+	- The processor pushes a return address on the stack before starting the handler just as in a procedure call, but the return address is either the current instruction or the next instruction depending on the type of the exception. 
+	- The processor pushes additional processor stack on the stack that is necessary to restart the interrupted program when the handler returns. For example, IA32 pushes the EFLAGS register which contains current condition codes and other things onto the stack. 
+	- If control is being transfered from a user program to the kernel, all of the pushed items are pushed onto the kernel's stack instead of the user's stack. 
+	- Exception handlers run in **kernel mode**, meaning they have complete access to all system resources. 
+- Once the exception is triggered, the act of exception handling is done in the software by the exception handler. When the handler finishes processing the event, it optionally returns to the interrupted program by executing a special *return from interrupt* instruction. This instruction pops state back onto the processor and data registers and restores the state to **user mode** if the exception has interrupted a user program and yields control back to the interrupted program.
+
+### Classes of Exceptions:
+- There are 4 classes of exceptions: **interrupts**, **traps**, **faults**, and **aborts**. The following table summarizes the characteristics of these exceptions:
+
+| Class | Clause | Async/Sync | Return behavior |
+| --- | --- | --- | --- |
+| Interrupt | Signal from I/O device | Async | Always returns to next instruction |
+| Trap | Intentional exception | Sync | Always returns to next instruction |
+| Fault | Potentially recoverable error | Sync | Might return to current instruction |
+| Abort | Nonrecoverable error | Sync | Never returns |
+
+#### Interrupts:
+- **Interrupts** occur **asynchronously** as result of signal from IO devices external to the processor. They are asynchronous because they are not caused by a program instruction but are caused by external signal. Exception handlers for interrupts are called **interrupt handlers**.
+- An interrupt occurs as follows:
+	- An IO device such as a network adapter or disk controller triggers an interrupt by "signaling a pin on the processor chip" :confused: on the processor and putting into the system bus the exception number identifying the the device that caused the interrupt.
+	- The current instruction finishes executing. 
+	- The processor notices the "interrupt pin has gone high," gets the exception number from the system bus and transfers control to the interrupt handler.
+	- The interrupt handler does it what does and then returns to the next instruction in the running program. The program resumes executing as if the interrupt never happened. 
+- The other 3 classes of exceptions are **synchronous** meaning they occur as a result of executing the current instruction. Such an instruction is called a **faulting instruction**. 
+
+#### Traps and System Calls:
+- **Traps** are **Intentional** exceptions that occur as a result of an executing instruction and they return control to the next instruction. Traps role in life is to provide a procedure-like interface between user programs and the kernel called **system calls**. 
+- User programs sometimes need to request services from the kernel such reading files (`read`), creating a new process (`fork`), loading a new program (`execve`) or terminating the current process(`exit`). Processors provide access to such services through the special **`sycall` *n*** instruction which the user programs can execute when they want to request service ***n***. Executing `sycall` causes a trap to a trap handler which decodes the argument and calls the right kernel function.
+- From the programmer's perspective, a system call is identical to a regular function call, but their implementations are different. Regular functions run in ***user mode*** which restricts the type of instructions they can use and access the same stack as other regular functions. System calls run the other hand run in kernel mode.
+
+#### Faults:
+- **Faults** occur because of errors that a fault handler might be able to correct. If the fault handler is able to correct the error, it returns control to the faulting instruction and re-executes it. Otherwise, the handler returns control to an **`abort`** routine in the kernel which terminates the program that caused the fault. 
+- A *page fault* exception is a good example of a fault. It occurs when a virtual memory address whose physical counterpart is not in memory and must be retrieved from disk. The fault handler loads the page from disk and returns control to the faulting instruction. When the instruction re-executes, it can access the page and run normally to completion.
+
+#### Aborts:
+- **Aborts** occur because of unrecoverable fatal errors such as hardware errors where DRAM	or SRAM are corrupted. Abort handlers don't return control to the application program, but return control to an `abort` routine that terminates the application program.
+
+### Exceptions in Linux/IA32:
+- There are 256 exception types in both x86-64 and IA32. Numbers in the range 0-31 correspond to exceptions defined by the Intel processor designers, while 32-265 correspond to exceptions defined by the Linux OS.
+
+#### Faults and Aborts in Linux/IA32:
+- **Divide error** (exception 0) occurs when attempting to divide by zero, or when the result of a divide is too big for the destination operand. Unix aborts programs causing divide errors while Linux reports them as "Floating exceptions."
+- **General protection fault** (exception 13) is common and occurs for many reasons but it usually occurs when trying to reference undefined a virtual memory area or write to a read-only area. Linux doesn't try to recover from such errors and reports them as *segmentation fault*.
+- **Page fault** (exception 14). We've described this earlier. 
+- **Machine check** (exception 18) occurs when a fatal hardware error is detected when executing the faulting instruction. Machine check handlers never return control to the application program.
+
+#### Linux/IA32 System Calls
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Processes:
 ## System Call Error Handling:
 ## Process Control:
