@@ -101,17 +101,17 @@ string_end:
 .section .text
 .globl main
 main:
-        # First, call write(1, "hello, world\n", 13)
-        movl     $4, %eax        # System call number 4   
-        movl     $1, %ebx        # stdout has descriptor 1
-        movl     $string, %ecx   # Hello world string
-        movl     $len, %edx      # String length
-        int      $0x80           # System call code
+    # First, call write(1, "hello, world\n", 13)
+    movl     $4, %eax        # System call number 4   
+    movl     $1, %ebx        # stdout has descriptor 1
+    movl     $string, %ecx   # Hello world string
+    movl     $len, %edx      # String length
+    int      $0x80           # System call code
 
-        # Next, call exit(0)
-        movl     $1, %eax        # System call number 0  
-        movl     $0, %ebx        # Argument is 0     
-        int      $0x80           # System call code       
+    # Next, call exit(0)
+    movl     $1, %eax        # System call number 0  
+    movl     $0, %ebx        # Argument is 0     
+    int      $0x80           # System call code       
 ```
 - The system call `write` has 3 arguments:
 	- The first argument `1` sends output to `stdout` (standard output).
@@ -120,9 +120,32 @@ main:
 - In the compiled code we see how the system call numbers `$4` for the `write` system call and `$0` for the `exit` system call are pushed into register `%eax`. The system calls themselves are done with `int $0x80`.
 
 ## Processes:
+- Exceptions are the building blocks allowing operating systems to have **processes**, "one of the most profound and successful ideas in computer science." *I've heard this somewhere before 🤔*.
+- Processes are the one abstraction that allows a program to appear as if it is the only one running in a system and having exclusive use of the processor and memory. 
+- A **process** is an instance of a program in execution. Each program in the system runs in the context of some process. The context is made of the state that the program needs to run correctly. This state includes the program's data and code stored in memory, its stack, the contents of its general-purpose registers, its program counter, environment variables and open file descriptors. 
+- When a user runs a program by typing the name of an executable on the shell, the shell creates a new process and runs the executable file in the context of this process. Any application program can create a process and either run its own code or the code of another application in this newly created process. 
+- The implementation of process won't be discussed here! It is the subject of an OS book. This section will be about two abstractions the process offer to applications:
+	- An independent *logical control flow* that gives the illusion that the program has exclusive use of the processor.
+	- A private address space giving the illusion that the program has exclusive use of memory. 
+
 ### Logical Control Flow:
+- If you single step the execution of a program with a debugger, you'll see a series of PC values corresponding to instructions contained in the program's executable object file. This sequence of PC values is called **logical control flow** or **logical flow**. 
+- The following image shows a system running three processes. The single physical control flow is divided into three logical flows, one for each process. Each one of the vertical lines in the image represents a portion of the logical flow of a process. The three processes are interleaved. Each one runs for some times, then processing jumps another portion of another process, then jumps back, etc. 
+![Logical control flow](img/lcf.png)
+- The 3 processes in the image take turns in processing. At any point in time a process is either running or is **preempted** (temporarily suspended). A program might seem to have exclusive use of the processor. "The only evidence to the contrary is that if we were to precisely measure the elapsed time of each instruction, we would notice that the CPU appears to periodically stall between the execution of some of the instructions in our program." However, when the processor resumes running a process, it does so without any changes to the memory locations or registers
+- A logical flow can be anything from an exception handler, process, signal handler,thread or Java process.  
+
 ### Concurrent Control Flow:
+- A logical flow that overlaps in time with another logical flow is a **concurrent flow** and the two flows **run concurrently**. 
+- The phenomenon of multiple flows running concurrently is called **concurrency** or **multitasking**. Each time period that a process executes a portion of its logical flow is called a **time slice**. Multitasking is also called **time-slicing**.
+- Concurrency is independent of the number of processor cores in a system. If two flows overlap in time, they are concurrent regardless of whether they are running in the same processor or multiple processor cores. Concurrent programs that run in different processor cores or different computers are better called **parallel flows** (or they *run in parallel*).
+
 ### Private Address Space:
+- A processes gives the illusion that a program has exclusive use of the system's address space. In a system with ***n***-bit addresses, the **address space** is set of ***2<sup>n</sup>*** possible addresses. Each process provides a program with its own **private address space**. Other processes cannot read or write bytes into the memory associated with this process. 
+- The memory associated with each private address space differs from one process to another but it's generally organized according to the same principles. The following image shows the general organization of a private address space of a process in Linux with x86:
+![Process address space](img/processAddressSpace.png)
+- The bottom portion of the address space is reserved for the user program, including its text, data, heap and stack portions. "Code segments begin at address `0x08048000` for 32-bit processes, and at address `0x00400000` for 64-bit processes." The top segment of the address space is reserved for the kernel. It includes the code, data and stack that the kernel uses when it executes instructions on behalf of the process (during a system call for example).
+
 ### User and Kernel Mode:
 ### Context Switches:
 
