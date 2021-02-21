@@ -147,10 +147,249 @@ main:
 - The bottom portion of the address space is reserved for the user program, including its text, data, heap and stack portions. "Code segments begin at address `0x08048000` for 32-bit processes, and at address `0x00400000` for 64-bit processes." The top segment of the address space is reserved for the kernel. It includes the code, data and stack that the kernel uses when it executes instructions on behalf of the process (during a system call for example).
 
 ### User and Kernel Mode:
+- For the OS to provide a correct process abstraction, the processor provides a way to restrict the instructions an application can run and the portions of the address space it can use. 
+- The process does this with a **mode bit** stored in a control register. This mode bit determines the privileges a process currently has. When the mode bit is set, the processor is running in **kernel mode** (also called **supervisor mode**). A process in kernel mode can execute any instruction and access any memory location in the system. *Wow, dangerous!!!*
+- When the the mode nit is not set, the process is running in **user mode**, meaning it is not allowed to execute **privileged instructions** which do things like halting the processor, changing the mode bit or initiates an IO operation. It also cannot reference data or code in the kernel area of the address space. An attempt to directly access code/data in the kernel area results in a protection fault error. To access stuff in the kernel area, the user program does it through a system call. 
+- A process running an application code is usually running in user mode. The only way for a process to change from user to kernel mode is through an exception such as a fault, an interrupt or a trap. When an exception occurs and control is passed from the application program to the exception handler, mode is changed from user mode to kernel mode. The exception handler runs in kernel mode. When the exception is handler and control is passed back to the program, the mode is changed back to user mode.  
+- Linux has the **`/proc` filesystem**  which allows user mode processes to access contents of kernel data structures. It exports the contents of the kernel data structures as a hierarchy of text files which can be read by user programs. `/proc/cpuinfo` for example provides information about the CPU. A similar thing is **`sys` filesystem** provides low-level information about the system buses and devices. 
+
 ### Context Switches:
+- The OS implements multitasking using the higher level type of control flow called a **context switch**. A context switch itself is built on top of lower level control flow exceptions such as traps.
+- The context of each process is maintained by the kernel. The context is "the state that the kernel needs to restart a preempted process." It consists of the values of registers, the user's stack, the program counter, the kernel's stack and data structures such as:
+	- The *page table* which characterizes the address space.
+	- The *process table* which contains information about the process.
+	- The *file table* which contains information about files the process has opened.
+- At some point while a process is running, the kernel decides to preempt the currently running process and restart another preempted process. This decision is known as **scheduling** and is done by a part of the kernel called the scheduler. When the kernel selects another process to run it, we say it has *scheduled* it. When the kernel schedules a process it preempts the currently running process and moves control to the new process through the use of a context switch which:
+	- Saves the context of the current of process.
+	- Restores the context of a previously preempted process.
+	- Transfers control to the newly restored process.
+- A context switch  can happen even while the kernel is executing a system call requested by current process. If the system call blocks for any reason (let's say a system call handling an IO operation) the current process is preempted and the context switch will still occur. 
+- I don't know what a *timer interrupt* is, but a context switch can occur as a result of a timer interrupt which would go off every few milliseconds at which point might decide that the current process has run enough time and it's time to switch context. 
+- The following image shows an example of a context switch. Process A is running in user mode until it traps to the kernel mode by using the `read` system call. The trap handler requests  data from the disk controller and arranges for the disk to interrupt the processor when the data from the disk is in memory. Fetching data from the disk takes a long time, so instead of waiting for that data the kernel performs a context switch from process A to process B. Notice that during each context switch both process A and process B are executing in kernel mode:
+![Context switching](img/contextSwitching.png)
+- Hardware cache in general doesn't usually play well with exception control flow and context switching. A context might *pollute cache*, meaning it makes it go cold for the preempted process and when a context is witched for a process, the new process might have a cold cache. 
 
 ## System Call Error Handling:
+- When a system-level function encounters an error, they return an ***-1*** and update the global integer variable **`errno`** to show what went wrong. It is advisable to check for errors. The following code checks for errors when the Linux function **`fork`** is called:
+```c
+if ((pid = fork) < 0){
+    fprintf(stderr, "fork error: %s\n", strerror(errno));
+    exit(0);
+}
+```
+- The **`strerror`** function returns a text string describing the error associated with the given `errno`. This can be repackaged into the following error reporting function:
+```c
+void unixError(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(0);
+}
+```
+- The original code can then be simplified to:
+```c
+if ((pid = fork()) < 0)
+    unixError("fork error");
+```
+- The code can be simplified further and made more robust with the use of error-handling wrappers. For each function `foo`, you define a function wrapper `Foo` (capitalized) wich runs the original function, checks for errors and terminates with a descriptive error message if an error occurs as the following example shows:
+```c
+pid_t Fork(void){
+    pid_t pid;
+
+    if ((pid = fork()) < 0)
+        unixError("Fork error");
+    return pid;
+}
+```
+- A robust call to `fork` with error checking becomes:
+```c
+pid = Fork();
+```
+
 ## Process Control:
+- Unix systems provide a variety of system calls for manipulating processes from C programs. We will go over some of the more important of these functions in this section.
+
+### Obtaining Process IDs:
+- Each process has a unique nonzero **process ID (PID)**. The **`getpid`** returns the PID of the calling process.**`getppid`** returns the parent of the calling process. Both functions return an integer value of type `pid_t` which is defined as an int in Linux systems in the header file `types.h`:
+```c
+#include <sys/types.h>
+#include <unistd.h>
+
+pid_t getpid(void);
+pid_t getppid(void);
+```
+
+### Creating and Terminating Processes:
+- For the programmer, a process can be in one of 3 states:
+	1. *Running*. It's either executing or waiting to be scheduled.
+	2. *Stopped*. The process is *suspended* and will not be scheduled. It's stopped as a result of a "SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOU signal, and it remains stopped until it receives a SIGCONT signal, at which point it can begin running again." *Signals* are a type of interrupt we will see later.
+	3. *Terminated*. The process stops permanently. A processes becomes terminated as a result of:
+		- Receiving a termination signal.
+		- Returning from the main routine.
+		- Calling the `exit` function:
+```c
+#include <stdlib.h> 
+void exit(int status);
+```
+- A **parent process** can create a new "running" **child process** by calling the function **`fork`**:
+```c
+#include <sys/types.h>
+#include <unistd.h>
+
+pid_t fork();
+```
+- The child process is almost identical to its parent but with a few differences. Similarities include:
+	- The child has an identical but separate copy of the parent's user-level virtual address space, including text, data, heap, user stack, etc. 
+	- Identical copies of the parent's open file descriptors, meaning the child can read and write files that were open when the parent called `fork`.
+- The main difference between the parent and the child is that they have different PIDs.
+- One confusing aspect of `fork` is that it i called once but returns twice, once in the parent and once in the child. In the child, `fork` returns a 0 and in the parent it returns the child's PID. Since the PID of the child is always a nonzero, `fork`'s return value provides a definitive indicator whether the program is running in the parent or child process. 
+- The following code example shows a parent process creating a child process with `fork`. `x` is one when `fork` returns, but we increment `x` inside the child and decrements it inside the parent. *This is a nice way of showing how `fork` works:*
+```c
+int main(){
+    pid_t pid;
+    int x = 1;
+
+    pid = fork(); 
+    if (pid == 0){
+        printf("child: x=%d\n", ++x);
+        exit(0);
+    }
+
+    printf("parent: x=%d\n", --x);
+} 
+
+
+/*
+parent: x=0
+child: x=2
+*/
+```
+- A few things one notices about this example:
+	- *Call once, return twice:* Because fork two processes are running at once, we have two print statements running together. This is straightforward because `fork` was called once, but it can be confusing in programs calling `fork` multiple times.
+	- *Concurrent execution:* The parent and child are separate processes that run concurrently. The kernel interleave them in a seemingly random manner. There is no guarantee that the parent `printf` runs first, because of how the kernel does the interleaving in an unpredictable manner. 
+	- *Duplicate but separate address spaces:* The two address spaces for the two processes are identical copies of each other. `x` is equal to 1 in both parent and child before the call to `printf`, but the printed values are different after the incrementing and decrement in each of the two processes. They are identical but still separate copies of each other.  
+	- *Shared files:* Both parent and child write their output to `stdout`, because the child inherits all parent open files. 
+- Using multiple `fork` functions can be confusing, so it's advisable to chart a *process graph* when using this function. Take the following code as an example:
+```c
+#include <stdio.h>
+
+int main(){
+	fork();
+	fork();
+	fork();
+    printf("fafa\n");
+    exit(0);
+}
+```
+- The process graph for such a program is as follows:
+[Process graph](img/processGraph.png)
+- Each horizontal arrow in the graph corresponds to a process that runs from left to right (*Whatever this means!!*), and each vertical arrow corresponds to the execution of a `fork` function. It sounds like if we we call `fork` ***n*** times, then, there will be ***2<sup>n</sup>*** calls to `printf`.
+
+### Reaping Child Processes:
+- When a child process is terminated, the kernel doesn't remove it immediately and it is still kept around in a terminated state until it is **reaped** by its parent. When the parent reaps the child process, its exit status is passed to the parent by the kernel is then discarded (it exists no more). Terminated processes that have not been reaped yet are known as *zombies*. 
+- If the parent process dies without having reaped its children, the kernel makes the **`init`** process reap them. The `init` process is a special process with PID 1 that gets created during the initialization of the system and one of its jobs is reaping orphaned zombies. Long running processes such as shells must terminate their zombie children because even if a zombie is terminated, it still consumes memory resources.
+- A process waits for its children to terminate by calling the function **`waitpid`**. 
+```c
+#include <sys/types.h> 
+#include <sys/wait.h>
+
+
+pid_t waitpid(pid_t pid, int *status, int options); 
+// Returns: PID of child if OK, 0 (if WNOHANG) or −1 on error
+```
+- By Default (when `options` is 0), `waitpid` suspends the parent until a child (*or all children*) in its **wait set** terminate. If a process in the wait set has already terminated at the time of the call, `waitpid` returns immediately. Anyways, `waitpid` returns the PID of the terminated child and the child process is removed from the system.
+
+#### Determining the Members of the Wait Set:
+- *Things are kinda starting to get a little sloppy! What the hell is a wait set?*
+- Ad verbatim "the members of the wait set are determined by the `pid` argument":
+	- if `pid > 0`, the process is a single child whose process ID is equal to `pid`.
+	- if `pid = -1`, then the wait set consists of all the parent's child processes. 
+
+#### Modifying the Default Behavior:
+- The default behavior of `waitpid` can be modified by setting `options` to combinations of the *WNOHANG* and *WUNTRACED* constants:
+	- **`WNOHANG`**: Returns immediately with a value of 0 if no child processes has terminated. This is as opposed to the default behavior where the parent is suspended until the child terminates which is kinda wasteful. 
+	- **`WUNTRACED`**: Suspends the calling process until a process in the wait set is either terminated or stopped, and returns the process PID (default behavior only returns for terminated processes). This allows you to wait for both terminated and stopped processes.
+	- **`WNOHANG | WUNTRACED`**: Returns immediately with a 0 if no processes in the wait set is terminated or stopped, or with a terminated or stopped process PID. 
+
+#### Checking the Exit Status of a Reaped Child:
+- If the `status` argument is not a NULL, `waitpid` encodes status information about the process that caused the return in the `status` argument. The `wait.h` has macros for interpreting the `status` argument:
+	- **`WIFEXITED(status)`**. Returns true if process terminates normally via exit or eturn.
+	- **`WEXITSTATUS(status)`**. Returns the exit status of a normally terminated process (Only defined if `WIFEXITED` returned true).
+	- **`WIFSIGNALED(status)`**. Returns true if the process was terminated because of a signal that was not caught (we'll see signals later).
+	- **`WTERMSIG(status)`**. Returns the number of the signal that caused a process to terminate (defined only if `WIFSIGNALED(status)` returns true).
+	- **`WIFSTOPPED(status)`**. Returns true if the process that caused the return is stopped.
+	- **`WSTOPSIG(status)`**. Returns the number of signal that caused a process to stop (defined only if `WIFSTOPPED(status)` returns true).
+
+#### Error Conditions:
+- If the calling process has no child processes, `waitpid` returns -1 and sets `errno` to `ECHILD`. If `waitpid` was interrupted by a signal, it returns -1 and sets `errno` to `EINTR`.
+
+#### The `wait` Function:
+- **`wait`** is a simpler version of `waitpid`, so the call to ` wait(&status)` is equivalent to `waitpid(-1, &status, 0)`:
+```c
+#include <sys/types.h> 
+#include <sys/wait.h>
+
+pid_t wait(int *status); // Returns: PID of child if OK or −1 on error
+```
+
+#### Examples of Using `waitpid`:
+- The following example illustrates the use and some of the quirky aspects of the complicated `waitpid` function:
+```c
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <errno.h>
+
+#define N 2
+
+int main(){
+    int status, i;
+    pid_t pid;
+
+    for (i = 0; i < N; i++)
+        if ((pid = fork()) == 0)
+            exit(100 + i);
+
+    while ((pid = waitpid(-1, &status, 0)) > 0){
+        if (WIFEXITED(status))
+            printf("child %d terminated normally with exit status=%d\n",
+               pid, WEXITSTATUS(status));
+
+        else
+            printf("child %d terminated abnormally\n", pid);
+    }
+
+    if (errno != ECHILD)
+        unix_error("waitpid error");
+
+    exit(0);
+}
+```
+
+### Putting Processes to Sleep:
+### Loading and Running Programs:
+### Using `fork` and `execve` to Run Programs:
+
+  
 ## Signals:
 ## Nonlocal Jumps:
 ## Tools for Manipulating Processes:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
