@@ -330,7 +330,7 @@ pid_t waitpid(pid_t pid, int *status, int options);
 pid_t wait(int *status); // Returns: PID of child if OK or −1 on error
 ```
 
-#### Examples of Using `waitpid`:
+#### Example of Using `waitpid`:
 - The following example illustrates the use and some of the quirky aspects of the complicated `waitpid` function:
 ```c
 #include <sys/types.h>
@@ -344,12 +344,14 @@ int main(){
     int status, i;
     pid_t pid;
 
+    // Parent creates N children
     for (i = 0; i < N; i++)
         if ((pid = fork()) == 0)
             exit(100 + i);
 
+    //Parent reaps N children in no particular order 
     while ((pid = waitpid(-1, &status, 0)) > 0){
-        if (WIFEXITED(status))
+        if (WIFEXITED(status)) // CHild
             printf("child %d terminated normally with exit status=%d\n",
                pid, WEXITSTATUS(status));
 
@@ -357,15 +359,58 @@ int main(){
             printf("child %d terminated abnormally\n", pid);
     }
 
+    // The only normal termination is if there are no more children
     if (errno != ECHILD)
         unix_error("waitpid error");
 
     exit(0);
 }
 ```
+- The parent waits for all its child processes to terminate by making calls to `waitpid` in the while loop. The child processes might not be reaped in the order they were created. 
 
 ### Putting Processes to Sleep:
+- The **`sleep`** function suspends a function for a specified period of time:
+```c
+#include <unistd.h>
+unsigned int sleep(unsigned int secs); // Returns seconds left to sleep
+```
+- `sleep` returns 0 if the requested sleep period has elapsed or the number of seconds left if there is still time left. The second case can happen if `sleep` has been interrupted by a signal.
+- A similar function is `pause` which puts the calling function to sleep until a signal is received by the process:
+```c
+#include <unistd.h> 
+int pause(void); // Always returns −1
+```
+
 ### Loading and Running Programs:
+- The **`execve`** function can load and run a new program in the context of the current process:
+```c
+#include <unistd.h>
+int execve(const char *filename, const char *argv[], const char *envp[]);
+// Does not return if OK, returns −1 on error
+```
+- `execve` loads and runs the executable file `filename` with the argument list `argv` and the environment variable list `envp`. `execve` doesn't return unless 
+- The following image shows the data structure used to represent the argument list. `argv` points to a null-terminated array of pointers. Each one of these pointers point to an argument string. "By convention, argv[0] is the name of the executable object file." *(So WTF is `filename`?!!:confused: and is running a shell command similar to or based on `execve`).*
+![Argument list organization](img/argumentList.png)
+- The following image shows how the list of environment variables is organized. Environment variables are also structured as a null terminated array of pointers, each of which points to an environment variable string which is a name-value pair of the form `"NAME-VALUE"`.													
+![Environment variables](img/envp.png)
+- When `execve` loads `filename`, some linking voodoo occurs, a stack is set up and control is passed to the main function of the new program which has a prototype in the form:
+```c
+int main(int argc, char **argv, char **envp);
+// Or
+int main(int argc, char *argv[], char *envp[]);
+```
+- When the `main` routine starts executing in a 32-bit Linux process, it has the structure shown in the following image:
+![Linux 32 stack organization](img/linux32Stack.png)
+- Starting from the bottom of the stack (top), the stack consists of:
+	- At the bottom, argument and environment strings are stored contiguously without gaps one after the other. 
+	- Next is a null terminated array of pointers pointing to environment variable strings stored on the stack (the global variable `eviron` points to the first of these variables `envp[0]`)
+	- Next is a null terminated array of pointers to arguments `argv`.
+	- Next are the 3 arguments to the `main` routine:
+		- `envp` which points to the array `envp[]`.
+		- `argv` pointing to the array `argv[]`
+		- `argc` giving the number of the non-null pointers in the `argv[]` array.
+- One big difference between `fork` and `execve` is that `fork` runs the same program in a child process that is a duplicate of the parent, while `execve` loads and runs a program in the context of the current process. The program has the same PID as the current process and as the program running when `execve` is called.
+
 ### Using `fork` and `execve` to Run Programs:
 
   
