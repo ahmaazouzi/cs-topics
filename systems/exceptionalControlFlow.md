@@ -1,4 +1,67 @@
 # Exceptional Control Flow:
+
+- [Exceptional Control Flow](#exceptional-control-flow)
+	* [Introduction](#introduction)
+	* [Exceptions](#exceptions)
+		+ [Exception Handling](#exception-handling)
+		+ [Classes of Exceptions](#classes-of-exceptions)
+		+ [Interrupts](#interrupts)
+		+ [Traps and System Calls](#traps-and-system-calls)
+		+ [Faults](#faults)
+		+ [Aborts](#aborts)
+		+ [Exceptions in Linux/IA32](#exceptions-in-linux/ia32)
+		+ [Faults and Aborts in Linux/IA32](#faults-and-aborts-in-linux/ia32)
+		+ [Linux/IA32 System Calls](#linux/ia32-system-calls)
+	* [Processes](#processes)
+		+ [Logical Control Flow](#logical-control-flow)
+		+ [Concurrent Control Flow](#concurrent-control-flow)
+		+ [Private Address Space](#private-address-space)
+		+ [User and Kernel Mode](#user-and-kernel-mode)
+		+ [Context Switches](#context-switches)
+	* [System Call Error Handling](#system-call-error-handling)
+	* [Process Control](#process-control)
+		+ [Obtaining Process IDs](#obtaining-process-ids)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<unistd.h<`](#include-unistdh)
+		+ [Creating and Terminating Processes](#creating-and-terminating-processes)
+- [include `<stdlib.h<`](#include-stdlibh)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<unistd.h<`](#include-unistdh)
+- [include `<stdio.h<`](#include-stdioh)
+		+ [Reaping Child Processes](#reaping-child-processes)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<sys/wait.h<`](#include-sys/waith)
+		+ [Determining the Members of the Wait Set](#determining-the-members-of-the-wait-set)
+		+ [Modifying the Default Behavior](#modifying-the-default-behavior)
+		+ [Checking the Exit Status of a Reaped Child](#checking-the-exit-status-of-a-reaped-child)
+		+ [Error Conditions](#error-conditions)
+		+ [The `wait` Function](#the-wait-function)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<sys/wait.h<`](#include-sys/waith)
+		+ [Example of Using `waitpid`](#example-of-using-waitpid)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<sys/wait.h<`](#include-sys/waith)
+- [include `<stdio.h<`](#include-stdioh)
+- [include `<errno.h<`](#include-errnoh)
+- [define N 2](#define-n-2)
+		+ [Putting Processes to Sleep](#putting-processes-to-sleep)
+- [include `<unistd.h<`](#include-unistdh)
+- [include `<unistd.h<`](#include-unistdh)
+		+ [Loading and Running Programs](#loading-and-running-programs)
+- [include `<unistd.h<`](#include-unistdh)
+	* [Signals](#signals)
+		+ [Signal Terminology](#signal-terminology)
+		+ [Sending Signals](#sending-signals)
+		+ [Process Groups](#process-groups)
+		+ [Sending Signals with the `/bin/kill` Program](#sending-signals-with-the-/bin/kill-program)
+		+ [Sending Signals from the Keyboard](#sending-signals-from-the-keyboard)
+		+ [Sending Signals with the `kill` Function](#sending-signals-with-the-kill-function)
+- [include `<sys/types.h<`](#include-sys/typesh)
+- [include `<signal.h<`](#include-signalh)
+		+ [Receiving Signals](#receiving-signals)
+- [include `<signal.h<`](#include-signalh)
+		+ [Signal Handling Issues](#signal-handling-issues)
+
 ## Introduction:
 - From the time a computer is powered on until it is turned off, the program counter takes a sequence of values where each value is the address of an instruction. Each transition from one PC value to the next is called a **control transfer**. A sequence of control transfers is called **control flow**. A simple control flow involves instructions that are stored in adjacent memory locations. This simple flow is interrupted from time to time leading to situations where the instructions being executed are not in adjacent memory locations. Such situations involve instructions like jumps, calls or returns. They occur as reactions to changes in the program's state. 
 - Systems do also react to changes in system state that are not related to internal program variables or the execution of a program. Examples of such reactions include packets arriving at a network adapter and getting stored in memory, or requesting data from disk and sleeping until such data arrived or parent processes being notified when their child processes have terminated.
@@ -516,20 +579,4 @@ sighandler_t signal(int signum, sighandler_t handler);
 	- *Pending signals are blocked*: Unix signal handlers usually block pending signals that are of the same type that is being currently processed, by the handler. The signal becomes pending but not received until the current signal is processed. 
 	- *Pending signals are not queued*: Because only one signal of a certain type can be pending. If a signal is being processed and the second one is blocked, then any signal coming after them will be discarded. Having one pending signal means more than one signal might have arrived. 
 	- *System calls can be interrupted*: *Slow system calls* such as `read`, `write` and `accept` are those that can can block a process for long time. In some systems, when a signal interrupts a slow system call, the system call does not resume when the signal is handled but returns immediately with an error (with `errno` set to `EINTR`).
-
-## Tools for Manipulating Processes:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
