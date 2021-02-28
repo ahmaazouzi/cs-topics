@@ -1,5 +1,4 @@
 # Exceptional Control Flow:
-
 ## Introduction:
 - From the time a computer is powered on until it is turned off, the program counter takes a sequence of values where each value is the address of an instruction. Each transition from one PC value to the next is called a **control transfer**. A sequence of control transfers is called **control flow**. A simple control flow involves instructions that are stored in adjacent memory locations. This simple flow is interrupted from time to time leading to situations where the instructions being executed are not in adjacent memory locations. Such situations involve instructions like jumps, calls or returns. They occur as reactions to changes in the program's state. 
 - Systems do also react to changes in system state that are not related to internal program variables or the execution of a program. Examples of such reactions include packets arriving at a network adapter and getting stored in memory, or requesting data from disk and sleeping until such data arrived or parent processes being notified when their child processes have terminated.
@@ -7,20 +6,19 @@
 	- At the hardware level, "events detected by the hardware trigger abrupt control transfers to exception handlers."
 	- At the OS level, the kernel transfers control from once user process to another through context switches.
 	- "At the application level, a process can send a signal to another process that abruptly transfers control to a signal handler in the recipient".
-	- "An individual program can react to errors by sidestepping the usual stack discipline and making **nonlocal jumps** to arbitrary locations in other functions." *(:confused: A lot of big words).*
 - Reasons why ECF is important include:
 	- Understanding ECF is an important prerequisite to understanding important systems and OS concepts. ECF is  fundamental building block in IO, processes and virtual memory.
 	- Understanding ECF is important to understand how applications interact with the OS. Applications use **traps** (also called **system calls**) to request services from the OS such as writing/retrieving data from disk and network, creating and terminating processes, etc. Such system calls are based on ECF.
 	- Understanding ECF allows you to go beyond the basics to create interesting applications that fully exploit the services provided by the OS. Example applications include shell programs and web servers.
 	- Understanding ECF allows you understand concurrency.
 	- Understanding ECF allows you to have a better understanding of how exceptions in software and higher level languages work. 
-- The previous chapters were about application interaction with the hardware, but from now on we will focus more on application interaction with the OS. This chapter will start discussing exceptions which are an application-hardware form of ECF. We then move on to system calls which give apps access to the the OS. We then describe processes and signals, and then wrap up with nonlocal jumps which are app-level exceptions.
+- The previous chapters were about application interaction with the hardware, but from now on we will focus more on application interaction with the OS. This chapter will start discussing exceptions which are an application-hardware form of ECF. We then move on to system calls which give apps access to the the OS. We then describe processes and signals which are app-level exceptions.
 
 ## Exceptions:
 - An **exception** is an *abrupt* change in control flow in response to a change in the process's state. It is a form of ECF that is implemented partly by the hardware (HW) and partly by the OS. Exception implementations differ from system to system but the general principles of exceptions and exception handling the same. *Warning: exceptions can be a confusing!!!*
 - The following image illustrates how an exception works:
 ![Exception](img/exception.png)
-- The processor in the image is executing the current instruction ***I<sub>curr</sub>*** when a change in the processor's *state* occurs. e processor's state is encoded in various bits and signals. This change in state is called an **event**. The event might be directly related to the current instructions; for example, the instruction might incur an arithmetic overflow or tries to divide by zero. The event might also be unrelated to the current instruction such as an IO request or a system timer going off!! :confused: *What!!*
+- The processor in the image is executing the current instruction ***I<sub>curr</sub>*** when a change in the processor's *state* occurs (The processor's state is encoded in various bits and signals). This change in state is called an **event**. The event might be directly related to the current instructions; for example, the instruction might incur an arithmetic overflow or tries to divide by zero. The event might also be unrelated to the current instruction such as an IO request or a system timer going off!! :confused: *What!!*
 - When the processors detects an event, it makes an *indirect procedure call (the exception)* through a jump table called the **exception table**, to an OS subroutine called the **exception handler** which is designed to handle this kind of event.
 - When the exception handler finishes processing, one of 3 things can happen depending on the type of event that caused the exception:
 	1. The exception returns control to the current instruction ***I<sub>curr</sub>*** that was executing before the exception occurred.
@@ -439,50 +437,87 @@ int main(int argc, char *argv[], char *envp[]);
  20 | SIGCHLD | discard signal | child status has changed | 
  21 | SIGTTIN | stop process | background read attempted from control terminal | 
  22 | SIGTTOU | stop process | background write attempted to control terminal | 
- 23 | SIGIO | discard signal | I/O is possible on a descriptor (see fcntl(2)) | 
- 24 | SIGXCPU | terminate process | cpu time limit exceeded (see setrlimit(2)) | 
- 25 | SIGXFSZ | terminate process | file size limit exceeded (see setrlimit(2)) | 
- 26 | SIGVTALRM | terminate process | virtual time alarm (see setitimer(2)) | 
- 27 | SIGPROF | terminate process | profiling timer alarm (see setitimer(2)) | 
+ 23 | SIGIO | discard signal | I/O is possible on a descriptor | 
+ 24 | SIGXCPU | terminate process | cpu time limit exceeded  | 
+ 25 | SIGXFSZ | terminate process | file size limit exceeded  | 
+ 26 | SIGVTALRM | terminate process | virtual time alarm  | 
+ 27 | SIGPROF | terminate process | profiling timer alarm  | 
  28 | SIGWINCH | discard signal | Window size change | 
  29 | SIGINFO | discard signal | status request from keyboard | 
  30 | SIGUSR1 | terminate process | User defined signal 1 | 
  31 | SIGUSR2 | terminate process | User defined signal 2 |
 
+ - Low-level hardware signals are not visible to users processes. Signals are a way whereby the kernal expose such low-level events to processes. For example, if a process tries to divide by zero, the kernel sends a `SIGFPE` signal. Probably one of the most visible signals programmers deal with is `SIGNIT` (signal 2) which the kernel sends to a foreground process to forcibly terminate it when pressing `ctrl-c`.
+
 ### Signal Terminology:
+- Transferring a signal to a process happens in two steps:
+	- **Sending a signal**: The kernel **sends** a signal to a destination process by updating the context of the destination process. The kernel sends the signal because:
+		- The kernel has detected a system event such as divide by zero.
+		- Some process (including the destination process itself) has invoked the `kill` function to explicitly request the kernel to send a signal to the destination process. 
+	- **Receiving a signal**: A process **receives** signal when it is forced by the kernel to react in some way to the delivery of said signal. The process can either ignore the signal, terminates or **catches** the signal by executing a **signal handler**.
+- A signal that has been sent but not yet received is a **pending signal**. At any point in time, there can be only one pending signal of a particular type. 
+- A process can **block** a certain type of signal. The block signal can be delivered but stays in a pending state and won't be received until the destination process unblocks it. 
+- For each process, the kernel keeps the set of pending signals in the `pending` bit vector, and the set of blocked signals in the `blocked` bit vector. The kernel sets and clears bits of different types when signals of these types arrive or get unblocked.  
+
 ### Sending Signals:
+- Sending signals relies on a number of mechanisms provided by the Unix systems, and chief among these mechanisms is *process groups*.
+
+#### Process Groups:
+- Every process belongs to a **process group** which is a identified by a positive integer called *group process ID*. The C **`getpgrp`** function gets the process group ID for a given process which is of type `pid_t`. A child process belongs to its parent process group, but this can be changed with **`setpgid`** function. 
+
+#### Sending Signals with the `/bin/kill` Program:
+- The **`/bin/kill`** program can send an arbitrary signal to another process (not necessary to kill it). Running the following command in the terminal, for example, will send signal 9 (SIGKILL) to the process with the PID 15213:
+```sh
+/bin/kill -9 15213
+```
+-  If you make the PID negative as in the following command, then the command will kill all the processes belonging to the process group with that ID:
+```sh
+/bin/kill -9 -15213
+```
+
+#### Sending Signals from the Keyboard:
+- A **job** is a Unix shell abstraction used to represent a process created as a result of evaluating a single command line. At any point in times, there can be at most one *foreground job* and zero or more *background jobs*. The shell creates a separate process group for each job. 
+- When you type `ctrl-c` a `SIGINT` signal is sent to the shell which catches it and sends it to every process in the foreground process group. 
+- Typing `ctrl-z`, on the other hand, is used to suspend processes. It sends a `SIGTSTP` to the shell which catches its and sends it to every foreground process, thus suspending.
+
+#### Sending Signals with the `kill` Function:
+- Sending a signal to other processes can alternatively be done with the **`kill`** function:
+```c
+#include <sys/types.h>
+#include <signal.h>
+
+int kill(pid_t pid, int sig);
+```
+- If `pid` is larger than zero, `kill`sends the signal to the process with the ID `pid`. If `pid` is smaller than the 0, then the signal is sent to every process in the process group with ID `pid`.
+
 ### Receiving Signals:
+- When the kernel is ready to pass control to process, it checks the set of unblocked pending signals for that process (`pending & ~blocked`). If the set is empty which is the default case, the kernel passes control the next instruction in the process. If the set is non-empty, however, the kernel chooses a signal from the set (usually the signal with the smallest value) and forces the process to receive the signal. 
+- Receiving the signal by the process triggers an **action** of some sort. After the process completes the given action, control might pass the next instruction in the process. The action itself, based on the the signal can take one of 4 forms:
+	- The process terminates.
+	- The process terminates and dumps core. *What?!! :confused:*.
+	- The process stops until restarted by `SIGCONT`.
+	- The process ignores the signal. 
+- A process can alter the default action of a signal (with the exception of `SIGSTOP` and `SIGKILL` whose default actions can't be modified) through the use of the **`signal`** function:
+```c
+#include <signal.h>
+typedef void (*sighandler_t)(int);
+
+sighandler_t signal(int signum, sighandler_t handler); 
+// Returns pointer to handler function if OK or SIG_ERROR on error
+```
+- The `signal` function can change the default action of the signal based on the value of the `handler` argument to one of three ways:
+	- If the handler is `SIG_IGN`, the signal is ignored.
+	- If the handler is `SIG_DFL`, the action for the signal is reversed to the default action. 
+	- If the handler is the address of a user-defined function (**signal handler**), that action is called when the process receives the signal. 
+- An example of a custom signal handler is a handler for `SIGINT` which would first a print a message or before terminating a process, or warning the user and giving them the choice to terminate the process or keep it running. 
+
 ### Signal Handling Issues:
-### Portable Signal Handling:
-### Explicitly Blocking and Unblocking Signals
-### Synchronizing Flows to Avoid Nasty Concurrency Bugs:
+- Signal handling becomes more complicated when a program catches multiple signals. Such problems include:
+	- *Pending signals are blocked*: Unix signal handlers usually block pending signals that are of the same type that is being currently processed, by the handler. The signal becomes pending but not received until the current signal is processed. 
+	- *Pending signals are not queued*: Because only one signal of a certain type can be pending. If a signal is being processed and the second one is blocked, then any signal coming after them will be discarded. Having one pending signal means more than one signal might have arrived. 
+	- *System calls can be interrupted*: *Slow system calls* such as `read`, `write` and `accept` are those that can can block a process for long time. In some systems, when a signal interrupts a slow system call, the system call does not resume when the signal is handled but returns immediately with an error (with `errno` set to `EINTR`).
 
-## Nonlocal Jumps:
 ## Tools for Manipulating Processes:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
