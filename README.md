@@ -1,4 +1,4 @@
-# Notes on CS Topics:
+# CS Fundamentals, Self Study:
 - [Computer Systems:](systems/)
 	+ [A Tour of Computer Systems](systems/computerSystems.md) :white_check_mark:
 	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
