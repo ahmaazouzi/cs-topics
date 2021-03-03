@@ -1,4 +1,4 @@
-# CS Fundamentals, Self Study:
+# Notes on CS Fundamentals:
 - [Computer Systems:](systems/)
 	+ [A Tour of Computer Systems](systems/computerSystems.md) :white_check_mark:
 	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
@@ -11,8 +11,8 @@
 	+ [System-Level IO](systems/systemLevelIO.md) :black_circle:   
 	+ [Concurrency](systems/concurrent.md) :black_circle:  
 	
-- [Networking:](algorithms/)
-	+ [A Tour of the Internet and Networking](algorithms/networking-and-internet.md) :white_check_mark:
+- [Networking:](networking/)
+	+ [A Tour of the Internet and Networking](networking-and-internet.md) :white_check_mark:
 	+ [The Application Layer](networking/application.md) :white_check_mark:
 	+ [The Transport Layer](networking/transport.md) :white_check_mark:
 
