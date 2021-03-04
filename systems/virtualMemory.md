@@ -72,7 +72,7 @@
 - Virtual memory has been around since the early 1960s, which is the reason why it has some  different terminology than SRAM that refer the basically the same things:
 	- SRAM *blocks* are called *pages*.
 	- Transferring pages between disk and memory is called **swapping** (also **paging**). Pages are *swapped in* from disk to DRAM, and *swapped out* from DRAM to disk.
-	- Waiting until the last moment to swap in a page is called **demand paging** which is the defacto mode used in virtual memory.
+	- Waiting until the last moment to swap in a page is called **demand paging** which is the de facto mode used in virtual memory.
 
 ### Allocating Pages:
 - A new page of virtual gets allocated as a result of say the `malloc` C function. It basically involves creating a virtual page on disk and updating some entry in the PTE to point to this newly created virtual page.
@@ -82,10 +82,50 @@
 - Good temporal locality produces seamless fast programs, but not all programs have it. If the working set exceeds the size of the physical memory, **thrashing** occurs. Thrashing is a situation where pages continually swapped in and out. 
 
 ## VM as a Tool for Memory Management:
+- Another use of virtual memory is that it simplifies memory management and "provide[s] a natural way to protect memory."
+- So far we've been talking about a single page table that maps a single virtual address space, but in fact, the OS provides a separate page table, and a thus a separate virtual address space for every process as the following image shows:
+![Each process has a separate virtual address space](img/processSeparateAddressSpace.png)
+- An interesting observation from the previous image is that multiple virtual pages from different process can be mapped to the same shared physical page.
+- The combination of demand paging and separate address spaces in a virtual memory system largely simplifies the use and management of memory (*having skipped the linking chapter for now, I basically know nothing about it at the moment and might misrepresent the rest of this section*):
+	- *Simplifying linking*: Separate address spaces allow each process to have the same memory image where code starts a certain point and text and stack have similar layouts regardless of the the particular physical memory where they are stored. Apparently linking is made easier by this predictable layout of each process irrespective of what physical memories they target. 
+	- *Simplifying loading*: ?? *I don't know anything about linking might come back to this*
+	- *Simplifying sharing*: Each process has its own separate private data, code, stack and heap, but virtual memory allows for easy sharing of some code and data between different processes such as kernel code or the C standard library routines. Instead of having separate copies of kernel code and shared libraries, the operating systems have page tables map virtual pages of this shared code and data to the same physical pages. 
+	- *Simplifying memory allocation*: VM also allows for simple allocation of additional memory to user processes. When a user processes requests additional memory, for example when calling `malloc`), the OS allocates the appropriate amount of contiguous virtual memory pages and maps this contiguous chunk to arbitrary physical memory pages located anywhere in DRAM. 
+
 ## VM as a Tool for Memory Protection:
+- A modern OS is expected to offer protection and control of memory system. A user process cannot or should not be able to:
+	- Modify its read-only text region. 
+	- Read or modify kernel's data and code.
+	- Read or write private memory of other processes.
+	- Modify virtual pages shared with other processes (unless explicitly allowed to do so through interprocess system calls).
+- By providing processes with separate address spaces, VM makes it easy to isolate the private memories of these processes.  
+- The address translation mechanism of a VM system goes further to offer a finger form of memory protection at the page-level. Every time the CPU wants to access information at a given address, the address translation hardware reads a PTE. By adding permission bits to PTEs, it becomes easy to control access to the contents of the corresponding virtual page as the following image shows:
+![Page-level memory protection](img/pageLevelMemProtection.png)
+- PTEs in this example now have 3 additional bits for access control:
+	- The ***SUP*** bit indicates whether the process must be running in kernel (supervisor) mode to able to access the page. Processes running in kernel mode can access any page, but user mode processes can only access pages whose SUP bit is 0.
+	- The ***READ*** bit controls the read access to the page.
+	- The ***WRITE*** bit controls the write access to the page.
+- If a process violates any of these permissions, the CPU triggers a protection fault and transfers control to an exception handler in the kernel. This is reported as the famous or infamous *segmentation fault*!! Ahha, that's what it is!!
+
 ## Address Translation:
 ## Case Study: The Intel Core i7/Linux Memory System
 ## Memory Mapping:
 ## Dynamic Memory Allocation:
 ## Garbage Collection:
 ## Common Memory Related C Bugs:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
