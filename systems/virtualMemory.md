@@ -108,6 +108,40 @@
 - If a process violates any of these permissions, the CPU triggers a protection fault and transfers control to an exception handler in the kernel. This is reported as the famous or infamous *segmentation fault*!! Ahha, that's what it is!!
 
 ## Address Translation:
+- This section offers a rough overview of the basics of address translation and the hardware's role in virtual memory.
+
+- Basic Parameters:
+
+| Symbol | Description |
+| --- | --- |
+| N = 2<sup>n</sup> | Number of addresses in virtual address space |
+| M = 2<sup>m</sup> | Number of addresses in physical address space |
+| P = 2<sup>p</sup> | Page size in bytes |
+
+- Components of a virtual address (VA):
+
+| Symbol | Description |
+| --- | --- |
+| VPO | Virtual page offset in bytes |
+| VPN | Virtual page number |
+| TLBI | TLB index |
+| TLBT | TLB tag |
+
+- Components of a physical address (PA):
+
+| Symbol | Description |
+| --- | --- |
+| PPO | Physical page offset in bytes |
+| PPN | Physical page number |
+| CO | Byte offset within cache block |
+| CI | TLB index |
+| CT | TLB tag |
+
+### Integrating Caches and VM:
+### Speeding Up Address Translation with TLB:
+### Multi-Level Page Tables: 
+### Putting It Together: End-to-end Address Translation
+
 ## Case Study: The Intel Core i7/Linux Memory System
 ## Memory Mapping:
 ## Dynamic Memory Allocation:
