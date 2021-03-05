@@ -57,7 +57,7 @@
 - These capabilities are provided by a combination of OS software, address translation hardware in the MMU and an important data structure stored in physical memory called **page table**. Page table maps virtual pages to physical pages. The address translation hardware reads the page table each time it translates a virtual address to a physical address. The OS is responsible for maintaining the contents of the page table and moving pages between the DRAM and disk.
 - The following image shows the organization of the page table and how it works:
 ![Page table](img/pageTable.png)
-- A page table is an array of **page table entries (PTEs)**. Each page in the virtual address space has a PTE at a flexible offset in the page table. We assume that each PTE consists of two parts, a *valid bit* and an *n*-bit address field. The valid bit indicates whether a virtual page is currently cached in DRAM. If the valid bit is set (has value 1), the address field indicates the start of the physical page where the virtual page is cached. If the valid bit is not set and the address field is NULL, then the virtual page has not been allocated. If the valid bit is not set and there is an address, then that address points to the start of the uncached virtual page on disk. 
+- A page table is an array of **page table entries (PTEs)**. Each page in the virtual address space has a PTE at a fixed offset in the page table. We assume that each PTE consists of two parts, a *valid bit* and an *n*-bit address field. The valid bit indicates whether a virtual page is currently cached in DRAM. If the valid bit is set (has value 1), the address field indicates the start of the physical page where the virtual page is cached. If the valid bit is not set and the address field is NULL, then the virtual page has not been allocated. If the valid bit is not set and there is an address, then that address points to the start of the uncached virtual page on disk. 
 - To reiterate, any virtual page can be placed in any physical page because DRAM cache is fully associative. 
 
 ### Page Hits:
@@ -108,9 +108,9 @@
 - If a process violates any of these permissions, the CPU triggers a protection fault and transfers control to an exception handler in the kernel. This is reported as the famous or infamous *segmentation fault*!! Ahha, that's what it is!!
 
 ## Address Translation:
-- This section offers a rough overview of the basics of address translation and the hardware's role in virtual memory.
+- This section offers a rough overview of the basics of address translation and the hardware's role in virtual memory. The following tables show the meanings of the symbols that will be used through this section:
 
-- Basic Parameters:
+*- Basic Parameters:*
 
 | Symbol | Description |
 | --- | --- |
@@ -118,7 +118,7 @@
 | M = 2<sup>m</sup> | Number of addresses in physical address space |
 | P = 2<sup>p</sup> | Page size in bytes |
 
-- Components of a virtual address (VA):
+*- Components of a virtual address (VA):*
 
 | Symbol | Description |
 | --- | --- |
@@ -127,7 +127,7 @@
 | TLBI | TLB index |
 | TLBT | TLB tag |
 
-- Components of a physical address (PA):
+- *Components of a physical address (PA):*
 
 | Symbol | Description |
 | --- | --- |
@@ -137,12 +137,51 @@
 | CI | TLB index |
 | CT | TLB tag |
 
-### Integrating Caches and VM:
-### Speeding Up Address Translation with TLB:
-### Multi-Level Page Tables: 
-### Putting It Together: End-to-end Address Translation
+- **Address translation** is a mapping between the elements of an ***N***-element virtual address space (***VAS***) and an ***M***-element *physical address space* (***PAS***).
+![Address translation with a page table](img/addrTranslation.png)
+- THe image above shows how the MMU uses a page table to perform address translation. A control register in the CPU called the **page table base pointer (PTBR)** points to the current page table. The ***n***-bit virtual address has two components: a ***p***-bit **virtual page offset (VPO)** and a ***(n - p)***-bit **virtual page number (VPN)**. The VPN is used by the MMU to locate the appropriate PTE so VPN 0 selects PTE 0, VPN 1 selects PTE 1, and so on. The corresponding physical page can be found by concatenating the **physical page number (PPN)** to the VPO of the virtual address. Because physical and virtual pages are both P bytes in length, the PPO and VPO are the same. 
+![A page hit](img/pageHit.png) 
+- The image above traces the steps followed when there is a page hit:
+	- *Step 1*: The processor generates a virtual address and sends it to the MMU. 
+	- *Step 2*: The MMU produces the PTE address and requests it from main memory.
+	- *Step 3*: The MMU constructs the physical address and sends it to main memory.
+	- *Step 4*: The main memory returns the requested word to the processor. 
+[A page fault](img/pageFault.png)
+- The image above shows what happens when a page fault occurs:
+	- *Step 1 to 3*: The same steps 1 to 3 in a page hit.
+	- *Step 4*: The valid bit in the PTE is 0, so the CPU triggers an exception which transfers control to a page fault exception handler in the kernel.
+	- *Step 5*: The fault handler identifies a victim page in physical memory. If that page is modified, it pages it out to disk.
+	- *Step 6*: The fault handler pages the new page in and updates the PTE.
+	- *Step 7*: The fault handler returns to the process that caused the fault and causes the faulting instruction to restart. The CPU then resends the same address to the MMU and because the page is in physical memory, there is a hit. Steps 1 to 4 from the page hit section are performed and the main memory returns the requested to the processor. 
 
-## Case Study: The Intel Core i7/Linux Memory System
+### Integrating Caches and VM:
+- Should we use virtual or physical addresses to access SRAM cache? Most systems use direct physical addresses for SRAM and don't ask me why! It's enough to know that cache wouldn't have memory protection issues because address translation occurs before access, so processes can have blocks in cache at the same time. PTEs can also be cached in SRAM as any other data from main memory.
+
+### Speeding Up Address Translation with TLB:
+- Should the MMU refer to a PTE to translate a virtual address into a physical address for every request by the CPU? This can introduce considerable overhead. If the PTE is cashed in L1, referring to it can take  couple extra cycles, if it has to be fetched from main memory then it's a few hundred cycles. 
+- Modern systems try to reduce this overhead by having a small cache of PTEs in the MMU called **translation lookaside buffer (TLB)**. A TLB is a small *virtually addressed (:confused:!!!)* cache where each line holds a single PTE. When there is a TLB hit, the whole address translation voodoo happens in the MMU hardware making it extremely fast. A TLB follows these steps:
+	- *Step 1*: The CPU generates a virtual address.
+	- *Step 2 and 3*: The MMU fetches the PTE from TLB.
+	- *Step 4*: The MMU translates the virtual address to physical address and sends to cache or main memory. 
+	- *Step 5*: The cache/main memory returns the requested data to the CPU.
+- When there is a TLB miss, the PTE is requested from cache/main memory. The fetched PTE is then stored in the TLB and maybe overwriting an existing PTE. The following image shows how TLB hits and misses work:
+[TLB hits and misses](img/tlb.png)
+
+### Multi-Level Page Tables: 
+- So far, we've been talking about a single page table for each process. In a 32-bit system, having 4KB pages with a 4-byte PTE for each page requires having a 4 MB page table in memory at all time for each process even if the process uses only a small part of the VM. This becomes a bigger problem in 64-bit systems. 
+- This problem is mitigated with the use of **multi-level page tables**. There are many details, but the basic idea is that instead of having a single page table, there is a hierarchy of page tables for each process. Imagine we have a 32-bit address space partitioned into 4KB pages with page table entries having 4 bytes each. There are one million pages and for each one of these pages we have one PTE, which would require 4 million bytes (4MB) if we use a single page table. Imagine also that the address space has the following layout: The first 2K pages are for code and data, the next 6K pages are unallocated, the next 1023 pages are also unallocated, and the next page is allocated for the stack. The following image shows how a 2-level page table hierarchy is used to address such a layout:
+![2-level page table hierarchy](img/multLevelPageTable.png)
+- Each PTE in the first-level table is responsible for mapping a 4MB chunk of virtual address space, with every chunk containing 1024 pages. We need 1024 PTEs to cover the whole 4GB address space, so our level 1 page table is only 4KB in size. 
+- As the image above shows, if every page in a given chunk is unallocated, the corresponding PTE is null. In our image, level-1 PTEs 2 to 7 are null because page is allocated in the corresponding chunks. If only one page is allocated in a given chunk, the corresponding level-1 PTE points to a level-2 page table.
+- Each PTE in a level-2 page table is responsible for mapping a single 4KB page of virtual memory. Each of these level-2 page tables has a 4 KB size. 
+- This scheme reduce the size of page table requirements in two ways:
+	- If a PTE in level-1 table is null, the corresponding level-2 table doesn't have to exist. Most memory in a 4GB virtual address space is unallocated, so we save up a lot of space that would've been eaten by a single page table.
+	- Only the 4KB level-1 page need be resident in memory at all time. level-2 pages can be created, paged in or paged out based on current needs. Only the mostly used level-2 pages need to be cached in main memory, hence reducing load on the system. 
+- The following image shows how address translation is done with multi-level page tables. The virtual address is partitioned into a number of VPNs corresponding to the number of levels in our page table hierarchy and a VPO. Each VPN is an index into a a table in the hierarchy. Each PTE in the lower-level tables contains points to a higher-level table. PTEs in the highest-level table contains PPNs of physical memory or disk blocks:
+![Address translation in a multi-level page table](img/multLevelAddrTranslation.png)
+- Multi-Level page tables might seem inefficient, but it is not, because TLB caching makes it faster. Generally speaking, it is not too much slower than single page tables and it's worth the spare space you get in your memory.
+
+## Linux Virtual Memory System:
 ## Memory Mapping:
 ## Dynamic Memory Allocation:
 ## Garbage Collection:
