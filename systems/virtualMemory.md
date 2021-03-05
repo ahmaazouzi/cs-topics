@@ -179,9 +179,39 @@
 	- Only the 4KB level-1 page need be resident in memory at all time. level-2 pages can be created, paged in or paged out based on current needs. Only the mostly used level-2 pages need to be cached in main memory, hence reducing load on the system. 
 - The following image shows how address translation is done with multi-level page tables. The virtual address is partitioned into a number of VPNs corresponding to the number of levels in our page table hierarchy and a VPO. Each VPN is an index into a a table in the hierarchy. Each PTE in the lower-level tables contains points to a higher-level table. PTEs in the highest-level table contains PPNs of physical memory or disk blocks:
 ![Address translation in a multi-level page table](img/multLevelAddrTranslation.png)
-- Multi-Level page tables might seem inefficient, but it is not, because TLB caching makes it faster. Generally speaking, it is not too much slower than single page tables and it's worth the spare space you get in your memory.
+- Multi-Level page tables might seem inefficient, but they are not, because TLB caching makes them faster. Generally speaking, they are not that much slower than single page tables and are worth the spare space you get in your memory.
 
 ## Linux Virtual Memory System:
+- *I skipped the part about Intel's i7's handling of virtual memory as it was too hardwary, and will focus on Linux's handling of the topic*.
+- The virtual memory layout of a Linux process (Each process has its separate virtual address space) generally looks as follows:
+![The virtual memory of a Linux process](img/linuxVM.png)
+- The kernel virtual memory contains code and data structures in the kernel. Some regions of the kernel virtual memory are shared by all processes. Examples of such shared kernel memory regions include the kernel code and global variables. Linux also maps a set of contiguous virtual pages equal to all the system's DRAM pages to the corresponding set of physical pages. This allows the kernel to access any location in physical memory to do such operations as accessing page tables or memory-mapped IO operations, etc. The kernel region also contains data specific to each process such as page tables for each process or the stack that the kernel uses when it's running in the context of the given process.
+
+### Linux Virtual Memory Areas:
+- Linux organizes virtual memory as a collection of **areas** (also called **segments**). Areas are contiguous chunks of allocated virtual memory that is related in some way, for example, we have code area, data area, heap area, shared library area,etc. 
+- Each existing virtual page is part of an area. A page that doesn't belong to an area does not exist and cannot be referenced. The kernel does not keep track of pages that don't belong to an area, so they don't consume memory or disk or kernel's memory itself. 
+- The following image shows the kernel data structures that keep track of the areas of a process:
+![How Linux organizes virtual memory](img/linuxVMOrg.png)
+- These data structures include:
+	- **`task_struct`**: is a task structure that the kernel maintains for each process. Each element in the task structure points to or contains all the data the kernel needs to run the process such as the PID, pointer to the stack, the PC, the name of the executable, etc. 
+	- **`mm_struct`**: one of the data contained in a task structure element characterizes the current state of process's VM. It contains two important structures, `pgd` and `mmap`.
+	- **`pgd`**: points to the base of the level 1 page table (*page global directory*, from which the structure's name comes). When the kernel runs the process, it stores the `pgd` in in the CR3 control register. 
+	- **`mmap`** points to a list of `vm_area_struct`s.
+	- **`vm_area_struct`**: (area structure) characterizes an area of the current virtual address space.
+- A `vm_area_struct` itself consists of :
+	- **`vm_start`**: points to the beginning of the area.
+	- **`vm_end`**: points to the end of the area. 
+	- **`vm_prot`**: describes the read/write permissions for all the pages in the area.
+	- **`vm_flags`**: does various things, including describing if pages in the area are shared with other processes or private to the current process.
+	- **`vm_next`**: points to the next area struct.
+
+### Linux Page Fault Exception Handling
+![Linux page fault handling](img/linuxPageFaultHandling.png)
+- Remember that we talked about how the kernel intervenes when there is a page fault. When an exception occurs while the MMU is trying to translate a virtual address, control is transferred to the kernel fault handler which does the following:
+	- The fault handler checks if the address is legal, meaning: is it in an area struct? The fault handler searches the address in the list of area structs by comparing the address with the `vm_start` and `vm_end` in each area. If the address is not legal, the fault handler triggers a segmentation fault and terminates the process. A process can create an arbitrary number of areas, so Linux places the list in a tree structure for speedy search when there are too many areas.
+	- Is the attempted memory access legal? If the process is violating access permissions such as trying to write into a read-only area or if a process running in user mode is trying to read from the kernel's virtual memory, then the handler triggers a protection exception which terminates the process. 
+	- The kernel knows now that the page fault resulted from a legal operation on a legal area. It selects a victim page from the area, swaps out the victim page if it's dirty, swaps the new page and updaates the page table. When the fault handler returns, the CPU reruns the faulting instruction which resends the address to the MMU. This time the address is translated normally and no page fault occurs. s
+
 ## Memory Mapping:
 ## Dynamic Memory Allocation:
 ## Garbage Collection:
