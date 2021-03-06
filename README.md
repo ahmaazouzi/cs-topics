@@ -12,7 +12,7 @@
 	+ [Concurrency](systems/concurrent.md) :black_circle:  
 	
 - [Networking:](networking/)
-	+ [A Tour of the Internet and Networking](networking-and-internet.md) :white_check_mark:
+	+ [A Tour of the Internet and Networking](networking/networking-and-internet.md) :white_check_mark:
 	+ [The Application Layer](networking/application.md) :white_check_mark:
 	+ [The Transport Layer](networking/transport.md) :white_check_mark:
 
