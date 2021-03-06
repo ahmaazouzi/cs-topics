@@ -210,13 +210,53 @@
 - Remember that we talked about how the kernel intervenes when there is a page fault. When an exception occurs while the MMU is trying to translate a virtual address, control is transferred to the kernel fault handler which does the following:
 	- The fault handler checks if the address is legal, meaning: is it in an area struct? The fault handler searches the address in the list of area structs by comparing the address with the `vm_start` and `vm_end` in each area. If the address is not legal, the fault handler triggers a segmentation fault and terminates the process. A process can create an arbitrary number of areas, so Linux places the list in a tree structure for speedy search when there are too many areas.
 	- Is the attempted memory access legal? If the process is violating access permissions such as trying to write into a read-only area or if a process running in user mode is trying to read from the kernel's virtual memory, then the handler triggers a protection exception which terminates the process. 
-	- The kernel knows now that the page fault resulted from a legal operation on a legal area. It selects a victim page from the area, swaps out the victim page if it's dirty, swaps the new page and updaates the page table. When the fault handler returns, the CPU reruns the faulting instruction which resends the address to the MMU. This time the address is translated normally and no page fault occurs. s
+	- The kernel knows now that the page fault resulted from a legal operation on a legal area. It selects a victim page from the area, swaps out the victim page if it's dirty, swaps the new page and updates the page table. When the fault handler returns, the CPU reruns the faulting instruction which resends the address to the MMU. This time the address is translated normally and no page fault occurs. s
 
 ## Memory Mapping:
+- Linux and other Unix systems initialize the contents of virtual memory area with **memory mapping** which is  associating this memory area with an *object* on disk. A memory area can be mapped to one of two types of objects:
+	- **Regular file in the Unix file systems**: (:confused:*This kinda doesn't make much sens e to me*:confused:). An area is mapped to a contiguous section of a disk file such as an executable object file. This file section is divided into page sized chunks with each chunk "obtaining the initial contents of a virtual page"!!! Due to demand paging, virtual pages are only swapped into physical memory when the CPU touches them (the CPU issues an address that goes into one of these pages.
+	- **Anonymous file**: Anonymous files created by the kernels get swapped into physical addresses directly and no disk is involved (*zero-demand*)!!! 
+- In both regular and anonymous files, once a page is created it is swapped back and forth into a **swap file** (also called *swap area* or *swap space*)maintained by the kernel. 
+
+### Shared Objects:
+- Memory mapping has resulted from the fact that integrating virtual memory and the file system provides a simple and efficient way of loading code and data into memory.
+- While each process has its private virtual address that shouldn't be accessed by other processes, there is also code and data that multiple processes share such functions from the C standard library functions. It would extremely wasteful to include separate copies of this shared data and code in the virtual address space of each process. Luckily, memory mapping comes to the rescue and allows multiple processes to share the same objects. 
+- An object can be mapped into an area of virtual memory as either a **shared object** or **private object**. If a shared object is mapped to an area in the private virtual space of a process, then any writes the process makes to that area are visible to all other processes that have have mapped that same shared object to their private virtual address spaces. The changes are also reflect on the original object in disk. 
+- Changes made to an area mapped to a private object are not visible to other processes, and writes that the process makes to the area are not reflected back to the object on disk. An area in the private virtual address space to which a shared object has been mapped is called a **shared area**, and the area to which a private object has been mapped is a **private area**. 
+- The following image shows how multiple processes map a shared object to their private VASs. Process 1 and process 2 don't have to copy the shared object the same address in their VASs. Because every object has a unique file name, the kernel easily  determines that process 1 has already mapped the shared object so it directs the PTEs of process 2 to point to the known physical addresses. A shared object does not need to have multiple copies in physical memory, even though it is mapped to multiple shared VAS areas:
+![Shared object](img/sharedObject.png)
+- Private objects are mapped to virtual media using a technique called **copy-on-write**. A private object starts life like a shared object as the following image shows:
+![Private copy-on-write object](img/privateCopyOnWrite.png)
+- In the processes that map the private object, the PTEs corresponding to the private area are flagged as read-only and the area struct is flagged as *private copy-on-write*. As  long asneither process attempts to write to the private area, the two processes continue to share the copy of the object in physical memory, but as soon as any process attempts to write to some page in the private area, the write triggers a protection fault.
+- When the protection fault notices that the exception was caused by an attempt to write to a page in a private copy-on-write area, it creates a new copy of the page in physical memory, updates the PTE to point to the new copy, and then restores write permissions to this new page. When the fault handler returns, the CPU redoes the write on the newly created page. *These freaking nerds!!! Smart as hell!!👍👍*. This is some very efficient use of physical memory. 
+
+### `fork`:
+- As far as virtual memory is concerned, when the current process calls `fork`, the kernel creates exact copies of the current process's `mm_struct`, area structs and page tables. It flags each page in both processes as read-only and flags each area struct in both processes as private copy-on-write. When fork returns the new process, it has an exact copy of of the virtual memory as it it existed before the call to `fork`. (*The parent or child virtual memory??!*). Only when wither the parent or child processes make writes that new pages are created using copy-on-write. 
+
+### User-level Memory Mapping with the `mmap` Function:
+- Unix processes can use the **`mmap`** function to create new areas of virtual memory and map objects into these areas:
+```c
+#include <unistd.h> 
+#include <sys/mman.h>
+
+void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset);
+```
+- `mmap` asks the kernel to create a new virtual memory area, starting at the address `start` if possible and map a contiguous chunk of the object given by file descriptor `fd` to this newly created area. This contiguous chunks is `length` bytes long and starts at an offset `offset` from the beginning of the file. The start is usually a NULL. The following image visualizes `mmap` argumetns:
+![mmap arguments](img/mmapArgs.png )
+- The `prot` argument contains access permission bits:
+	- **`PROT_EXEC`**: Instructions in pages in the area may be executed.
+	- **`PROT_READ`**: Pages may be read.
+	- **`PROT_WRITE`**: Pages may be written.
+	- **`PROT_NONE`**: Pages in the area cannot be accessed.
+- The `flags` argument specifies the type of the mapped object:
+	- **`MAP_ANON`**: Anonymous object with zero-demand.
+	- **`MAP_PRIVATE`**: Private object with copy-on-write.
+	- **`MAP_Shared`**: Shared Object.
+- A similar function **`munmap`** does the opposite, deletes areas from regions of virtual memory.
+
 ## Dynamic Memory Allocation:
 ## Garbage Collection:
 ## Common Memory Related C Bugs:
-
 
 
 
