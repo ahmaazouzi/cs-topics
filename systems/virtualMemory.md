@@ -255,20 +255,60 @@ void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset
 - A similar function **`munmap`** does the opposite, deletes areas from regions of virtual memory.
 
 ## Dynamic Memory Allocation:
-## Garbage Collection:
-## Common Memory Related C Bugs:
+- **Dynamic memory allocators** are thought to be more convenient and more portable the `mmap` and `munmap` to acquire more virtual memory at run time.
+- A dynamic memory allocator maintains an area of the process's virtual memory known as the **heap**. The heap is a demand-zero are that starts immediately after the uninitialized bbs area and it grows upwards toward higher addresses. The kernel maintains a variable **`brk`** (break) that points to the top of the heap. The following image shows the heap in the context of a process's virtual memory:
+![The heap](img/heap.png)
+- An allocator maintains the heap as a collection of various-sized **blocks**. These blocks can be either **allocated** or **free**. A an allocated area has been reserved for use by the application, while a free area is available to be allocated. A free blocks is free until the application explicitly allocates it. An allocated block stays allocated until it is explicitly freed by the application or implicitly freed by the dynamic allocated. (*Looks like we will see later what these implicit/explicit words mean*).
+- There are two styles of allocators. They both explicitly allocate blocks, but they differ in how they deallocate blocks:
+	- **Explicit allocators**: require the application to explicitly free the allocated blocks. C has the explicit allocator `malloc` for allocating blocks and `free` for freeing allocated blocks.
+	- **Implicit allocators**: require the allocator to detect when an allocated block is no longer in use and free the block. Implicit allocators are called **garbage collectors**, and the process of automatically freeing unused allocated blocks is called **garbage collection**. Higher-level languages such as Java rely on garbage collectors to free memory.
+- The rest of this section will focus on explicitly memory allocation with a focus on allcators that manage heap memory. Keep in mind that memory allocation is not specific to the heap but is a general idea that applies to other contexts. Garbage collection is deferred to the next [section](#garbage-colelction).
+
+### The `malloc` and `free` Functions:
+- The C standard library has an explicit memory allocator called the **`malloc`** package. Heap memory is allocated using the `malloc` function:
+```c
+#include <stdlib.h>
+
+void *malloc(size_t size); // Returns pointer to allocated block, or NULL on error!
+```
+- `malloc` returns a pointer to a block of memory that is at least `size` bytes which is aligned to an 8-byte boundary (double word. *From now on in this document words means 4 bytes*).
+- If an error is encountered, such as requesting a block larger than available memory, `malloc` returns a NULL and sets `errno`. `malloc` does not initialize the memory it allocates. Initializing memory can be done with a wrapper around `malloc` called **`calloc`** that initializes the allocated memory to 0. **`realloc`** can be used to to resize an allocated block. 
+- Dynamic allocators such as `malloc` can also allocate or deallocate heap memory explicitly using `mmap` and `munmap`. They can also use **`sbrk`** (We are talking here about resizing the heap area and not allocating blocks within the heap):
+```c
+#include <unistd.h>
+
+void *sbrk(intptr_t incr); // Returns: old brk pointer on success, −1 on error
+```
+- `sbrk` resizes the heap by adding `incr` to the kernel's `brk` pointer. On success, `sbrk` returns the old value of `brk`, but if a problem is encountered, it returns -1 and sets `errno` to `ENOMEM`.
+- Allocated memory is freed with the **`free`**:
+```c
+#include <stdlib.h>
+
+void free(void *ptr);
+```
+- The `ptr` pointer must point to the beginning of an allocated block that was obtained from `malloc`, `realloc` or `calloc`. If not, the behavior of `free`. Something bad can go wrong and you are not alerted. 
+- The following image shows how `malloc` and `free` work on a small 16-word double-world aligned heap where each word is 4-byte long:
+![How malloc and free work](img/mallocFree.png)
+- This is what is happening in the image above:
+	- **a**. The program uses `malloc` to request a 4-word block. `malloc` allocates the specified block from the beginning of the free block and returns a pointer to the beginning of the allocated block. 
+	- **b**. The program requests a 5-word block, and `malloc` allocates a 6-word block *padding* the requested 5-word with an extra word to keep the block "aligned to a double-world boundary".
+	- **c**. Same as a.
+	- **d**. The program frees the 6-word block allocated in b. `p2` still points to a freed block. Reusing it might cause problems until reinitiated by a call to `malloc` or one of its wrappers.
+	- **e**. The program requests a two-word block and `malloc` that in a previously freed block and returns a pointer to this block. *What if I wanted the block to be beyond any of the prviously allocated blocks, like closer to the heap's head??!!!!*
+
+### Why Dynamic Memory Allocation?
+### Allocator Requirements and Goals:
+### Fragmentation:
+### Implementation Issues:
+### Implicit Free Lists:
+### Placing Allocated Blocks:
+### Splitting Free Blocks:
+### Getting Additional Heap Memory:
+### Coalescing Free Blocks:
+### Coalescing with Boundary Tags:
+### Putting It Together: Implementing a Simple Allocator:
+### Explicit Free Lists:
+### Segregated Free Lists
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+## Garbage Collection: 
