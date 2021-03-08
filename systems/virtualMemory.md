@@ -294,21 +294,124 @@ void free(void *ptr);
 	- **b**. The program requests a 5-word block, and `malloc` allocates a 6-word block *padding* the requested 5-word with an extra word to keep the block "aligned to a double-world boundary".
 	- **c**. Same as a.
 	- **d**. The program frees the 6-word block allocated in b. `p2` still points to a freed block. Reusing it might cause problems until reinitiated by a call to `malloc` or one of its wrappers.
-	- **e**. The program requests a two-word block and `malloc` that in a previously freed block and returns a pointer to this block. *What if I wanted the block to be beyond any of the prviously allocated blocks, like closer to the heap's head??!!!!*
+	- **e**. The program requests a two-word block and `malloc` that in a previously freed block and returns a pointer to this block. *What if I wanted the block to be beyond any of the previously allocated blocks, like closer to the heap's head??!!!!*
 
 ### Why Dynamic Memory Allocation?
-### Allocator Requirements and Goals:
-### Fragmentation:
-### Implementation Issues:
-### Implicit Free Lists:
-### Placing Allocated Blocks:
-### Splitting Free Blocks:
-### Getting Additional Heap Memory:
-### Coalescing Free Blocks:
-### Coalescing with Boundary Tags:
-### Putting It Together: Implementing a Simple Allocator:
-### Explicit Free Lists:
-### Segregated Free Lists
+- The main and obvious reason for using dynamic allocation is that the programmer doesn't know the sizes of certain data structures until run time. The naive alternative is to define static data structures such as static arrays with a specific length. The problem with static arrays is that they can be become a maintainability nightmare if they start receiving data that is larger than their fixed lengths. The static array might also be too large and sitting idle handling only small data while most of it goes  unused. With dynamic, you are guaranteed elastic structures that are allocated and freed based on demand. They can be expanded to handle large amounts of data or deallocated when longer needed thus freeing memory the limited memory resource for other parts of the program or other programs in the system. 
+- The main problem with dynamic memory allocation is that it is often misunderstood and baffling to novices and sometimes even experts. The rest of the section will try to demystify some aspects of dynamic memory allocation.
 
+### Allocator Requirements and Goals:
+- An explicit allocator is must respect the following constraints:
+	- **Handling arbitrary request sequences**: An application can make an arbitrary sequence of allocate and free requests with the constraint that a free requests must correspond to a currently allocated block obtained with a previous allocate request. There are not assumptions about the ordering of allocate and free requests: an allocate request is not necessarily followed by a matching free request.
+	- **Making immediate responses to requests**: The allocator cannot reorder or buffer requests to improve performance. It must respond immediately to requests. 
+	- **Using only the heap**: all non-scalar data structures must be stored in the heap. 
+	- **Aligning blocks (alignment requirement)**: In most systems blocks are aligned on an 8-byte boundary, so that the allocated area can hold any type of object. 
+	- **Not modifying allocated blocks**: Allocators cannot move or modify blocks that are already allocated. 
+- If you are planning to design an allocator, you should achieve the two main goals of maximizing throughput and memory utilization:
+	- *Goal 1: Maximizing throughput.* An allocator's **throughput** is the number of requests it completes per unit times. If an allocator can complete 500 allocate and 500 free requests in a second then its throughput is a 1000 requests per second. Allocator's throughput can be maximized by improving the average time to complete free and allocate requests. We can improve throughput to have a worst-case allocate that is linear to the number of free blocks and a constant runtime for free requests.
+	- *Goal 2: Maximizing memory utilization.* Virtual memory is a finite resource limited by the swap space on disk. Dynamic memory allocator usually handle very large blocks of memory, so how is memory utilization maximized by dynamic allocators? There are different ways to measure how memory efficient an allocator is such as **peak utilization**. The peak utilization can be defined by the aggregate block payload in bytes of a sequence of requests divided by the total size of the *monotonically nondecreasing (whatt!!!!? :confused:)* heap. *(Not very sure, hopefully next sections will clarify this)*. There is tension between the maximal throughput and maximal memory utilization, each one of the two can be maximized at the expense of the other. The programmer needs to strike a good balance between the two.
+
+### Fragmentation:
+- **Fragmentation** is the main culprit behind poor heap memory utilization. Fragmentation occurs when "therwise unused memory is not available to satisfy allocate requests". Fragmentation appears in two forms:
+	- **Internal fragmentation**: occurs when an allocated block is larger than the payload. This happens usually as a result of alignment constraints (as we've seen earlier) or when the allocator imposes a minimum size of the allocated block and the payload is smaller than that minimum. It can be measured by summing the aggregate difference of allocated blocks and their payloads.
+	- **External fragmentation**: occurs when there is enough aggregate free memory to satisfy an allocate request, but these blocks are scattered all over the place and no single free block is able to satisfy the request. External fragmentation is less quantifiable than its internal counterpart, because it depends on previous as well as future requests. External fragmentation is harder to predict, so allocators try to heuristically maintain small numbers of large free blocks.
+
+### Implementation Issues:
+- If we are trying to design our own dynamic memory allocator, our heap would be a large array of bytes and we will use pointer `p` that initially points to the first byte of the array. To allocate `size` bytes, our `malloc` increases `p` by `size`, stores the new `p` on the stack and returns the old value of `p` to the calling function. `free` doesn't do anything.
+- This design has an excellent throughput, but a terrible memory utilization because there is no reuse of freed blocks (there is no freeing of blocks in the first place). An actually useful allocator that balances between memory utilization and throughput needs to consider the following issues:
+	- *Free block organization*: We need a way of keeping track of free blocks.
+	- *Placement*: Decide in which free block a newly allocated block must be placed.
+	- *splitting*: Deciding what to do with the remaining free space in a block after allocating a new block in that free block. 
+	- *coalescing*: What to do with a block that has just been freed. 
+
+### Implicit Free Lists:
+- A self respecting memory allocator must have a data structure that keeps track of block boundaries (where a blocks starts and ends) and distinguishes between free and allocated blocks. Most allocators include such information in the blocks themselves as the following images shows:
+![Simple heap block format](img/heapBlockFormat.png)
+- In the image above, we see that a block consists of three parts: a one-word (4-byte) *header*, the block's *payload*, and optional *padding*. 
+- The **header** is used to encode the block size (including the header and padding) and if the block is allocated or free. If a double-word alignment constraint is applied to the block then the block size is always a multiple of 8, making the 3 low-order bits always zero. We need only 29 bits to represent the block size and as a result we have 3 free bits which we can use to encode other information about the block. 
+- The least significant bit in the header is called the **allocated bit**. It is used to indicate whether the block is allocated when it is 1, or free (0). An allocated block whose size is 24 (`0x18`) bytes has a the following header:
+```
+0x00000018 | 0x1 = 0x00000019
+```
+- A free 40 (`0x28`)-byte block has the following header:
+```
+0x00000028 | 0x0 = 0x00000028
+```
+- Using the configuration of a block from the previous image, we can view the heap as a sequence of contiguous free and allocated blocks:
+![Organizing the heap with an implicit free list](img/implicitFreeListHeap.png)
+- This organization of the heap is called **implicit free list** because "blocks are linked implicitly by the size fields in the headers"???!!! :confused:. To traverse the list of free blocks in the heap, the allocator must traverse all the blocks including allocated ones. In this list, we also having a special terminating block with the allocated bit set and a size of zero. 
+- The implicit free list scheme is simple but not very efficient. Any operation, such as allocating a block might require a sequential search through the whole list of blocks.
+- The **minimum block size** in this configuration is mainly dictated by the alignment constraint. Even if we need only a single byte, we must allocate a double-word block. 
+
+### Placing Allocated Blocks:
+- When the application requests a block, the allocator searches the free list for a free block that is large enough to hold the requested block. The way the allocator does this search is called the **placement policy**. There different placement policies, and they include:
+	- **First fit**: Starts searching the list until it finds the first free block that fits. The first fit policy tends to leave large free blocks at the end of the list which is good, but also have the bad side of effect of leaving a bunch of free small free splinters towards the beginning of the list which causes long search times for large blocks.
+	- **Next fit**: Similar to first fit but instead of starting at the beginning of the list, it starts where the previous list stopped. Proposed by eminent nerd, D. Knuth, next runs significantly faster than first fit has a worse memory utilization.
+	- **Best fit**: examines all the free blocks, and picks the smallest free block that fits. It has the best memory utilization, but using with simple free list organizations such as implicit free list can incur significant throughput penalties due to exhaustive searches for best fit searches. 
+
+### Splitting Free Blocks:
+- Once a free block is found, the allocator must decide what it should do with the remaining free portion of the free block. It can either allocate the whole block, or just use what is needs (including padding imposed by alignment and what not) and **split** the block into two parts, a portion for the allocated bytes and a new free block occupying the rest of the block. Using the whole block introduces internal fragmentation. Looks like splitting is the better option.
+
+### Getting Additional Heap Memory:
+- What if the allocator can't find a free block large enough to satisfy a request? In this case the allocator can do one of two things:
+	- It can either *coalesce* smaller adjacent free blocks to get a block large enough to hold the requested size.
+	- If the coalesced blocks don't satisfy the request, the allocator acquires more heap space with a call to `sbrk`. 
+
+### Coalescing Free Blocks:
+- When a block is freed, it might be adjacent to one or two free blocks. Now we have 2 or 3 adjacent free blocks. This results in something called **false fragmentation** where there is a bunch of adjacent tiny but unusable free blocks that are good for nothing. 
+- To mitigate false fragmentation, we merge small adjacent free blocks in a process called **coalescing**. The allocator, however, has to decide when to perform coalescing so we have two types of coalescing:
+	- **Immediate coalescing** where adjacent blocks are coalesced immediately after a block is freed.
+	- **Deferred coalescing** where coalescing happens at a later time than freeing, for example when a request fails, at which point the allocator scans the entire heap coalescing all coalesceable blocks.
+- Immediate coalescing is simple but it can introduce thrashing where blocks are repeatedly unnecessarily split and coalesced back following allocations/freeings. Self-respecting allocators go for deferred coalescing to cut unnecessary coalescing. The header of the current block checks the header of the next block to see if it is free and if so, the current block simply adds the size of the next block to its own size, but what how would the current block efficiently coalesce the free block before it?
+
+### Coalescing with Boundary Tags:
+- How is coalescing done? Assuming we are doing immediate coalescing, let's call the block we want to free the *current block*. After freeing the current block, coalescing the block following it is easy. With an implicit free list of blocks with headers, the only way to check for the previous free block is to scan the whole list to see if the previous block is free. This makes `free` run in linear time which is kinda too much. 
+- Super smart D. Knuth invented **boundary tags** which allow for coalescing in constant time. The basic idea is adding a **footer** that is a replica of the header at the end of each block. Now, coalescing the previous block can be done in constant time because the current block can simply examine the footer of the previous block because it is always the word that precedes it. The following image shows the structure  of a block that uses boundary tags:
+![The format of a block that uses boundary tags](img/boundaryTag.png)
+- Coalescing with boundary tags is a fairly simple business, but requiring each block to have a header and a footer can be taxing on memory if the application allocates and frees many small blocks. The book gives an example of allocating and freeing many graph nodes that are only one or few words long. The header and footer could eat up half the size of a block.
+- There is a clever optimization that can eliminate much of the memory overhead introduced by footers. Only free footers really need a footer, while allocated blocks don't, how how can the current block know if the previous block is free? Remember that blocks have 3 low order bits that don't represent size. We use the lowest bit as an allocated bit. We can actually use the second or third bit as the allocate bit of the previous block so the current block 
+
+### Explicit Free Lists:
+- Actual general-purpose allocators do not use implicit free lists because searching for a free block requires the traversal of both allocated and free blocks. An alternative and better approach is **explicit free lists** where only free blocks are searched. This arrangement reduces the search time to only the number of free blocks instead of all blocks in the heap.
+- One implementation of an explicit free list involves the use of a doubly-linked list with pointers stored in the blocks themselves. Each free block has a predecessor pointer and successor pointer pointing to the closest other free blocks to them. The following image shows how blocks are organized into doubly-linked lists:
+![Heap blocks that use doubly-linked free lists](img/blockLinkedList.png)
+- The time to find a free block can even be constant based on the ordering of blocks in the list, so we can order blocks based on the recency of their freeing or based on their addresses in the heap and each one has its own advantages and disadvantages. 
+- The disadvantage of explicit lists is that they require a large enough minimum block size that accommodate the previous and predecessor pointers (that's 4 words) in addition a header and possibly a footer which results in more internal fragmentation. 
+
+### Segregated Free Lists:
+- It might be very costly to traverse all free lists if they are all placed in one long linked lists. An improvement on explicit free lists is based **segregated storage** where the list is divided into different classes of smaller lists that contain blocks of similar sizes. There are different ways of devising these classes. For example, smaller blocks can be assigned to classes of their sizes while larger ones can be powers of 2 as in: 
+	- ***{1}, {2}, {3}, . . . , {1023}, {1024}, {1025−2048}, {2049 − 4096}, {4097−∞}***
+- The allocator also maintains an array of these lists ordered by increasing size. When the allocator needs a block of a given size, it index searches the array (it's an ordered array, *so efficient!!!*) and if the given size is not there, it searches the next position in the array and so on. 
+- One good variant of segregated storage is the so-called *segregated fit* storage. An allocator using segregated fit maintains an array of lists of free lists where each list is organized as an implicit or explicit list of a size class. Each lists can contain multiple sizes belonging to the appropriate size class. To find a free block, we determine the appropriate size class and search its list. If found, we might split the free block and allocate our block. If not found, we scan the next list  and keep scanning next class lists until we find the appropriate size. If not found in the class list, we request additional heap memory from the kernel, use that and place the remainder free space in the appropriate class list. When we free a block, we coalesce free space around it.
+- Segregated fit is used in actual high-performance dynamic memory allocators such as the GNU `malloc` because it is both fast and memory efficient. It is fast because, it searches only a portion of the heap blocks instead of the entire heap. It also has maximal memory utilization because it approaches best-fit search.
 
 ## Garbage Collection: 
+### Garbage Collector Basics:
+### Mark&Sweep Garbage Collectors:
+### Conservative Mark&Sweep for C Programs:
+
+##
+###
+###
+###
+###
+###
+###
+###
+###
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
