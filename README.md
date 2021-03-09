@@ -26,3 +26,4 @@
 - Databases:
 - Compilers and Languages:
 - Programming (Functional and Beyond)
+- Applied Cryptography

@@ -1,7 +1,59 @@
 # Virtual Memory:
+## Table of Contents:
+* [Introduction](#introduction)
+* [Physical and Virtual Addressing](#physical-and-virtual-addressing)
+* [Address Spaces](#address-spaces)
+* [VM as a Tool for Caching](#vm-as-a-tool-for-caching)
+	+ [DRAM Cache Organization](#dram-cache-organization)
+	+ [Page Tables](#page-tables)
+	+ [Page Hits](#page-hits)
+	+ [Page Faults](#page-faults)
+	+ [Allocating Pages](#allocating-pages)
+	+ [Locality to the Rescue Again](#locality-to-the-rescue-again)
+* [VM as a Tool for Memory Management](#vm-as-a-tool-for-memory-management)
+* [VM as a Tool for Memory Protection](#vm-as-a-tool-for-memory-protection)
+* [Address Translation](#address-translation)
+	+ [Integrating Caches and VM](#integrating-caches-and-vm)
+	+ [Speeding Up Address Translation with TLB](#speeding-up-address-translation-with-tlb)
+	+ [Multi-Level Page Tables](#multi-level-page-tables)
+* [Linux Virtual Memory System](#linux-virtual-memory-system)
+	+ [Linux Virtual Memory Areas](#linux-virtual-memory-areas)
+	+ [Linux Page Fault Exception Handling](#linux-page-fault-exception-handling)
+* [Memory Mapping](#memory-mapping)
+	+ [Shared Objects](#shared-objects)
+	+ [`fork`](#fork)
+	+ [User-level Memory Mapping with the `mmap` Function](#user-level-memory-mapping-with-the-mmap-function)
+* [Dynamic Memory Allocation](#dynamic-memory-allocation)
+	+ [The `malloc` and `free` Functions](#the-malloc-and-free-functions)
+	+ [Why Dynamic Memory Allocation?](#why-dynamic-memory-allocation)
+	+ [Allocator Requirements and Goals](#allocator-requirements-and-goals)
+	+ [Fragmentation](#fragmentation)
+	+ [Implementation Issues](#implementation-issues)
+	+ [Implicit Free Lists](#implicit-free-lists)
+	+ [Placing Allocated Blocks](#placing-allocated-blocks)
+	+ [Splitting Free Blocks](#splitting-free-blocks)
+	+ [Getting Additional Heap Memory](#getting-additional-heap-memory)
+	+ [Coalescing Free Blocks](#coalescing-free-blocks)
+	+ [Coalescing with Boundary Tags](#coalescing-with-boundary-tags)
+	+ [Explicit Free Lists](#explicit-free-lists)
+	+ [Segregated Free Lists](#segregated-free-lists)
+* [Garbage Collection](#garbage-collection)
+	+ [Garbage Collector Basics](#garbage-collector-basics)
+	+ [Mark&Sweep Garbage Collectors](#mark&sweep-garbage-collectors)
+* [Common Memory-Related Bugs in C Programs](#common-memory-related-bugs-in-c-programs)
+	+ [Dereferencing Bad Pointers](#dereferencing-bad-pointers)
+	+ [Reading Uninitialized Memory](#reading-uninitialized-memory)
+	+ [Allowing Stack Buffer Overflows](#allowing-stack-buffer-overflows)
+	+ [Assuming that Pointers and the Objects They Point to Are the Same Size](#assuming-that-pointers-and-the-objects-they-point-to-are-the-same-size)
+	+ [Making Off-by-One Errors](#making-off-by-one-errors)
+	+ [Referencing a Pointer Instead of the Object It Points to](#referencing-a-pointer-instead-of-the-object-it-points-to)
+	+ [Misunderstanding Pointer Arithmetic](#misunderstanding-pointer-arithmetic)
+	+ [Referencing Nonexistent Variables](#referencing-nonexistent-variables)
+	+ [Referencing Data in Free Heap Blocks](#referencing-data-in-free-heap-blocks)
+	+ [Introducing Memory Leaks](#introducing-memory-leaks)
 
 ## Introduction:
-- Multiple processes can share the CPU and memory. When too many processes share a CPU, it is slowed down but when too many	processes share memory, they might run out of the available space and no more processes can use that memory. Processes might also be able to mess with memory "belonging" to other processes, thus corrupting this memory.
+- Multiple processes can share the CPU and memory. When too many processes share a CPU, it is slowed down but when too many	processes share the finite memory, they might run out of the available space and no more processes can use that memory. Processes might also be able to mess with memory "belonging" to other processes, thus corrupting this memory.
 - Modern systems use **virtual memory** to address these problems. "*Virtual memory is an elegant interaction of hardware exceptions, hardware address translation, main memory, disk files, and kernel software that provides each process with a large, uniform, and private address space.*" It offers the following three services:
 	- It treats main memory as a cache for disk, keeping only active data in memory and moving data back and forth between memory and disk as needed.
 	- It simplifies memory management by providing each process with a uniform address space.
@@ -309,10 +361,10 @@ void free(void *ptr);
 	- **Not modifying allocated blocks**: Allocators cannot move or modify blocks that are already allocated. 
 - If you are planning to design an allocator, you should achieve the two main goals of maximizing throughput and memory utilization:
 	- *Goal 1: Maximizing throughput.* An allocator's **throughput** is the number of requests it completes per unit times. If an allocator can complete 500 allocate and 500 free requests in a second then its throughput is a 1000 requests per second. Allocator's throughput can be maximized by improving the average time to complete free and allocate requests. We can improve throughput to have a worst-case allocate that is linear to the number of free blocks and a constant runtime for free requests.
-	- *Goal 2: Maximizing memory utilization.* Virtual memory is a finite resource limited by the swap space on disk. Dynamic memory allocator usually handle very large blocks of memory, so how is memory utilization maximized by dynamic allocators? There are different ways to measure how memory efficient an allocator is such as **peak utilization**. The peak utilization can be defined by the aggregate block payload in bytes of a sequence of requests divided by the total size of the *monotonically nondecreasing (whatt!!!!? :confused:)* heap. *(Not very sure, hopefully next sections will clarify this)*. There is tension between the maximal throughput and maximal memory utilization, each one of the two can be maximized at the expense of the other. The programmer needs to strike a good balance between the two.
+	- *Goal 2: Maximizing memory utilization.* Virtual memory is a finite resource limited by the swap space on disk. Dynamic memory allocator usually handle very large blocks of memory, so how is memory utilization maximized by dynamic allocators? There are different ways to measure how memory efficient an allocator is such as **peak utilization**. The peak utilization can be defined by the aggregate block payload in bytes of a sequence of requests divided by the total size of the *monotonically nondecreasing (what!!!!? :confused:)* heap. *(Not very sure, hopefully next sections will clarify this)*. There is tension between the maximal throughput and maximal memory utilization, each one of the two can be maximized at the expense of the other. The programmer needs to strike a good balance between the two.
 
 ### Fragmentation:
-- **Fragmentation** is the main culprit behind poor heap memory utilization. Fragmentation occurs when "therwise unused memory is not available to satisfy allocate requests". Fragmentation appears in two forms:
+- **Fragmentation** is the main culprit behind poor heap memory utilization. Fragmentation occurs when "otherwise unused memory is not available to satisfy allocate requests". Fragmentation appears in two forms:
 	- **Internal fragmentation**: occurs when an allocated block is larger than the payload. This happens usually as a result of alignment constraints (as we've seen earlier) or when the allocator imposes a minimum size of the allocated block and the payload is smaller than that minimum. It can be measured by summing the aggregate difference of allocated blocks and their payloads.
 	- **External fragmentation**: occurs when there is enough aggregate free memory to satisfy an allocate request, but these blocks are scattered all over the place and no single free block is able to satisfy the request. External fragmentation is less quantifiable than its internal counterpart, because it depends on previous as well as future requests. External fragmentation is harder to predict, so allocators try to heuristically maintain small numbers of large free blocks.
 
@@ -386,20 +438,84 @@ void free(void *ptr);
 - Segregated fit is used in actual high-performance dynamic memory allocators such as the GNU `malloc` because it is both fast and memory efficient. It is fast because, it searches only a portion of the heap blocks instead of the entire heap. It also has maximal memory utilization because it approaches best-fit search.
 
 ## Garbage Collection: 
-### Garbage Collector Basics:
-### Mark&Sweep Garbage Collectors:
-### Conservative Mark&Sweep for C Programs:
+- With explicit allocators such as `malloc`, the application is responsible for allocating new memory blocks and freeing those blocks it no longer it needs. Failing to free allocated memory is a common mistake among programmers. Examine the following code:
+```c
+void garbage(){
+	int *p = (int *) malloc(23454);
+	return;
+}
+```
+- The function `garbage` above allocates some memory but never releases it. This useless block will stay allocated for the lifetime of the program, occupying heap space that could've been used for something else.
+- A **garbage collector** is a dynamic memory allocator that automatically frees allocator memory blocks that are no longer needed. Allocated but not needed blocks are called **garbage** and **garbage collection** is freeing these unneeded resources. In a system that supports garbage collection, applications explicitly allocate resources but never explicitly frees them. Instead, the garbage collector periodically finds garbage blocks and frees them. 
+- Garbage collectors were first used with Lisp in the 1960s by some John McCarthy that I've never heard of. They are an important part of modern languages such as Java and Python. They also remain an important area of research. The rest of this section will focus on the original McCarthy's *Mark&Sweep* algorithm. It can actually be built on top of a `malloc` package to provide garbage collection for C.
 
-##
-###
-###
-###
-###
-###
-###
-###
-###
-###
+### Garbage Collector Basics:
+- A garbage collector views memory as a directed *reachability graph* that looks as the following images shows:
+![Memory as a directed reachability graph](img/directedReachabilityGraph.png)
+- The nodes in this graph are divided into two sets: **root nodes** and **heap nodes**. Each heap node corresponds to a block allocated in the heap. A directed edge ***p → q*** means that a location in block ***p*** points to a location in block ***q***. Root nodes are locations outside the heap containing pointers to locations inside the heap. Root nodes can be registers, variables on the stack or global variables in the read-write area of the VM.
+- A node is **reachable** if there is a directed path from any root node to it. *Unreachable* nodes are garbage that can never be reached and used by the application again. The job of a garbage collector is to "maintain some representation of the reachability graph" and periodically free the unreachable nodes.
+- Garbage collectors for interpreted languages like Java can keep an exact representation of the reachability graph and thus free all garbage. In C and C++, a garbage collector cannot maintain an exact representation of a reachability graph, so it is called a **conservative garbage collector**. In such a garbage collector, each reachable node is correctly identified as reachable but some unreachable nodes are wrongly identified as reachable. 
+- A garbage collector might collect garbage on demand, or run on a separate thread and continually updating the reachability graph and collecting garbage.	 
+
+### Mark&Sweep Garbage Collectors:
+- **Mark&Sweep** collectors consist of two phases: 
+	- A **mark phase** where all reachable and allocated descendants of the root nodes are marked.
+	- A **sweep phase** which frees all unmarked allocated blocks.
+- Usually, one of the low order bits of a block's header is used to mark that block.
+- Generally speaking, a `mark` phase function would go over all root nodes and start marking all their reachable descendants that are unremarked heap blocks recursively until they are all marked. At the end of marking, any heap blocks that are unmarked are guaranteed to be unreachable. 
+- A `sweep` function would go over all the blocks in the heap and free all blocks that are allocated but unmarked.
+
+## Common Memory-Related Bugs in C Programs:
+- Managing virtual memory is fraught with errors and bugs. They are scary and often appear far away from their original causes both in time and space. A program would run fine for a long before a memory-related bug crashes it. Bugs can also seem to have little  relevance to the actual cause. This section is a cheat sheet listing some of the more common memory bugs and errors that plague the code of C programmers.
+
+### Dereferencing Bad Pointers:
+- Remember from the section on Linux virtual memory layout. We saw the a process's virtual address space is divided into areas and these areas can be separated by holes that the kernel doesn't keep track of. These holes cannot be dereferenced, and any attempt to dereference them results in a termination of the program with a segmentation exception (the so called seg fault).
+- Other regions of the process address space are read-only, so attempting to write to such areas also terminates the program with a protection exception.
+- One common example of bad pointer dereferencing is the infamous `scanf` bug. `scanf` is used to read a string from `stdin` into a variable by passing to it a format string and the address of the said variable as in `scanf("%d", &val)`. Novice programmers pass the value of the variable itself instead of its address: `scanf("%d", val)`. The program interprets `val` as an address and attempts to write to it. If you are lucky, the program terminates immediately with an exception. If you are unlucky, your program writes to a valid read/write area causing some obscure and probably disastrous problems. 
+
+### Reading Uninitialized Memory:
+- bss memory location (*damn it, I should've read the linking chapter!!*) such as global variables are always initialized to something like zeros, but heap memory variables are not initialized. `malloc` allocates memory but does not initialize the block it initialize. This is instead done its wrapper `calloc`.
+
+### Allowing Stack Buffer Overflows:
+- A program suffers from a buffer overflow when it writes to a target buffer on the stack without checking the input size. The following function suffers from a buffer overflow bug, because `gets` doesn't check the input size:
+```c
+void bufferOverflow(){
+	char buf[64];
+
+	gets(buf);
+
+	return;
+}
+```
+- Replacing `gets` with `fgets` which checks the input size is the fix. 
+
+### Assuming that Pointers and the Objects They Point to Are the Same Size:
+- Pointer syntax is just confusing and pointers in general are the bane of programming in C. Make sure that you don't confuse pointers with data they point to. This  might not be a problem where a pointer type has the same size as the type of object it points to, but this is not always the case.Programmers usually commit this mistakes and often don't get any warnings, although compilers are becoming smarter and usually give you warnings about such errors.
+
+### Making Off-by-One Errors:
+- C doesn't check array boundaries or give you a `ArrayIndexOutOfBoundsException` like Java, so if go over the bounds of an array by by 1 index (a very common error), you might corrupt a crucial part of virtual memory that follows your array.
+
+### Referencing a Pointer Instead of the Object It Points to:
+- The expression `*val--` is most probably wrong and was meant is `(*size)--`. We are trying to decrement `val`, the content of pointer but `*val--` decrements the address of that value. This is caused by the precedence and associativity rules of the C language. `*` and `--` have the same precedence and associate from right to left. To be on the safe side make sure to always use parentheses to explicitly override the confusing precedence rules. 
+
+### Misunderstanding Pointer Arithmetic:
+- Pointer arithmetic is done in units equal to the size of objects they point to and not bytes.
+
+### Referencing Nonexistent Variables:
+```c
+int *stackref(){
+	int val;
+
+	return &val;
+}
+```
+- `val` in the example above only exists during the lifetime of the function `stackref`. `val` lives in the stack which is popped after the function returns. While the pointer still points to a valid memory address, it points to an invalid variable. That same location might be reused by other function stacks, so changing the returned pointer might corrupt a stack variable of that function. This is a little subtle and one those sneaky and dangerous bugs. 
+
+### Referencing Data in Free Heap Blocks:
+- It is easy to find oneself in scenarios where one allocates some heap space, frees it, and then tries to access that space. Because that heap region is now free, it might have been allocated by some other part of the program and its values overwritten. This is another silent bug that's hard to track.
+
+### Introducing Memory Leaks:
+- **Memory leaks** mean allocating blocks, say in a functions and returning without ever freeing them. If such a function is called frequently, then the unfreed garbage will grow the heap until it eats up the whole virtual memory space. This is especially bad for daemons and servers that never terminate.  
 
 
 
