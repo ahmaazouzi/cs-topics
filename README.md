@@ -8,7 +8,7 @@
 	+ [The Memory Hierarchy](systems/memoryHierarchy.md) :white_check_mark:
 	+ [Exception Control Flow](systems/exceptionalControlFlow.md) :white_check_mark: 
 	+ [Virtual Memory](systems/virtualMemory.md) :white_check_mark: 
-	+ [System-Level IO](systems/systemLevelIO.md) :barrows_counterclockwise:   
+	+ [System-Level IO](systems/systemLevelIO.md) :arrows_counterclockwise:   
 	+ [Concurrency](systems/concurrent.md) :black_circle:  
 	
 - [Networking:](networking/)
