@@ -90,10 +90,10 @@ ssize_t write(int fd, const void *buf, size_t n);
 #include <stdlib.h>
 
 int main(){
-	char c;
-    while(Read(STDIN_FILENO, &c, 1) != 0)
-        Write(STDOUT_FILENO, &c, 1);
-	exit(0);
+    char c;
+    while(read(STDIN_FILENO, &c, 1) != 0)
+        write(STDOUT_FILENO, &c, 1);
+    exit(0);
 }
 ```
 - The current file position can be manipulated with the **`lseek`** function.
@@ -101,10 +101,14 @@ int main(){
 	- *Encountering EOF on reads*: If the application requests a 100 bytes from a file that has only 20 bytes, the first `read` will return the short count 20 and the next `read` returns the short count 0, coz it encounters EOF.
 	- *Reading text lines from a terminal*: If the open file is associated with the terminal (keyboard, display, etc.), `read` can only read one line at a time. If you requests chunks of 100 bytes and a line is shorter than 100, you get a short line.
 	- *Reading and wring sockets*: If the open file is a network socket, "then internal buffering constraints and long network delays" can cause short counts. Short counts can also happen due to the Unix *pipe*.
-- Short counts are almost never encountered when reading from or writing to disk except on EOF, but to have reliable network application, we need to have programs continually call `read` and `write` until all requested bytes have been transferred.
+- Short counts are almost never encountered when reading from or writing to disk except on EOF, but to have reliable network applications, we need to overcome short counts caused by network latency and other reasons. 
 
 ## Robust Reading and Writing with the Rio Package:
+- *This section went over creating a IO package resilient to short counts, but what I thought was interesting is the difference between buffered and unbuffered IO. I understand the general idea, but I'm not sure about the details. Basically, with buffering a whole block of bytes gets written or read at once, instead of reading/writing each byte individually. The block of bytes gets stored somewhere between operations. The common opinion is that buffering reduces overhead because there are not system calls for each byte  and that fewer calls are performed for a whole block than for each byte in the block. One thing that really confused me from the text is a claim that buffered IO is good for text files, while unbuffered IO is good for text files, while binary data is bettered IOed without buffering.I checked online and couldn't find definitive answers to anything about buffering and often some conflicting "opinions", the most confusing of which was that buffering might be bad because we are doing [double buffering](https://www.quora.com/What-is-a-good-explanation-of-buffered-I-O). Even when reading the C programming language book, I was stomped at one of the later chapters that was about Unix IO. Probably, I might have to come back to this subject in the future.*
+
 ## Reading File Metadata:
+- Information about a file or **metadata** can be got by a call to **`stat`** or **`fstat`**
+
 ## Sharing Files:
 ## IO Redirection:
 ## Standard I/O:
