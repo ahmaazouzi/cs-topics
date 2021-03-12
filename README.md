@@ -3,7 +3,7 @@
 	+ [A Tour of Computer Systems](systems/computerSystems.md) :white_check_mark:
 	+ [Representing and Manipulating Information](systems/repManInfo.md) :white_check_mark:
 	+ [Machine-Level Representation of Programs](systems/machineLevelRep.md) :white_check_mark:
-	+ [processor Architecture](systems/processorArchitecture.md) :x: 
+	+ [processor Architecture](systems/processorArchitecture.md) :arrows_counterclockwise: 
 	+ [Optimizing Program Performance](systems/optimizingPerformance.md) :white_check_mark:
 	+ [The Memory Hierarchy](systems/memoryHierarchy.md) :white_check_mark:
 	+ [Exception Control Flow](systems/exceptionalControlFlow.md) :white_check_mark: 
