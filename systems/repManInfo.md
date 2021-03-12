@@ -1,6 +1,7 @@
 # Representing and Manipulating Information:
 - *I will skip many of the very obvious information such as "everything in computers is 0's and 1's".*
 
+## Table of Contents:
 * [Intro and Motivation](#intro-and-motivation)
 * [Information Storage](#information-storage)
 	+ [Hexadecimal Notation](#hexadecimal-notation)
@@ -33,9 +34,9 @@
 * [Floating Point](#floating-point)
 	+ [Fractional Binary Numbers](#fractional-binary-numbers)
 	+ [IEEE Floating-Point Representation](#ieee-floating-point-representation)
-	+ [Case 1 Normalized Values](#case-1-normalized-values)
-	+ [Case 2 Denormalized Values](#case-2-denormalized-values)
-	+ [Case 3 Special Cases](#case-3-special-cases)
+		+ [Case 1 Normalized Values](#case-1-normalized-values)
+		+ [Case 2 Denormalized Values](#case-2-denormalized-values)
+		+ [Case 3 Special Cases](#case-3-special-cases)
 	+ [Example Numbers](#example-numbers)
 	+ [Converting an Unsigned Integer into IEEE Floating-Point Representation](#converting-an-unsigned-integer-into-ieee-floating-point-representation)
 	+ [Rounding](#rounding)
