@@ -16,6 +16,7 @@
 	+ [A Tour of the Internet and Networking](networking/networking-and-internet.md) :white_check_mark:
 	+ [The Application Layer](networking/application.md) :white_check_mark:
 	+ [The Transport Layer](networking/transport.md) :white_check_mark:
+	+ [The Network Layer](networking/network.md) :arrows_counterclockwise:
 
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables](algorithms/basicDS.md) :arrows_counterclockwise:
