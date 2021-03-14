@@ -17,6 +17,7 @@
 	+ [The Application Layer](networking/application.md) :white_check_mark:
 	+ [The Transport Layer](networking/transport.md) :white_check_mark:
 	+ [The Network Layer](networking/network.md) :arrows_counterclockwise:
+	+ [The Link Layer](networking/link.md) :black_circle:
 
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables](algorithms/basicDS.md) :arrows_counterclockwise:
