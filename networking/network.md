@@ -60,6 +60,33 @@
 	- A network architecture can only offer a connectionless host-to-host service or a connection host-to-host service but can never offer both. Networks providing only connection services at the network layer are called **virtual circuits (VCs)**, and those offering connectionless services only are called **datagram networks**.
 	- Transport connection facilities are implemented in the edge at the end-systems, while network connection is implemented at the core in routers as well as the edge in end-systems.
 
+### Virtual-Circuit Networks:
+- We all know and interact daily with the Internet network which is a datagram network, but there are other networks which belong to the virtual-circuit architecture such as the ATM and *frame relay* networks. 
+- A VC consists of:
+	- 1. A *path* consisting of a series of links and routers connecting the source to the destination. 
+	- 2. *VC numbers*, one for each link along the path.
+	- 3. Entries in the *forwarding table* of each router along the path.
+- A VC packet carries a VC number in its header. Each VC router along the packet's path changes the VC number of the packet using the router's forwarding table.
+- Consider the following virtual circuit network:
+![Virtual circuit network](VCNetwork.png)
+- In the figure above, we see a host A and host B, and 4 routers. Routers R1 and R2 have 3 link interfaces each. Imagine host A wants to establish a virtual circuit between itself and host B at the path A-R1-R2-B, and also assigns VC numbers 12, 22, 32 to the three links in the path for this VC. 
+- How does the router determine the replacement VC number of a packet going through the router? Well, Each router's forwarding table has a *VC number translation* which looks something like the following table (for R1):
+
+| Incoming interface | Incoming VC # | Outgoing interface | Outgoing VC # |
+| --- | --- | --- |
+| 1 | 12 | 2 | 22 |
+| 2 | 63 | 1 | 18 |
+| 3 | 7 | 2 | 17 |
+| 1 | 97 | 3 | 44 |
+| ... | ... | ... | ... |
+
+- Whenever a new VC is established across a router, a corresponding entry is added to the forwarding able. When the VC terminates, entries in each router's forwarding table in the path are removed. 
+
+
+
+### Datagram Networks:
+### Origins of VC and Datagram Networks:
+
 ## Inside a Router:
 ## The Internet Protocol: Forwarding and Addressing in the Internet:
 ## Routing Algorithms:
