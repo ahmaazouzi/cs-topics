@@ -73,7 +73,7 @@
 - How does the router determine the replacement VC number of a packet going through the router? Well, Each router's forwarding table has a *VC number translation* which looks something like the following table (for R1):
 
 | Incoming interface | Incoming VC # | Outgoing interface | Outgoing VC # |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | 1 | 12 | 2 | 22 |
 | 2 | 63 | 1 | 18 |
 | 3 | 7 | 2 | 17 |
