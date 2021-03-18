@@ -68,7 +68,7 @@
 	- 3. Entries in the *forwarding table* of each router along the path.
 - A VC packet carries a VC number in its header. Each VC router along the packet's path changes the VC number of the packet using the router's forwarding table.
 - Consider the following virtual circuit network:
-![Virtual circuit network](VCNetwork.png)
+![Virtual circuit network](img/VCNetwork.png)
 - In the figure above, we see a host A and host B, and 4 routers. Routers R1 and R2 have 3 link interfaces each. Imagine host A wants to establish a virtual circuit between itself and host B at the path A-R1-R2-B, and also assigns VC numbers 12, 22, 32 to the three links in the path for this VC. 
 - How does the router determine the replacement VC number of a packet going through the router? Well, Each router's forwarding table has a *VC number translation* which looks something like the following table (for R1):
 
