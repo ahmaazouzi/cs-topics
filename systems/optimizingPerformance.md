@@ -71,7 +71,7 @@ for (int j = 0; j < n; j++){
 
 int ni = n * i; // This computation was moved outta loop
 for (int j = 0; j < n; j++){
-    a[n * i + j] = b[j];
+    a[ni + j] = b[j];
 }
 ```
 - Compilers might be stomped and not always move loop-invariant expressions outside loops, especially if they involve aliased memories or function calls. A call to an expensive function that does the exact same thing in every iteration can be extremely costly. In such cases, the programmer might have to do such a motion manually.

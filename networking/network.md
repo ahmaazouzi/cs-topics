@@ -81,10 +81,47 @@
 | ... | ... | ... | ... |
 
 - Whenever a new VC is established across a router, a corresponding entry is added to the forwarding able. When the VC terminates, entries in each router's forwarding table in the path are removed. 
-
-
+- Why complicate things by changing a packet's header for each link it crosses? There are two reasons for this:
+	- 1. It reduces the length of the VC field in the packet's header.
+	- 2. It also greatly simplifies the *VC setup* (whatever this :confused:). With multiple VC numbers for each packet, each link in the path can choose a VC number independent of VC numbers chosen at other links along the path. If we have one common VC for all links along a certain path, routers in that path need to communicate and make sure that number is not being in use by another connection at these routers. 
+- Being connection-oriented, a VC network's routers must maintain **connection state information** for current connections. Each time a connection is established through a router, a connection entry must be added to that router's forwarding table, and each time a connection is disbanded, the corresponding connection entry in the router's forwarding table must be removed. maintaining state information about the VC connection might be the most important feature of such type of network. 
+- The life cycle of a VC connection goes through 4 phases:
+	- **VC setup**: The sending transport layer contacts the network layer, giving it the receiver's address. The network determines the path between the sender and receiver, gives each link along the path a VC number, and adds an entry in the forwarding table of each router along the path. The network layer might also reserve resources such as bandwidth along the path.
+	- **Data transfer**: Once a VC is established, packets can start flowing through the circuit as the figure blow shows.
+	- **VC teardown**: Once the sender or receiver wishes to terminate the connection, it tells the network to tear the VC down. The network informs the other end system of this wish to terminate and updates the forwarding tables in routers along the path to show that the VC doesn't exist anymore.
+![VC setup](img/VCSetup.png)
+- One important difference between VC setup and transport layer connection setup is only the two end systems are aware of and involved in the set up of a transport layer connection, while in a VC, every router in the VC path is aware of all the VC passing through it.
+- Messages that end systems send to setup and teardown a VC and the messages exchanged between routers to setup this connection are called **signaling messages** and are governed by **signaling protocols** and we will not cover them here. 
 
 ### Datagram Networks:
+- In a **datagram network**, a packet is given an address of the destination end system and is placed in the network where the address will be used by routers to get it get the packet to the desired destination.
+Datagram networks are connectionless, so they don't need a VC setup, and routers don't have to maintain VC state information as the following image shows:
+![A datagram network](img/datagramNetwork.png)
+- As a packet traverses the network, it passes through  a series of routers which use the packet's address to forward it. Each router has a forwarding table that maps destination addresses to link interfaces. A router uses the destination address of a packet to lookup the right link interface in the forwarding table. The router, then, forwards the packet to that link interface. 
+- How does the lookup operation works in datagram networks. Let's say that a destination address is 32-bit long. A naive implementation of a forwarding table in such a system would have an entry for every possible address. Such a table would have over 4 billion entries which is extremely inefficient. 
+- Let's also suppose we have a router with 4 links numbered 0 through 3, and that packets are to be forwarded as follows:
+
+| Destination range | Link interface |
+| --- | --- |
+| 11001000 00010111 00010000 00000000<br>through<br>11001000 00010111 00010111 11111111 | 0 |
+| 11001000 00010111 00011000 00000000<br>through<br>11001000 00010111 00011000 11111111 | 1 |
+| 11001000 00010111 00011001 00000000<br>through<br>11001000 00010111 00011111 11111111 | 2 |
+| otherwise | 3 |
+
+- For such an arrangement we don't really need all 4 billion address but we need only a 4-entry table:
+
+| Prefix match | Link interface |
+| --- | --- |
+| 11001000 00010111 00010 | 0 |
+| 11001000 00010111 00011000 | 1 |
+| 11001000 00010111 00011 | 2 |
+| Otherwise | 3 |
+
+- In this type of forwarding tables, a router matches the **prefix** of a destinations address with a entry in the table. If there is a match, the router forwards the packet to the corresponding link interface. Let's say the destination address of a given packet is ***11001000 00010111 00010110 10100001***. We see that the first 21-bits of the address matches the first entry in the table, so the packet will be forwarded to the link interface 0, or would it?? If you examine the whole table, you'd notice the address matches all 3 entries? So how would the router decide which link to forward the packet to? In fact, when there are multiple matches, the router uses the **longest prefix matching rule**. The router finds the longest matching entry in the table and forwards the packet to the link interface associated with the matching entry. 
+- Although datagram networks don't maintain information about connection state, they keep forwarding state information in their tables. However, the rate at which datagram network forwarding tables are updated is very slow. These tables are updated by forwarding tables every one to five minutes. VC forwarding tables are updated whenever a connection is established or torn down.. This can literally happen in microseconds!
+- Because forwarding tables in datagram networks can be updated at any time, the paths that packets sent from one system to another can follow different paths and arrive out of order!
+
+
 ### Origins of VC and Datagram Networks:
 
 ## Inside a Router:
