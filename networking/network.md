@@ -123,8 +123,28 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 
 
 ### Origins of VC and Datagram Networks:
+- THe VC network has its origins in telephony systems which actually use real circuits instead of virtual circuits. It is much more complex than the datagram network because it connects dumb end systems so the network is burdened with maintaining a connection.
+- Datagram networks were designed from the get go to connect complex computers. Networks were made as simple as possible. Upper layers of the network stack that reside in the sophisticated end system take care of functions that make the network usable such as packet reordering, reliability and congestion control. Datagram networks are inversion of VC networks. 
+- This simple design of datagram networks demands little requirements from the networks which leads to fact that such a network can interconnect networks relying on different link-layer technologies that use different media such as radio, Ethernet, fiber, etc.
+- Complex functionality that depends on datagram networks is all implemented in end systems and is not hindered by complex network constraints. It's easy to develop complex applications on the edge on the network without having it mixed with complexities of the network's core.
 
 ## Inside a Router:
+- How do routers **forward** packets? i.e. How do they transfer packets from their incoming links to their outgoing links? The terms *forwarding* and *switching* are often used interchangeably and it looks like we'll be doing the same from now on.
+- The following figure shows a high-level generic view of router architecture:
+![Router architecture](img/routerArch.png)
+- Your generic router generally consists of:
+	- **Input ports**: perform several functions:
+		- At the physical layer, the input port *terminates* the incoming physical link.
+		- At the link layer, the lookup function is performed at the input port. "It is here that the for- warding table is consulted to determine the router output port to which an arriving packet will be forwarded via the switching fabric", Control packets, *whattt :confused:!!* such as those carrying routing information get forwarded from the input ports to the routing processor. 
+	- **Switching fabric**: connects the input ports to output ports. It is completely contained within the router. It is a network inside the network's router.
+	- **Output ports**: stores packets received from the switching fabric and transmits these packets on the outgoing link by performing the physical and link layer functions we've touched on for input ports. With bidirectional links which transmit data in both directions, an output port is paired with an input port "on the same line card (a printed circuit board containing one or more input ports, which is connected to the switching fabric)".
+	- **Routing processor**: executes the *routing protocols*,  maintains *routing tables* (what :confused:!!) and attached link information. It also computes the forwarding table of the router and performs network management which we will not talk about in this chapter. 
+- As we've seen earlier, a router perform two functions: routing and forwarding. The image above showing router's architecture illustrates this distinction where we can see how the router is divided into a **router forwarding plane** and a **router control plane**.
+- The router's input ports, output ports and switching fabric are part of the forwarding plane and are almost always implemented in hardware. Implementing the forwarding plane in hardware rather than software is due to the fact that a typical router needs to forward large amounts of packets in a few nanoseconds. Implementing the forwarding functionality in software would make it slower.
+- Unlike the forwarding plane, the router control plane which executes router protocols executes at a scale of milliseconds and seconds. They are implemented in software that runs on the routing processor which a typical CPU.
+
+
+
 ## The Internet Protocol: Forwarding and Addressing in the Internet:
 ## Routing Algorithms:
 ## Routing in the Internet:
