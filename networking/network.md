@@ -142,6 +142,22 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 - As we've seen earlier, a router perform two functions: routing and forwarding. The image above showing router's architecture illustrates this distinction where we can see how the router is divided into a **router forwarding plane** and a **router control plane**.
 - The router's input ports, output ports and switching fabric are part of the forwarding plane and are almost always implemented in hardware. Implementing the forwarding plane in hardware rather than software is due to the fact that a typical router needs to forward large amounts of packets in a few nanoseconds. Implementing the forwarding functionality in software would make it slower.
 - Unlike the forwarding plane, the router control plane which executes router protocols executes at a scale of milliseconds and seconds. They are implemented in software that runs on the routing processor which a typical CPU.
+- There are many things to consider when designing a self-respecting router! how do routers handle packet jams? What if many packets all want to go through a specific output port? Are there priorities governing the flow of packets? We will see some answers to these questions in the following more detailed subsections about the internals of routers.
+
+### Input Processing:
+- The following diagram shows a detailed description of how input ports work:
+![Input port processing](img/inputPortProcessing.png)
+- An input port implements the physical-layer and link-layer for an individual input link. The lookup function is executed at the input port. It is in the input port that the router uses the forwarding table to decide which output port to forward a packet to via the switching fabric. The router processor computes and updates the forwarding table but a *shadow copy* of the forwarding table is usually stored in each input port. The forwarding table is copied to the "line cards" (*whatever these are!!*) over a separate bus. The shadow copies of the forwarding table in each port allow each port to make forwarding decisions locally without referring to the routing processor for each packet.
+- The ports don't just search the forwarding table linearly as they can receive several Gbps of data which they need to process in mere nanoseconds. The lookup is done in hardware and specialized algorithms are used to do such lookup. Embedded on-chip DRAM and SRAM memories are also used to speedup lookup. There is talk of a certain *ternary content address memories (TCAMs)* which returns a forwarding table entry in constant time. Each input port has its CAM or TCAM.
+- Once the lookup determines which output port the packet needs to be forwarded to, it sends the packet to the switching fabric. Sometimes, a packet might be blocked temporarily from entering the switching fabric because packets from another input port are passing through the fabric. Blocked packets are queued and scheduled to be passed to the switching fabric at a later time. Queuing can be done in both input and output processors as we will see later. A few other operations are performed at the input router such as checking packet checksum, version number and time-to-live, etc.
+- Input port processing which involves looking up an address (*match*) and sending a packet into the switching fabric (*action*) is a specific case of general abstraction called *match plus action*. Other network components also use this abstraction such as link-layer switches which do destination addresses lookup before sending frames to the switching fabric, and firewalls which would filter packets that don't match certain criteria such as a combination of source/destination IP addresses and transport-layer port numbers.
+
+### Switching:
+![Three switching techniques](img/switchingTechniques.png)
+
+### Output Processing:
+### Where Does Queuing Occur?
+### Routing Control Plane:
 
 
 
