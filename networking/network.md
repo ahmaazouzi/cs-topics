@@ -121,7 +121,6 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 - Although datagram networks don't maintain information about connection state, they keep forwarding state information in their tables. However, the rate at which datagram network forwarding tables are updated is very slow. These tables are updated by forwarding tables every one to five minutes. VC forwarding tables are updated whenever a connection is established or torn down.. This can literally happen in microseconds!
 - Because forwarding tables in datagram networks can be updated at any time, the paths that packets sent from one system to another can follow different paths and arrive out of order!
 
-
 ### Origins of VC and Datagram Networks:
 - THe VC network has its origins in telephony systems which actually use real circuits instead of virtual circuits. It is much more complex than the datagram network because it connects dumb end systems so the network is burdened with maintaining a connection.
 - Datagram networks were designed from the get go to connect complex computers. Networks were made as simple as possible. Upper layers of the network stack that reside in the sophisticated end system take care of functions that make the network usable such as packet reordering, reliability and congestion control. Datagram networks are inversion of VC networks. 
@@ -154,9 +153,18 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 
 ### Switching:
 ![Three switching techniques](img/switchingTechniques.png)
+- The switching fabric is a fundamental component of the router which uses it to switch (forward) packets from input ports to output ports. As the image above depicts, switching can be done in one of 3 ways:
+	- **Switching via memory**: Earlier routers were simple and acted like traditional computers. Switching was done directly by the CPU (routing processor). Input and output ports acted as IO devices. When an input port received a packet, it signaled the routing processor with an interrupt, which copied the packet to main memory, extracted its destination addresses, looked up the output port in the forwarding table, and then copied it to the output port's buffer. Memory acted as a bottleneck in this system and only one packet could be forwarded at a time because only one memory read/write operation could be done over the shared system bus. Routers still perform switching via memory, but instead of doing it in the routing CPU, the lookup and storage in appropriate memory locations is done by processing on the *input line cards*. I believe in this scheme multiple packets can be written read concurrently, but don't take my word for it. 
+	- **Switching via a bus** involves moving a packet directly from the input port to the appropriate output port through a shared bus by prepending the packet with a header that indicates the destination output port. All the output ports will receive the packet, but only the port with the matching label keeps the packet while others discard it. The label is then stripped from the packet because that label is only used within the switch. If multiple packets arrive at the router input at the same time (even when targeting different input ports), they all must wait but one packet because only one packet can pass through the shared bus at a time. The switching speed in such switches is bottlenecked by the speed of the bus. Such routers are OK for small local networks and enterprise networks. 
+	- **Switching via an interconnection network**: The limitations of a single shared bus can be replaced by the use of an interconnection network. In a router with ***N*** input ports and ***N*** output ports, there are ***2N*** buses connecting the two types of ports. These buses have switches that get opened and closed by the switching fabric controller. Multiple packets arriving at multiple different input ports and destined for multiple different output ports can be forwarded simultaneously.
 
 ### Output Processing:
+![Output port processing](img/outputPortProcessing.png)
+- The image above shows a how output port's processing is done. It takes packets stored in the output port's memory and transmits them to the output link after it selects them and dequeues them for transmission. 
+
 ### Where Does Queuing Occur?
+- 
+
 ### Routing Control Plane:
 
 
