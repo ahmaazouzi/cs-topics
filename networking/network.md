@@ -163,11 +163,14 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 - The image above shows a how output port's processing is done. It takes packets stored in the output port's memory and transmits them to the output link after it selects them and dequeues them for transmission. 
 
 ### Where Does Queuing Occur?
-- 
+- Theoretically, queuing can occur both in input and output ports and this depends on a variety of factors such as traffic load, the speed of the switching fabric and the line speed *(I don't know what line they are referring to, is it the port itself or the link terminated by the port??!!)*. When a port's memory is filled and can't store any more packets, **packet loss** occurs. 
+- If the switching fabric is fast, at least as fast as the sum of all the pairs of input and output ports in the router, the queuing will most likely occur at the output ports because a flood of packets might be directed to one output port from multiple input ports all at once and these packets will flow unhindered by the fast switching fabric resulting in queuing at output ports.
+- A consequence of output queuing is a **packet scheduler** which chooses the next packet from the queue to transmit. This can be as simple as *first-come-first-served (FCFS)* scheduling, or can be more sophisticated such as *weighted fair queuing (WFQ)* "which shares the outgoing link fairly among the different end-to-end connections that have packets queued for transmission". Packet scheduling is important in so called *quality-of-service guarantees* which seems to be important for multimedia networking such as video streaming, I believe!
+- When memory can't queue any more packets, the router or output port must decide to drop packets. When the queue is full, newly arriving packets can get dropped (a policy called **drop-tail**). Already queued packets might also be dropped to make room for new packets. Packet dropping policies can get fancier and start dropping or marking packets before queuing buffer is full and this is done to send a congestion signal to the sending node. Policies for packet-dropping and packet-marking are called **active queuing management (AQM)** algorithms.
+- When the switch fabric is too slow to forward all arriving packets to the appropriate output ports, then queuing happens at the input ports. One result of input port queuing is a phenomenon called **head of the line (HOL) blocking**. Packets behind blocked packets are also blocked inside the buffer, even though they can otherwise move freely through the switch fabric. Geniuses have proposes solutions to manage the HOL phenomenon which we, mere mortals, won't understand. 
 
 ### Routing Control Plane:
-
-
+- The routing control plane resides in the router's routing processor. The network wide control plane is distributed with different pieces of it residing and executing in different routers and interacting by sending routing messages to each other. 
 
 ## The Internet Protocol: Forwarding and Addressing in the Internet:
 ## Routing Algorithms:
