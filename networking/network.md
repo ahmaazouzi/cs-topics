@@ -173,6 +173,40 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 - The routing control plane resides in the router's routing processor. The network wide control plane is distributed with different pieces of it residing and executing in different routers and interacting by sending routing messages to each other. 
 
 ## The Internet Protocol: Forwarding and Addressing in the Internet:
+- We've been discussing the the generic addressing and forwarding mechanics of the network layer in general, but will now discuss one specific network-layer protocol, the **Internet Protocol (IP)** which governs the the **Internet**. 
+- There are two versions of IP, IP version 4 or **IPv4** and IP version 6 or **IPv6** and we will discuss both in this section with a focus on IPv4. 
+- The following diagram shows the main components of the Internet's network layer:
+![Internet's network layer](img/inernetNetworkLayer.png)
+- The Internet's network layer has three main components:
+	- The IP protocol which will be the subject of this s
+	- Routing.
+	- Error reporting in the network.
+
+### Datagram Format:
+- The following image shows the structure of an IPv4 datagram which a self-respecting student of networking should probably know by heart:
+![IPv4 datagram format](img/ipv4Datagram.png)
+- Important IPv4 datagram fields, as the image above shows, include:
+	- **Version number**:consists of 4 bits and is used by the router to determine the IP version of a datagram, which in turn is used to determine how the datagram is to be interpreted as different IP versions have different datagram formats. There are different IP versions and the image above shows a datagram of IPv4.
+	- **Header length**: uses 4 bits. IPv4 datagram's header can contain a variable number of options which means datagrams have variable header lengths. The header length field is used to determine where the actual datagram data starts. Most datagrams have no options meaning the header length is usually 20 bytes.
+	- **Type of service (TOS)**: is an 8-bit field used to distinguish between different types of datagrams such as those requiring low delay and those requiring reliability, etc. 
+	- **Datagram length**: is 16 bits in length. It indicates the total length of a datagram (header + data). Based on the number of bits in this field, a datagram can theoretically be 65,535 bytes in length, but an actual datagram is rarely over 1,500 bytes.
+	- **Identifier, flags, fragmentation offset**: are fields that have to do with *IP fragmentation* which we will see later.
+	- **Time-to-live (TTL)**: has 8 bits and is included to prevent a datagram from circulating forever in the network such as in the case of a long routing loop. This field is incremented by 1 each time it is processed by a router. When it is equal to 0, the datagram is dropped.
+	- **Protocol**: is 8-bit long. This field is used only when the datagram reaches its destination host. It indicates to which to which transport layer the datagram's data belongs to. For example, the value 6 indicates the datagram's data goes to TCP, while 17 is for UDP. This fields binds the network layer to network and transport layers together.
+	- **Header checksum**: is 8-bit long. It is used by a router to detect errors in an IP datagram. It is computed by treating each 2 bytes in the header as a number and summing these numbers using 1s complement. Each router computes the header checksum of a datagram and drops the datagram if the checksum header field doesn't equal the result of this computation. Each router recomputes and stores the header checksum because the TTL and probably the options too might change. Why does TCP/IP computes a checksum at both the network and transport layer? It seems a little redundant. There are several wise reasons for such apparent which include:
+		- Only the datagram header is checksummed at the at the IP layer, while the whole segment is checksummed at the TCP/UDP layer.
+		- TCP/UDP protocols don't have to belong to the same stack as IP. IP can be used for other transport layer protocols, while UDP/TCP can theoretically run on an ATM network. 
+	- **Source and destination IP addresses**: are both 32-bit long. These two fields contain the sender and receiver host IP addresses. The sender inserts its own address into the source field, and does the same with the destination address which it usually obtains through a DNS lookup.
+	- **Options**: allow the IP header to be extended to include possible extra data. Options were meant to be used  rarely, that's why they are not included in every datagram. Datagrams that  contain options incur extra overhead because they need more processing. The complicated nature of options led to dropping them altogether in IPv6. 
+	- **Data (payload)**: is of a variable length and it contains the actual data in the datagram. It usually consists of a transport segment, but it can also consist of other types of data such ICMP messages which we will see later in this document.
+- The header of a datagram that doesn't have options is 20-byte long. If the datagram has a TCP segment, the segment's header is also 20 bytes in length. Such a datagram, then, has 40-bytes of
+header data not including the transport segment's payload!   
+
+### IPv4 Addressing:
+### Internet Control Message Protocol (ICMP):
+### IPv6 Addressing:
+### IP Security:
+
 ## Routing Algorithms:
 ## Routing in the Internet:
 ## Broadcast and Multicast Routing:
