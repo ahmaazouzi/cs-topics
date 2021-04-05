@@ -202,6 +202,24 @@ Datagram networks are connectionless, so they don't need a VC setup, and routers
 - The header of a datagram that doesn't have options is 20-byte long. If the datagram has a TCP segment, the segment's header is also 20 bytes in length. Such a datagram, then, has 40-bytes of
 header data not including the transport segment's payload!   
 
+#### IP Fragmentation:
+- Different link-layer protocols can carry packets of different sizes. Ethernet can carry up to 1500-byte frames, while some WAN links can only carry 576-byte frames, but others can carry jumbo frames that can be as big as 5000 bytes. The maximum amount of data that can be carried by a link-layer frame is called the **maximum transmission unit (MTU)**. The MTU of a link limits the maximum size an IP datagram can have. What results from this is that as a packet traverses the network to its destination it crosses links that use different protocols with different MTUs. What if the datagram too big for a link's MTU?
+- When a datagram is larger than the  outgoing link's MTU, the datagram is fragmented into two or more smaller datagrams and is encapsulated into separate frames that can be passed to the given outgoing link.  
+- Fragments need to be reassembled before they can be used in the transport layer as UDP/TCP expect unfragmented datagrams. Reassembling datagrams can be costly if it's done in routers can put a lot of overhead on the network, that's why the designers of IPv4 decided to do the reassembly of packets on the destination end system rather than routers to keep the network's core simple and performant.
+- When a series of datagrams are received by the destination host, the host needs to determine if any of these datagrams are fragments of some original larger datagram. It also needs to determine if it has received the last fragment of an original packet. It must also determine how such fragments are to be reassembled into the original datagram. To perform all these tasks, the network uses the 3 IPv4 fields: *Identifier, flags* and *fragmentation offset*. Fragmentation and reassembly are done in the following steps:
+	- The sending host stamps each datagram with an *identification* number as well as a source and destination address. This number identification with each new datagram to be sent (I don't know exactly when the incrementation starts, each time a process starts making use of the network?!!).
+	- When a router fragments a datagram, it stamps each fragment with the identification number, source and destination addresses of the original datagram. 
+	- When destination receives a series of datagrams, it examines their identification numbers to determine if they are fragments of a larger original datagram. Because the IP protocol is unreliable a fragment might never arrive to its destination. To be sure that the last fragment has been received, it has a *flag* bit set to 0, while all other fragment flag bits are set to 1 (does this also mean that a non-fragmented datagram has that flag bit set to 0. They haven't explained how the destination can tell the difference between a fragment and a non-fragment). Tom determine the order of fragments and if a fragment is missing, the receiving host uses the *offset* field to place a fragment in its proper position in the original datagram. 
+- The following figure shows how a datagram is fragmented en route and then reassembled at its destination:
+![IPv4 datagram fragmentation and reassembly](img/ipFragReass.png)
+- A few little considerations about fragmentation is apart from the last fragment, the sizes of all other fragments must be multiples of 8. The offsets must also be specified in 8-byte units. If the second fragments starts after byte 1,480 its offset is 185 because *1480 = 185 · 8*.
+- Fragmentation seems innocent but it has some costs:
+	- It complicates the lives of routers which have to fragment datagrams and end systems which have to do extra work to reassemble fragments.
+	- Hackers have found ways to exploit fragmentation to Dos systems:
+		* In a *Jolt2* attack, a hacker sends to the target system a stream of small packets none of which has an offset of zero. The system might crash as tries to reassmeble datagrams out of these packets.
+		* In another type of attacks, hackers send streams of overlapping fragments, fragments whose offsets don't overlap. Some operating systems get confused by these fragments and crash. 
+- As we've mentioned earlier, IPv6 dropped fragmentation altogether to simplify the network further and to avoid the aforementioned security vulnerabilities. 
+
 ### IPv4 Addressing:
 ### Internet Control Message Protocol (ICMP):
 ### IPv6 Addressing:
