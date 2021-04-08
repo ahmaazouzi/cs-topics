@@ -242,7 +242,39 @@ header data not including the transport segment's payload!
 - A special type of IP address is the IP broadcast address ***255.255.255.255***, when a host sends a datagram to this address, the message is delivered to all hosts on the same subnet.
 - The following section will treat the issue of how address blocks are assigned to an organization and subnets in general and how hosts within a subnet are assigned individual addresses.
 
-***Principles in practice (don't forget this)!!***
+#### Obtaining a Block of Addresses:
+- If we, a random organization, want a block of IP addresses within an ISP's subnet, we contact that ISP which will give us a block of addresses within a larger block that has been assigned to the ISP. Let's say we have an ISP that has been allocated the address block ***200.23.16.0/20***. If the ISP divides this address block further into 8 contiguous address blocks and gives one block to each one of these organizations, we would obtain the following result (the subnet parts are in bold type):
+
+| Entity | Subnet | Start of address block |
+| --- | --- | --- |
+| ISP’s block | 200.23.16.0/20 | <u>11001000 00010111 0001</u>0000 00000000 |
+| Organization 0 | 200.23.16.0/23 | <u>11001000 00010111 0001000</u>0 00000000 |
+| Organization 1 | 200.23.18.0/23 | <u>11001000 00010111 0001001</u>0 00000000 |
+| Organization 2 | 200.23.20.0/23 | <u>11001000 00010111 0001010</u>0 00000000 |
+| ... | ... | ... |
+| Organization 7 | 200.23.30.0/23 | <u>11001000 00010111 0001111</u>0 00000000 |
+
+- ISPs are not the only organizations that can provide address blocks; in fact ISPs themselves obtain their address blocks from a global authority whose job is to manage the global IP address space. This authority is called **Internet Corporation for Assigned Names and Numbers (ICANN)**. It is a non-profit organization that also manages DNS root servers in addition to IP address block allocation. 
+
+#### Obtaining a Host Address: the Dynamic Host Configuration Protocol:
+- When an organization obtains an address block, it can start assigning individual addresses to host and router interfaces of the organization. A system administrator might configure addresses manually, probably remotely with a network management tool. Assigning individual addresses is, however, often done today using the **dynamic host configuration protocol (DHCP)**. DHCP allows hosts to obtain addresses automatically. An admin can configure a host so that it obtains the same IP address each time it's connected to the network, or that it's assigned a **temporary IP address** each time the host gets connected. In addition to being assigned an IP address, DHCP allows a host to know a few things about the network it belongs to such as its subnet mask, the address of its *first hop-router* (also called *default gateway*), and the address of its local DNS server.
+- DHCP, a plug-and-play protocol, enjoys widespread popularity today because of its ability to automate the repetitive task of assigning IP address especially in residential Internet access networks and wireless LANs where devices join and leave the network frequently. Assigning arbitrary addresses to devices connecting and leaving for short periods of time is served greatly by DHCP. 
+- DHCP is a client-server protocol where the client is a newly connected host needing to network configuration information including an IP address. In simple cases, a subnet has its own DHCP server, but when such a server is not available in the subnet, we need a *DHCP relay agent* (usually a router) that knows a DHCP server in the network. To simplify things, let's just assume our subnets have their own DHCP servers.
+![DHCP client-server interaction](img/dhcpProcess.png)
+- As the image above shows, When a host newly connects to the network, a four-step process takes place  in which DHCP assigns an address to the host and gives it related network configuration information:
+	- **DHCP server discovery**: The host needs to first find a DHCP server by sending a **DHCP discover message** in UDP packet to port 67. This UDP packet is encapsulated in an IP datagram, but should the host sends it? The host doesn't know anything about the network. The destination address of this datagram is ***255.255.255.255***, meaning it'll be broadcast to all devices in the work and the source address is ***0.0.0.0*** meaning this device, itself (I think the host mac address is its actual identifier). This IP packet is passed to the link layer which packages it in a frame and broadcast to all devices in the subnet.  
+	- **DHCP server offer(s)**: When the DHCP server receives the discover message, it responds by broadcasting a **DHCP offer message** to all nodes in the subnet. There might be several DHCP servers in a subnet and the client might have to choose one of them. The offer message contains:
+		- A **transaction ID** of the received request message. 
+		- The proposed IP address of the client.
+		- The network mask.
+		- The IP **address lease time** (the amount of time for which the address will be valid which usually lasts between hours and days).
+	- **DHCP request**: The client selects one offer and responds to the selected server with a **DHCP request message**. This message copies the information contained in the server offer message. 
+	- **DHCP ACK**: The server responds to the client with a **DHCP ACK message** which confirms the requested configuration parameters. 
+- Once the client receives the ACK message, the client start using the allocated IP address for the period given in the least address lease time. 
+- Amazing as DHCP is, it has a few shortcomings such as the fact that a TCP connection cannot be maintained when moving between different subnets (considering that much of networking is done today in mobile phones). *Mobile IP* is the solution to this problem where devices are offered permanent IP addresses that are not affected when moving between different subnets.
+
+#### Network Address Translation:
+#### UPnP:
 
 ### Internet Control Message Protocol (ICMP):
 ### IPv6 Addressing:
