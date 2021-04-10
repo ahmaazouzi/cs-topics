@@ -274,7 +274,35 @@ header data not including the transport segment's payload!
 - Amazing as DHCP is, it has a few shortcomings such as the fact that a TCP connection cannot be maintained when moving between different subnets (considering that much of networking is done today in mobile phones). *Mobile IP* is the solution to this problem where devices are offered permanent IP addresses that are not affected when moving between different subnets.
 
 #### Network Address Translation:
-#### UPnP:
+- **Network address translation (NAT)** is another popular IP address conservation strategy (CIDR was one we've seen earlier). NAT was adopted as a response to the meteoric proliferation of *SOHO* (small office, home office) networks. Should we allocate a range of addresses for each SOHO? How many addresses should a SOHO have, and what if we run out of allocated addresses? How can SOHO networks be administered? etc. Some and other issues are answered with NAT. 
+- The following figure shows how a NAT-enabled router works and what it does. 
+![NAT](img/nat.png)
+- You can see that the SOHO network on the right of the network belong to the subnet address ***10.0.0.0/24***. This network include 3 hosts and one interface from a NAT-enabled router. These addresses belong to the reserved address space ***10.0.0.0/8*** which is reserved for a **private network** (also called a **realm with private addresses**). There are two other private address spaces as defined in RFC 1918. These are:
+```
+10.0.0.0        -   10.255.255.255  (10/8 prefix)
+172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+``` 
+- In a private network, addresses have meaning only within that network. Hundreds of thousands of SOHO networks can use the address same space ***10.0.0.0/24***. Devices within this such networks can send packets to each other in their private realms, but these addresses don't mean anything outside these private networks because many other networks use this same address space. How can these addresses be meaningful in the global Internet which require addresses to be unique. 
+- To the outside world, a NAT-enabled router seems like a single device with a single address. In the image above all traffic entering the private network has the destination IP address ***138.76.29.7*** and all traffic leaving it has the source IP address ***138.76.29.7***. A NAT-enabled router basically hides the traffic details inside the private network. How are the private network computers  assigned their private addresses and how does the NAT-enabled home router itself obtain its address? This is done with good old DHCP. The ISP assigns the router an address from its DHCP server and the private network's computers are obtained from a DHCP server run by the NAT-enabled router.
+- How do datagrams coming from the global Internet to the public facing interface of a NAT router get to a host in the private network even though the whole network has a single public IP address? This is done with a **NAT translation table**. This table uses both IP addresses and port numbers *(This is a little weird cos we've said routers are not supposed to be aware of any layers above the network layer!! Maybe NAT-enabled routers are a special case).*
+- When a host in the private network with a private IP address in the space ***10.0.0.0/8*** sends a datagram with a given transport source port, the NAT-enabled router generates an arbitrary transport-layer source port that is not currently in use by the router. The router then:
+	- Replaces the source port of the datagram with the source port the router has generated.
+	- Replaces the source IP address of the datagram with the router's WAN (publicly facing) IP address. 
+	- It adds an entry to its NAT translation table containing these WAN and LAN address and port pairs.
+	- It sends the datagram to its destination. 
+- Because a port number is 16-bit long, the NAT-enabled router can support more than 60,000 simultaneous connections. 
+- When the NAT-enabled router receives a datagram on its WAN interface, it looks up its NAT translation table, finds the appropriate entry and translates the port number and IP address to correspond to the appropriate private address.
+
+#### Problems with NAT and UPnP:
+- *(This is extremely brief and unclear. Needs further research and details).*
+- In spite of the widespread adoption of NAT, it suffers from a few shortages that the IETF dislike deeply and argue that:
+	- Ports are meant to distinguish between processes rather than between hosts. This causes problems if you want to run a server behind a NAT-enabled router because servers wait for connections on specific ports.
+	- NAT-enabled routers process layer 4 packets even though routers in general are only meant to process up to layer 3 packets. 
+	- NAT violates the *end-to-end* argument where hosts are meant to talk directly to each other with no intermediary nodes modified IP datagrams and port numbers.
+	- We have IPv6 which provides a more than satisfying answer to the problem of IP address shortage.
+- A major problem with NAT is that it interferes with P2P applications because a host behind it cannot act as a server and accept TCP connections. This can be circumvented through different hacks known collectively as **NAT traversal**.
+- **universal plug and play (UPnP)** is a more modern and easy way of doing NAT traversal. It basically allows the application to choose a mapping between the private and public port/address pairs so the machine can start acting as a server host and the address/port pair can be advertised as a server of sorts that clients can initiate connections to it.
 
 ### Internet Control Message Protocol (ICMP):
 ### IPv6 Addressing:
