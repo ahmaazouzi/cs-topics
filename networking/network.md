@@ -238,7 +238,7 @@ header data not including the transport segment's payload!
 - Internet's address assignment is done using a strategy called **classless interdomain routing (CIDR )** (pronounced as *cider*) which is a generalized form of address subnetting. In this scheme the IP address is divided into two parts and looks as follows: ***a.b.c.d/x*** and where the first part is the dotted-decimal form of the address, and ***x*** indicates the number of bits in the first part of the address.
 - The x most significant bits of an address in ***a.b.c.d/x*** are its prefix and they "constitute the network portion of the IP address." An organization is usually assigned a block of contiguous addresses, that is a range of addresses with a common prefix so device addresses in the organization all have the same prefix. Outside the organization's network, routers only consider its prefix bits. This consideration reduces routing tables sizes considerably since a single entry in a router is sufficient for routing datagrams to any destination belonging to an organization.
 - The rest ***32 - x*** bits of the address are used to distinguish between the different devices in the organization. They are used to forward packets within an organization. They may or may not have further subnetting structures. 
-- Before the adoption of CIDR, **classful addressing** was used. Classful addressing allowed the network portion to only be 8, 16 or 24 bits in length and accommodated classes A, B and C networks (hence the name). The rapid growth of small and medium organization made this scheme useless. A class C (/24) could only accommodate a few ***2<sup>8</sup> - 2 = 254 *** addresses (2 addresses are reserved for special uses), while class B (/16) allowed for too many addresses (65,634). An organization needing 2000 addresses was given a class B class subnet which quickly depleted available class B subnets and was too wasteful as the other 63,635 addresses sat by idle used for nothing. The adoption of CIDR solved this problem.
+- Before the adoption of CIDR, **classful addressing** was used. Classful addressing allowed the network portion to only be 8, 16 or 24 bits in length and accommodated classes A, B and C networks (hence the name). The rapid growth of small and medium organization made this scheme useless. A class C (/24) could only accommodate a few ***2<sup>8</sup> - 2 = 254*** addresses (2 addresses are reserved for special uses), while class B (/16) allowed for too many addresses (65,634). An organization needing 2000 addresses was given a class B class subnet which quickly depleted available class B subnets and was too wasteful as the other 63,635 addresses sat by idle used for nothing. The adoption of CIDR solved this problem.
 - A special type of IP address is the IP broadcast address ***255.255.255.255***, when a host sends a datagram to this address, the message is delivered to all hosts on the same subnet.
 - The following section will treat the issue of how address blocks are assigned to an organization and subnets in general and how hosts within a subnet are assigned individual addresses.
 
@@ -305,9 +305,58 @@ header data not including the transport segment's payload!
 - **universal plug and play (UPnP)** is a more modern and easy way of doing NAT traversal. It basically allows the application to choose a mapping between the private and public port/address pairs so the machine can start acting as a server host and the address/port pair can be advertised as a server of sorts that clients can initiate connections to it.
 
 ### Internet Control Message Protocol (ICMP):
-### IPv6 Addressing:
-### IP Security:
+- In addition to the IP protocol discussed earlier, and the routing protocols (RIP, OSPF, and BJP) which we will be talking about later, the Internet's network layer also consists of ICMP which we will discuss in this section.
+- The ***Internet control message protocol (ICMP)*** is used by hosts and routers to communicate network-layer information to each other. The most important of these information is error reporting. When you encounter an error message such as "Destination network unreachable" while running a Telnet or FTP session, you are dealing with a message that has its origins in ICMP. What happened is that an IP router couldn't find a path to the specified destination so it created a type-3 ICMP message and sent it back to your host telling it about the error. 
+- ICMP is popularly considered as part of IP but it is not exactly. It lies above IP in the stack because ICMP messages are carried as IP datagram payload just as a transport layer segment is an IP datagram payload. When a host receives an IP datagram with ICMP as an upper-layer protocol, it demultiplexes the datagram content to ICMP just as it does with TCP/UDP packets. 
+- An **ICMP message** consists of a **type** field, a **code** field, and the header of the datagram that caused the error along with the first 8 bytes of that datagram. The following table shows some ICMP message types (you should notice that they are not all for error reporting):
 
+| ICMP type | Code | Description |
+| --- | --- | --- |
+| 0 | 0 | echo reply (to ping) |
+| 3 | 0 | destination network unreachable |
+| 3 | 1 | destination host unreachable |
+| 3 | 2 | destination protocol unreachable |
+| 3 | 3 | destination port unreachable |
+| 3 | 6 | destination network unknown |
+| 3 | 7 | destination host unknown |
+| 4 | 0 | source quench (congestion control) |
+| 8 | 0 | echo request |
+| 9 | 0 | router advertisement |
+| 10 | 0 | router discovery |
+| 11 | 0 | TTL expired |
+| 12 | 0 | IP header bad |
+
+- The famous `ping` program sends an ICMP message of type 8 and code 0 to a given host. The destination host responds with an ICMP message of type 0 and code 0 which is an echo reply. 
+- The *source quench* message which is rarely used is another way of congestion control where a congested router sends a host a message forcing it to reduce its transmission rate. We've seen how congestion control is done at the transport layer by TCP. 
+- The Traceroute program which we might have seen before and which is used to trace the path from a host to any destination host is also based on ICMP messages. To determine the names and addresses of routers in the path, Traceroute sends a series of IP datagrams with increasing TTLs starting with TTL 1, then 2, then 3, etc. These datagrams carry UDP segments with unlikely port numbers. Traceroute also starts timers for each of these datagrams. When a router receives a datagram it knows that its TTL has expired so it discards it and sends back an ICMP message back to the source telling it about the problem (type 11, code 0). This ICMP message contains the name and address of the router. The round-trip of the packet is obtained from the timer the Traceroute set for each datagram. The timer is stopped when the corresponding  IMCP is received. When a datagram reaches the destination host, because it has an unlikely UDP port number, the destination host sends back to the source a "port unreachable" ICMP message (type 3, code 3). This message signals to Traceroute that it should stop sending datagrams. Traceroute can do this because, it can instruct the operating system to generate UDP messages with with specific TTL values, and can get notified by the OS that it has received ICMP messages. 
+
+### IPv6 Addressing:
+- IPv6 was developed in the early 1990s to be a successor to IPv4 mainly because IPv4 adresses were (and are still) being depleted quickly. In addition to responding to IPv4 address shortage, IPv6 is also trying to mitigate some of the disadvantages that IPv4 suffers from.
+
+#### IPv6 Datagram Format:
+![IPv6 datagram format](img/ipv6DgFormat.png)
+- As the image above shows, the IPv6 datagram format provides several improvements over its predecessor IPv4:
+	- **Expanded addressing**: Instead of the 32-bit IPv4, IPv6 introduced 128-bit addressing meaning "every grain of sand on the planet can be IP-addressable". In addition to unicast and multicast addressing, IPv6 has introduced a new type of address called **anycast address** "which allows a datagram to be delivered to any one of a group of hosts".
+	- **Streamlined 40-byte header**: Several fields have been dropped or made optional. An IPv6 datagram have a fixed 40-byte header making processing it easier and faster. 
+	- **Flow labeling and priority**: IPv6 allows for labeling datagrams belonging to different **flows**. Certain types of flow like real time video streaming is considered as flow while email or file transfer is not!! WHATT :confused:. Another field, **traffic**, is used to give different priorities to datagrams from different applications.
+- It is easy to notice that IPv6 datagram has a simpler format than that of IPv4:
+	- **Version** (4 bits): It obviously has the value 6 and changing to 4 doesn't magically turn an IPv6 datagram into an IPv4 datagram.
+	- **Traffic class** (8 bits): Acts like the TOS field in IPv4.
+	- **Flow label** (20 bits):  Identifies the a flow of datagrams.
+	- **Payload length** (16 bits): An unsigned integer that gives the number of the bytes in the datagram following the fixed-length 40-byte header.
+	- **Next header** (8 bits): Gives a number identifying the protocol to which the contents of the IP datagram belongs to such as TCP, UDP, etc. This is similar to the protocol field of IPv4 and uses the exact same numbers. 
+	- **Hop limit** (8 bits): the contents of this field are decremented by 1 for each router the datagram traverses. When this field's value reaches 0, the datagram is dropped.
+	- **Source and destination addresses** (128 bits each).
+	- **Data**.
+- Streamlining IPv6 means dropping several fields and complications associated with them:
+	- **Fragmentation and Reassembly**: Routers cannot fragment or reassemble IPv6 datagrams. If a router receives a datagram that is too big to pass through the outgoing link, it is dropped and an ICMP message is sent to the source host asking it for smaller datagrams. Removing the overhead of fragmentation/reassembly makes IP significantly faster.
+	- **Header checksum**: This operation is completely redundant because it is done in the link layer and done again in transport layer. What's worse is because of the TTL field that changes after every router hop, the checksum has to be recomputed at every router introducing significant unnecessary overhead. Removing this field has made IPv6 faster.
+	- **Options**: Options are not part of the header anymore, but an IPv6 datagram can have extra optional headers. The *next header* field in the standard header can point to this header exactly as it would point to upper layer header such as TCP. This is why IPv6 has a fixed-length header of 40 bytes. 
+- IPv6 also has a newer version of ICMP, called ICMPv6 which extends ICMP with functionality IPv6 needs such as the "Packet too big", and "Unrecognized IPv6 options" messages. 
+#### Transitioning from IPv4 to IPv6:
+-
+
+### IP Security:
 ## Routing Algorithms:
 ## Routing in the Internet:
 ## Broadcast and Multicast Routing:
