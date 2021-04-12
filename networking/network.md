@@ -353,10 +353,20 @@ header data not including the transport segment's payload!
 	- **Header checksum**: This operation is completely redundant because it is done in the link layer and done again in transport layer. What's worse is because of the TTL field that changes after every router hop, the checksum has to be recomputed at every router introducing significant unnecessary overhead. Removing this field has made IPv6 faster.
 	- **Options**: Options are not part of the header anymore, but an IPv6 datagram can have extra optional headers. The *next header* field in the standard header can point to this header exactly as it would point to upper layer header such as TCP. This is why IPv6 has a fixed-length header of 40 bytes. 
 - IPv6 also has a newer version of ICMP, called ICMPv6 which extends ICMP with functionality IPv6 needs such as the "Packet too big", and "Unrecognized IPv6 options" messages. 
+
 #### Transitioning from IPv4 to IPv6:
--
+- How will the IPv4-based Internet transition to IPv6? IPv6-capable systems can be backward-compatible and process IPv4 datagrams, but IPv4 only systems have no idea about IPv6 or how it works. One way the transition might be effectuated is through declaring a flag day when all systems and the whole Internet moved to IPv6 but this is almost impossible. When the world moved from NCP to TCP many years ago, it was very hard to do even when there were only a few wizard running the Internet which consists of far fewer systems. Instead of such a mess, two approaches that can be used separately or together have been proposed are in actual use now which aim to gradually replace IPv4 with IPv6.
+- The first and straightforward approach, **dual-stack**. A node in this approach implement both IPv4 and IPv6 so that it can send both IPv4 and IPv6 datagrams. It sends and receives an IPv4 when dealing with IPv4-only node, and IPv6 otherwise! To take these decisions, an IPv6-capable node must also be able to determine if another node is IPv6-capable; this it does using DNS. DNS will return to  to a requesting node the up address of a given node name which it can determine if it’s IPv6 or IPv4.
+- In the dual-stack approach, both nodes need to be IPv6-capable to be able to exchange IPv6 datagrams, otherwise if one is not, the two can only exchange IPv4 datagrams. Due to the nature of the Internet and the changes a datagrams undergoes between the two versions, two IPv6 capable nodes might end up exchanging only IPv4 datagrams. The following diagram shows how this can take place:
+![Dual-stack](img/dualStack.png)
+- The problem with dual-stack is that translating IPv6 to IPv4 results in loss of IPv6-specific fields such as the flow field so when an ivp4 datagrams which was originally IPv6 is attempted to translate into IPv6, those fields are lost and cannot be reused.
+- the answer to the loss of header information in dual-stack is in the second approach: **tunneling** which can be illustrated by the following diagram:
+![Tunneling](img/ipv6Tunneling.png)
+- Basically when two IPv6-capable systems want to exchange IPv6 datagrams but are connected by IPv4 nodes (This intervening set of IPv4 routers is called a **tunnel**), the sending IPv6-capable node simply wraps the IPv6 datagram as a payload inside an IPv4 datagrams. The receiving IPv6 node checks the IPv4 datagram sees if contains an IPv6 datagram. This approach retain all the IPv6 datagram metadata.
 
 ### IP Security:
+- IP was designed without security in mind, but with the growing dangers in the digital world and rising importance of security, researches has started designing network-layer protocols that are focused on security. One of these protocols is known as **IPsec** which is widely used in so-called VPNs (virtual private network). We will see IPsec in a chapter about [networking and security](security.md)!
+
 ## Routing Algorithms:
 ## Routing in the Internet:
 ## Broadcast and Multicast Routing:
