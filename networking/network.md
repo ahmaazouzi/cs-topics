@@ -9,7 +9,7 @@
 	- Looking inside a router and how it's used in packet delivery. 
 	- Diving deep in the Internet Protocol (IP) and such things as IPv4, NAT, ICMP, IPv6, etc. 
 	- Routing algorithms and how they are used to make the network efficient.
-	- Different routing protocols such as RIP, OSPF, etc.
+	- Different routing protocols such as RIP, OSPF, BGP, etc.
 	- Multicast and broadcast routing.
 
 ## The Network Layer:
@@ -404,6 +404,75 @@ header data not including the transport segment's payload!
 - ASs don't exactly correspond to ISPs. An ISP might consists entirely of a single AS or it might be broken up into multiple interconnected ASs. 
 
 ## Routing in the Internet:
+Routing in the Internet is based on the general principles of routing we’ve been studying so far, including distance-vector and link-state vector algorithms, autonomous systems, etc. So, how is the path of a datagram from source to destination in the Internet determined?
+
 ### Intra-AS Routing in the Internet with RIP:
+- Intra-AS routing protocols determine how routing is done with ASs. They are also called **interior routing protocols**. Two popular interior gateway protocols are **routing information protocol (RIP)**, and **open shortest path first (OSPF)**.  Another protocol similar to OSPF is called **IS-IS**.
+- RIP is old and it comes form Xerox. It’s widely used and it’s fame can be attributed to its inclusion in 1982 BSD version of Unix.
+- RIP is a DV protocol that operates on the number of hops (at least in one of its versions) where each link has a cost of one. In the real Internet, however, cost is defined not a that of a link connecting two routers, but costs are “from a source router to a destination subnet”!!! This is the case for RIP as well as OSPF. In RIP a *hop* count is the “number of subnets traversed along the shortest path from source router to destination subnet, including the destination subnet”. The following diagram shows an AS with 6 leaf subnets and it indicates the number of hops from the source A to each of the leaf subnets:
+![Hop counts using subnets in an AS](img/hopCount.png)
+- The maximum cost of a path in RIP cannot exceed 15. Routers in RIP exchange distance vectors with their neighbors every 30 seconds using **RIP response messages** (also called **RIP advertisements**). A response message contains up to 25 destination subnets and the sender's distance to each of these destinations. 
+- To consider how RIP advertisement works, let's look at the following diagram showing an AS using the RIP protocol (The diagram only shows a part of the AS and dotted lines indicate that the AS continues with more routers and subnets). The diagram labels 4 routers (A, B, C and D) and 4 subnets (w, x, y and z):
+![An AS using RIP](img/ASRIP.png)
+- Each Router router maintains a RIP table called the **routing table** which contains the router's distance vector and its forwarding table. The following routing table is that of router D:
+
+| Destination subnet | Next router | Number of hops to destination |
+| --- | --- | --- |
+| w | A | 2 |
+| y | B | 2 |
+| z | B | 7 |
+| x | - | 1 |
+| .... | ... | ... |
+
+- The routing table has 3 columns showing respectively:
+	- The destination subnet.
+	- The next router along the shortest path to the destination.
+	- The number of hops until the destination subnet is reached.
+- When a router receives RIP advertisement containing updated routing information, it updates its routing table and and changing one or of its next router and number of hop to destination fields for certain destination subnets. 
+- RIP routers exchange routing information every 30	seconds. If a router doesn't receive an advertisement from a neighbor within 180 seconds, that router is dropped and is considered as unreachable. The router then modifies its routing table and propagates this new information to its neighbors.
+- A router can also request information from a neighbor about cost to its destination using **RIP request message**. RIP request and response messages are exchanged over UDP using port 520. Yes, it's weird that a lower layer uses services from an upper layer!! I thought UDP and TCP are only implemented in end-systems. 
+- In fact, routers using the UNIX OS implement RIP as an application-layer protocol running over UDP. It connects  processes called *routed* (pronounced as *route dee*) that use standard UNIX sockets for connectivity.
+
 ### Intra-AS Routing in the Internet with OSPF:
+- **OSPF (open shortest path first)** is also a widely used protocol, but it is used mostly by upper-tier ISPs, while RIP is used by lower-tier ISPs and enterprises. OSPF has an open specification, hence the inclusion of open in its name.
+- OSPF was originally intended as a successor to RIP so it has more advanced features. As opposed to RIP, OSPF is a link-state protocol based on link-state flooding and Dijkstra's shortest path finding. Each router constructs a complete topological map of the AS. It then uses Dijkstra's algorithm to find the shortest paths to all other subnets. Link costs themselves are configured manually by the network administrator. The links can either be all given cost 1 to achieve minimum hop counts or base the cost on link bandwidth thus reducing traffic through low-bandwidth links. OSPF doesn't specify how link costs are set, but only takes these costs as inputs. 
+- In OSPF, a router broadcasts routing information to all other routers in the AS. A router sends link-state information whenever there is a change in link state. It also sends link-state information every 30 seconds even if the link-state hasn't changed. Unlike RIP, OSPF doesn't use the transport layer to transmit these messages, but these messages are packed directly into IP packets whose *upper-layer protocol* field is set to 89. 
+- Advantages of OSPF over RIP include:
+	* *Security*: Exchange of information between OSPF routers can be authenticated so only trusted routers can participate in such an exchange, thus preventing malicious intervention from outside the AS. By default, OSPF is not configured to be authenticated, but it can be configured to use MD5. A *cryptographic babble ensues (we will see this in the security chapter in detail)*.  
+	* *Multiple same-cost paths*: When multiple same paths exist, they can all be used to send packets.
+	* *integrated support for unicast and multicast routing*: **Multiple OSPF (OSPF)**
+	* *Support for hierarchy within a single routing domain*: OSPF can "structure an autonomous system hierarchically"!! Does this mean there can be ASs within an AS :confused:?!!! Acktchyually, what happens that an OSPF AS can be divided hierarchically into areas where each area runs its own OSPF routing algorithm and each router in that area can broadcast its link-state information to all other routers in that area. Each area has one or more **area border routers** which route packets outside the area. One area in the AS is configured to  be the be **backbone area**; its job is to route traffic between other areas in the AS. A packet moving between different areas must first pass through the source area border router, then go through the backbone before going to the destination area border router and then routed to its destination. 
+
+### Inter-AS Routing with BGP:
+- **Border gateway protocol (BGP)** or more accurately BGP version 4 (BGP4 or simply BGP) is the *de facto* inter-AS routing protocol in the Internet. It provides each AS that uses the following:
+	- Gets subnet reachability from neighboring ASs.
+	- Propagates reachability information to routers internal to ASs.
+	- Determines "good" routes based on reachability information and AS policies.
+- A very important of BGP is that it allows each subnet to advertise itself to the rest of the Internet and make itself discoverable. BGP makes sure the subnet is known by ASs in the Internet and how to get to that subnet. Without BGP subnets would be isolated and unknown by the rest of the Internet. 
+
+#### Basics of BGP:
+- BGP is extremely complex and requires reading many books and months or years of practice to understand how it works. This will be just an invisible scratch on the surface of the topic. Because this protocols glues the Internet together and is an absolutely fundamental one, we have to at least try to understand the general aspects of how it work.
+- In BGP routing information is exchanged between pairs of routers over semipermanent TCP connections over port 179. In each link that connects two gateway routers from two different ASs there is a BGP TCP semipermanent connection. There are also semipermanent BGP TCP connections between routers within the same AS. The following diagram illustrates how BGP is usually laid out:
+![eBGP and iBGP sessions](img/eBGP_iBGP.png)
+- The two routers in two ends of a connection are called **BGP peers**, while the the TCP connection itself is called a **BGP session**. A connection between two different ASs is called an **external BGP (eBGP) session**, and a connection within an AS is called an **internal (iBGP) session**. 
+- BGP allows an AS to learn about reachable destinations through the AS's neighbors. Destinations in BGP are not hosts but CIDRized prefixes representing a subnet or a collection of subnets. 
+- Different ASs exchange prefix reachability information using eBGP sessions through their gateway routers to their neighbor AS gateway routers. Gateway routers send these information to its AS routers via iBGP sessions. "When a router (gateway or not) learns about a new prefix, it creates an entry for the prefix in its forwarding table." Some ASs
+
+#### Path Attributes and BGP Routes:
+- An AS is "identified in BGP by its globally unique **autonomous system number (ASN)**",  although some ASs mainly those that act only as destination or source ASs and don't act as intermediary between other ASs.
+- When a router advertises a prefix in BGP, it provides with the prefix certain **BGP attributes**. The prefix with the BGP attributes is called the a **route**, so we can say that "BGP peers advertise routes to each other". Some of BGP attributes include:
+	- The *AS-PATH* attribute contains the ASs that the advertisement for the prefix has been through. Each AS adds its own ASN to to the *AS-PATH* attribute. This is used to prevent looping between ASs. If an AS receives its own advertisement it rejects it.
+	- The *NEXT-HOP* attribute provides an important link between inter-AS and intra-AS protocols. *That's all I can say because I have no idea what the rest of the paragraph says*. In addition to linking inter-AS and intra-AS protocols, the *NEXT-HOP* attribute can also maybe help an AS determine which is the shortest path where the hot-potato principle can be applied to deliver a packet to another AS when 2 ASs are linked by two different links. 
+- In BGP, gateway routers use their **import policy** to decide whether to receive or filter a route advertisement. 
+
+#### BGP Route Selection
+- iBGP and eBGP distribute routes to all routers within ASs which results in the situation where a router learns there are more than one route to a certain prefix. How does the router select specific route from these possible routes? This process of selection takes as an input all the routes that have been accepted bu the router. If there are more than one routes to the same prefix, the following elimination rules are executed until only one route is left:
+	- "Routes are assigned a local preference value as one of their attributes". This is done manually by the AS administrator. Routes with the highest local preference values are selected.
+	- If the remaining routes have the same local value, then the route with the shortest *AS-PATH* is selected. Maybe BGP uses a DV algorithm for choosing the path with the smallest number of AS hops.
+	- If there are still more than one route with the same *AS-PATH*, then a route with the closest *NEXT-HOP* is selected. This is basically within an AS and it is the shortest path chosen by the AS algorithm. 
+	- "If more than one route still remains, the router uses BGP identifiers to select the route".
+
+#### Routing Policy
+- Let's just say that ASs are organized in a hierarchy of sorts. Certain ASs provide traffic to others while some ASs only act as *stub ASs*, meaning only destination or source for the traffic that goes through them as opposed to provider ASs that act as backbone of the Internet and traffic goes through them even if they are not source/destination for such traffic. Routing policies are used by PGB to make sure that stub ASs as act as stubs and prevent them from acting as backbone ASs. These policies address other things such as relationships between different ISPs and how they'd peer, etc. Sorry, this stuff is kinda complicated.
+
 ## Broadcast and Multicast Routing:
