@@ -476,3 +476,40 @@ Routing in the Internet is based on the general principles of routing we’ve be
 - Let's just say that ASs are organized in a hierarchy of sorts. Certain ASs provide traffic to others while some ASs only act as *stub ASs*, meaning only destination or source for the traffic that goes through them as opposed to provider ASs that act as backbone of the Internet and traffic goes through them even if they are not source/destination for such traffic. Routing policies are used by PGB to make sure that stub ASs as act as stubs and prevent them from acting as backbone ASs. These policies address other things such as relationships between different ISPs and how they'd peer, etc. Sorry, this stuff is kinda complicated.
 
 ## Broadcast and Multicast Routing:
+- The routing protocols we've seen so far are *unicast* (point-to-point), meaning that a single source node sends packets to a single destination node. This final section will treat two other modes of routing:
+	- **Broadcast routing**: where a source node in a network sends packets to all other nodes in the network.
+	- **Multicast routing**: enables a single source node to send "a copy of a packet to a subset of the other network nodes".
+
+### Broadcast Routing Algorithms:
+- In the more straightforward *source duplication* broadcasting, the sending node creates copies of the packet to be sent and sends a copy for each destination in the network. Each copy is sent to its destination using good old unicast routing. In technical terms, this is called **N-way unicast** broadcasting (the sending node send N copies to the N nodes in the network).
+- N-way unicast broadcasting is simple, but is very inefficient. It creates unnecessary traffic and puts too much pressure on the sending node and the links directly attached to it as the following figure (a) shows:
+![Source duplication vs. in-network duplication](img/duplication.png)
+- Other disadvantages of N-way unicast broadcasting is destination addresses must be known beforehand which requires extra overhead to obtain and register these addresses. Broadcasting is also used to get information to perform unicast routing, so it's unwise to use unicast broadcasting in order to perform unicast routing (there is something circular and nasty about this).
+- Part (b) in the diagram above shows a different way broadcasting packets. A node sends copies only to the nodes directly linked to it, and other nodes actively create copies of the these packets and forward copies to their neighbors. 
+
+#### Uncontrolled Flooding:
+- An obvious way of broadcasting packets is through **flooding** where the source node sends copies of a packet to all its neighbors and these make copies and send them to their neighbors until the network is covered. There some fatal problems with this approach, however! If we think of a network as a graph, it would often be a cyclic graph. This means some packets will cycle indefinitely in the network, and copies will be made from other copies at nodes with multiple links at a very fast rate  while cyclic indefinitely which probably would quickly crash the network. This is called a **broadcast storm**.
+
+#### Controlled Flooding:
+- To avoid broadcast storms, a node needs to know when and when not to flood a packet. Simply, has the node already received and copied the packet?
+- There different ways of controlling flooding which include:
+	- **Sequence-number-controlled flooding**: In this method, the source node puts its address (or some other unique identifier) and a **broadcast sequence number** in the packet. Each node maintains a list of the source addresses and broadcast sequence numbers of the packets they've received, copied and flooded. When a node receives a packet, it first checks its address and broadcast sequence number against the list and if it's there it drops it.  
+	- **Reverse-path flooding (RPF)** or *reverse path broadcast (rpb)*: is simple and more elegant than the previous method. A node copies and floods a broadcast packet only if it receives it through the link at the end of the shortest path back to the source broadcasting node, otherwise the packet is ignored. RPF doesn't use unicast routing and doesn't need to know the full shortest path from the given node back to the source. It only need the it's neighbor node which is in the unicast shortest path from the node to the source and should be already available in the node. 
+
+#### Spanning Tree Broadcast:
+- RPF and sequence-number-controlled broadcasting both help avoid broadcast storms, but they fail to avoid redundant packet broadcasting which they have to discard. Could there be a way where each node receives only one copy of the packet? This can be achieved through the use of a data structure called a **spanning tree** which is basically a graph that contains all the nodes of the original graph with no cycling and whose edges are a subset of the original graph's edges. It guarantees that each node receives only one copy of the broadcast packet. A graph can contain multiple spanning trees, so **minimum spanning tree** is the spanning tree with the lowest total edge cost.
+- The following diagram shows such a spanning tree:
+![Broadcasting along a spanning tree](img/spanningTree.png)
+
+#### Broadcast Algorithms in Practice:
+-
+
+### Multicast:
+#### Internet Group Management Protocol:
+#### Multicast Routing Algorithms:
+### Multicast Routing in the Internet:
+
+
+
+
+
