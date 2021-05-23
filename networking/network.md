@@ -1,4 +1,56 @@
 # The Network Layer:
+## Table of Contents:
+* [Introduction](#introduction)
+* [The Network Layer](#the-network-layer)
+	+ [Forwarding and Routing](#forwarding-and-routing)
+		+ [Connection Setup](#connection-setup)
+	+ [Network Service Models](#network-service-models)
+* [Virtual Circuit and Datagram Networks](#virtual-circuit-and-datagram-networks)
+	+ [Virtual-Circuit Networks](#virtual-circuit-networks)
+	+ [Datagram Networks](#datagram-networks)
+	+ [Origins of VC and Datagram Networks](#origins-of-vc-and-datagram-networks)
+* [Inside a Router](#inside-a-router)
+	+ [Input Processing](#input-processing)
+	+ [Switching](#switching)
+	+ [Output Processing](#output-processing)
+	+ [Where Does Queuing Occur?](#where-does-queuing-occur)
+	+ [Routing Control Plane](#routing-control-plane)
+* [The Internet Protocol Forwarding and Addressing in the Internet](#the-internet-protocol-forwarding-and-addressing-in-the-internet)
+	+ [Datagram Format](#datagram-format)
+		+ [IP Fragmentation](#ip-fragmentation)
+	+ [IPv4 Addressing](#ipv4-addressing)
+		+ [Subnets](#subnets)
+		+ [Obtaining a Block of Addresses](#obtaining-a-block-of-addresses)
+		+ [Obtaining a Host Address the Dynamic Host Configuration Protocol](#obtaining-a-host-address-the-dynamic-host-configuration-protocol)
+		+ [Network Address Translation](#network-address-translation)
+		+ [Problems with NAT and UPnP](#problems-with-nat-and-upnp)
+	+ [Internet Control Message Protocol (ICMP)](#internet-control-message-protocol-(icmp))
+	+ [IPv6 Addressing](#ipv6-addressing)
+		+ [IPv6 Datagram Format](#ipv6-datagram-format)
+		+ [Transitioning from IPv4 to IPv6](#transitioning-from-ipv4-to-ipv6)
+	+ [IP Security](#ip-security)
+* [Routing Algorithms](#routing-algorithms)
+	+ [The Link-State (LS) Routing Algorithm](#the-link-state-(ls)-routing-algorithm)
+	+ [The Distance-Vector (DV) Routing Algorithm](#the-distance-vector-(dv)-routing-algorithm)
+	+ [Hierarchical Routing](#hierarchical-routing)
+* [Routing in the Internet](#routing-in-the-internet)
+	+ [Intra-AS Routing in the Internet with RIP](#intra-as-routing-in-the-internet-with-rip)
+	+ [Intra-AS Routing in the Internet with OSPF](#intra-as-routing-in-the-internet-with-ospf)
+	+ [Inter-AS Routing with BGP](#inter-as-routing-with-bgp)
+		+ [Basics of BGP](#basics-of-bgp)
+		+ [Path Attributes and BGP Routes](#path-attributes-and-bgp-routes)
+		+ [BGP Route Selection](#bgp-route-selection)
+		+ [Routing Policy](#routing-policy)
+* [Broadcast and Multicast Routing](#broadcast-and-multicast-routing)
+	+ [Broadcast Routing Algorithms](#broadcast-routing-algorithms)
+		+ [Uncontrolled Flooding](#uncontrolled-flooding)
+		+ [Controlled Flooding](#controlled-flooding)
+		+ [Spanning Tree Broadcast](#spanning-tree-broadcast)
+	+ [Multicast](#multicast)
+		+ [Internet Group Management Protocol](#internet-group-management-protocol)
+		+ [Multicast Routing Algorithms](#multicast-routing-algorithms)
+		+ [Multicast Routing in the Internet](#multicast-routing-in-the-internet)
+
 ## Introduction:
 - The process-to-process communication in the transport layer depends on services provided by the layer under it, the *network layer* which is responsible for host-to-host communication. This is probably the most important and interesting layer in the networking stack. While the application and transport layers are implemented only in the end systems, the network layer is implemented across the whole network, so every router in the network has to process it. 
 - The network layer is both complex and interesting and in this document we will try to capture some of this complexity by covering various topics which include:
@@ -500,16 +552,46 @@ Routing in the Internet is based on the general principles of routing we’ve be
 - RPF and sequence-number-controlled broadcasting both help avoid broadcast storms, but they fail to avoid redundant packet broadcasting which they have to discard. Could there be a way where each node receives only one copy of the packet? This can be achieved through the use of a data structure called a **spanning tree** which is basically a graph that contains all the nodes of the original graph with no cycling and whose edges are a subset of the original graph's edges. It guarantees that each node receives only one copy of the broadcast packet. A graph can contain multiple spanning trees, so **minimum spanning tree** is the spanning tree with the lowest total edge cost.
 - The following diagram shows such a spanning tree:
 ![Broadcasting along a spanning tree](img/spanningTree.png)
-
-#### Broadcast Algorithms in Practice:
--
+- A network first constructs a spanning tree. A node then can broadcast on links that are part of the spanning tree! Any node can use the pre-constructed  spanning tree to start the broadcast and each node need only know the links that are part of the spanning tree.
+- Creating and maintaining the spanning tree is the main source of complexity in this method. There are several distributed spanning tree algorithms, but we will work with a simple one here we can call **center-based** spanning tree. In this approach, a center node (called *rendezvous point*) is defined. The rest of the nodes start unstinting *tree-join messages* (whatever this really means!!) to the rendezvous point. Each of these messages will arrive at either a node that already belongs to the spanning tree or the rendezvous point.
+- The following diagram shows the steps of constructing a network spanning tree in part (a) and the final spanning tree in part (b). E is the rendezvous point, and you can see that constructing the tree start by node F sending its tree-join message, followed by D, then A, etc. 
+![constructing a center-based spanning tree](img/cbSpanningT.png)
 
 ### Multicast:
+- While broadcast services deliver packets to every node in the network, **multicast** delivers packets only to a select *subset* of nodes in the network. Examples of applications requires multicast transfer of packets from one or more nodes to a group of destinations include bulk data transfer such as distributing a software upgrade, streaming data such as during a Twitch live stream, interactive gaming, etc. 
+- Two problems jump at you when thinking about multicast communication: how to identify the receivers of a multicast packet? And how to address a multicast packet? In unicast communication, each packet carries an IP address that identifies a single recipient, while an address is not needed in broadcast communication since all nodes need to be covered. In multicast we have multiple specific recipients. Should the packet carry addresses of the multiple recipients? This doesn't scale as the packet cannot carry many addresses. Can the sender have a list of the receivers? Maybe a bad idea.
+- The two problems mentioned above are solved through the use of **address indirection**. A single identifier is used for a group of receivers and copy of the packet addressed to this group is delivered to all the receivers associated with this group. "In the Internet, the single identifier that represents a group of receivers is a *class D multicast IP address*. The group of receivers associated with a class D address is referred to as a **multicast group**." *What :confused:*. The following diagram illustrates how group multicasting is done:
+![Group multicasting](img/multicastGroup.png)
+- But each receiver still has its own independent IP address with no association with the multicast group address. A few questions pops up when you try to understand the relationship between receivers and the multicast group:
+	- How does a group start and terminate?
+	- How is the group address chosen?
+	- How are new hosts added to the group either as senders or receivers?
+	- Can any host join the group or is the membership restricted? And if so, who restricts the group?
+	- Do nodes know the identities of other nodes in the group?
+	- how do group members interoperate with each other to deliver multicast datagrams to all group members?
+	- These questions are addressed in the Internet by the **Internet group management protocol(IGMP)**.
+
 #### Internet Group Management Protocol:
+- IGMP operates between a host and its directly attached router. I don't know exactly, but this can be thought of as the first hop router outside a host's local network or the last hop router on a path toward the host. The following figure shows 3 first-hop multicast routers each connected to a LAN with an outgoing local interface. The figure shows that some of the hosts in the LANs can belong to a multicast group (indicated in blue):
+![IGMP and multicast routing protocols](img/IGMPnMCRP.png)
+- IGMP allows the host to tell its directly attached router that the host has an application running that wants to join a specific multicast group. IGMP only operates between the host and its directly attached router, so we need another protocol for communication between multicast routers in the Internet. This is achieved through *multicast routing protocols/algorithms* which we will see in the next subsection. 
+- IGMP messages are encapsulated within IP datagrams just like ICMP messages. The IP protocol number of an IGMP-message carrying datagrams is 2. There are 3 types of IGMP messages:
+	1. The **`membership_query`** message is sent by the router to its attached hosts in a LAN to determine the set of all multicast groups that have been joined by hosts in that *LAN/interface?!*
+	2. A **`membership_report`** is issued by a host as an answer to a `membership_query`. A host can also issue a `membership_query` message when it first joins a group without having to wait for a `membership_query`.
+	3. **`leave_group`** is optional and I believe it signals that a host has left a multicast group. But how can the router always determine if a host has left a multicast group? The answer is simple: If a host stop responding to a `membership_query` message (of a given group/group address), that means it's left the group. This is an example of so-called *soft-state*. Because a host stopped responding to `membership_query` messages, the router decides it has left the group. There is really no need for the host to actually send a `membership_report` to signal it's left.. The host might have simply crashed so it can't send this message anyways.. This is a powerful engineering principle, I think and we use it a lot, but without knowing its name.
+
 #### Multicast Routing Algorithms:
-### Multicast Routing in the Internet:
+- The following diagram shows how a multicast group works in a network. Routers in blue are directly attached to hosts that are members of a given multicast group:
+![Multicasting across the Internet](img/mcRoutingAlgos.png)
+- The goal of multicast routing is to find a tree of links that connect all the routers directly attached to hosts participating in a multicast group. Such a tree can contain routers that are not part of the multicast group. For example, either router D or C is necessary to connect all the routers in this multicast group. 
+- There are two approaches to constructing such a routing tree. They differ in whether a single tree is used by all sends to send traffic to the rest of the group or if each sender has its own tree for distributing traffic to the rest of the group:
+	- *Multicast routing using a group-shared tree*: A single tree is shared by all routers involved in the multicast group (might also include connection routers not participating the group). This involves a center-based spanning tree similar to what we've seen in broadcast protocols. 
+	- *Multicast routing using a source-based tree*: In this approach, each sender has its own tree of which it is the source. An RPF algorithm (we've seen RPF in the broadcast subsection) is used to construct such a tree. The problem is that routers not attached to hosts participating in multicast groups will receive unwanted multicast packets and this can easily lead to big problems. To solve this problem, we use **pruning**. Routers that are not attached to multicast group hosts send prune messages to upstream routers telling them to stop sending packets because they are not involved in a multicast. 
 
-
-
-
-
+#### Multicast Routing in the Internet:
+- **Distance-vector multicast routing protocol(DVMRP)** is the oldest multicast routing protocol. It implements source-based trees with RPF and pruning. 
+- The **protocol-independent multicast (PIM)** routing protocol is the most widely used routing protocol in the Internet. 
+- This protocol provides multicast distribution in two modes:
+	- In **dense mode**, many or most of the multicast group members are densely located meaning that most routers in "area" are involved in routing traffic?!!! Dense mode in PIM is flood and prune with RPF just like DVMRP.
+	- In **sparse mode**, the number of routers attached to multicast group hosts is sparse compared to the total number of router; group members are spread thin over a large area. PIM sparse mode uses spanning trees centered at rendezvous points
+- PIM and DVMRP are configured manually within a given domain. For interdomain multicasting, BGP can have extensions for that. 
