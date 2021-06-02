@@ -58,7 +58,7 @@
 - The one-bit parity scheme can be generalized into a *two-dimensional parity* scheme for more robustness. The bits in D can be divided into i columns and j rows and a parity value is calculated for each row and each column as the following figure shows:
 ![Two-dimensional parity](img/2Dparity.png)
 - If an error occurs at a given bit, both the row and column where it occurred will be affected. The receiver can detect the error and also locate exactly where it happened and then correct it. 2D-parity matrices can also detect and correct errors in the parity bit themselves although I have no idea how! 
-- The ability of the receiver to both detect and correct errors is called **forward error correct (FEC)**. This technique is used in audio storage and playback devices such as CDs. They can be used by themselves or with other techniques such as retransmission in the way we saw with TCP to recover from errors. The good thing about FEC is that it allows for immediate error correction and reduces the number of retransmissions. This is especially useful for real-time applications. 
+- The ability of the receiver to both detect and correct errors is called **forward error correction (FEC)**. This technique is used in audio storage and playback devices such as CDs. They can be used by themselves or with other techniques such as retransmission in the way we saw with TCP to recover from errors. The good thing about FEC is that it allows for immediate error correction and reduces the number of retransmissions. This is especially useful for real-time applications. 
 
 ### Checksumming Methods:
 - With checksumming (we've seen it in the transport document), the bits of a packet are treated as a sequence of k-bit integers. These k-bit integers can be added together to produce a sum which is used for error detection. The 1s complement of this sum is sent as a checksum with the data. The receiver takes the 1s complement of the received data (including the checksum). The result should be all 1 bits, but if any of the bits is 0 this means an error has occurred. 
@@ -73,21 +73,70 @@
 - The idea seems fairly basic and clear, but the authors love to waffle on about details.
 
 ## Multiple Access Links and Protocols: 
--
+- As we've mentioned earlier, there are two types of links, point-to-point links and broadcast links. Broadcast links (examples include wireless LANs and Ethernet) connect multiple sending and receiving nodes that all share the same broadcast channel. This type of link is considered *broadcast*, because when a node sends a frame each other nodes receives a copy of it.
+- This section will try to touch (at a theoretical level e)on the interesting problem facing broadcast links which is the so-called **multiple access problem**: how to coordinate the access of multiple sending and receiving nodes to a shared broadcast channel. 
+- Television is one example of broadcasting, but it is a one-way type of broadcasting where television sets only receive signal. A room full of people engaged in a conversation, or conversations. These guys need some kinda protocol to make their conversation possible: not all talking at the same time, listening while another talks, signaling the desire to speak, etc.
+- Computer networks also use protocols which allow nodes to coordinate packet transmission into shared broadcast channels. These protocols are called **multiple access protocols**.
+- More than one node can transmit frames into the broadcast channel at the same time. The result is that other nodes can receive multiple frames at the same time. Frames in this case are said to **collide** and the receiving nodes cannot make sense of them. Frames that collide lost and the broadcast channel *bandwidth* was wasted during collisions.
+- Multiple access protocols' job is to coordinate the transmission of multiple nodes hence reducing collisions and the associated waste of broadcast channels. There are many of these protocols, but they can be broadly classified into 3 categories: **channel partitioning protocols**, **random access protocols**, and **taking turns protocols**.
+- If we try to devise our own multiple access protocol, we should ideally make it satisfy the following requirement for a broadcast channel of rate R bits per second:
+	- If only one node is sending data, the node has a throughput of R bps.
+	- If M nodes have data to send, each node as an average throughput R/M bps.
+	- The protocol is decentralized. No master node controls it.
+	- The protocol is simple and inexpensive!
+
 ### Channel Partitioning Protocols:
--
+- A broadcast channel can be partitioned by nodes using one of the following techniques:
+	- **Time division multiplexing (TDM)**: Given a channel with R bps transmission rate that supports N nodes, "time is divided into frames of fixed duration, and each frame is divided into" N "time slots" (these time frames have nothing to do with the link-layer packets called frames). Each time slot is assigned to one of the N nodes. A node must wait for its assigned time slot before it can send a packet. TDM is fair and eliminates collision. Each node gets a dedicated fixed rate of R/N bps. This can be problematic, because a node can only send one packet but it needs to send more and no other node is using the channel at the same time. The node needs to wait for its time to send more data even though the channel sits idle. 
+	- **Frequency division multiplexing (FDM)**: An R bps channel supporting N nodes is divided into different Frequencies each with an R/N bandwidth. "FDM thus creates N smaller channels of R/N bps out of the single, larger R bps channel". Like TDM, FDM has the combined advantage of collision avoidance and the fair sharing of bandwidth between the N nodes. It also has the same disadvantage. A node is limited to an R/N bandwidth even if the other nodes are sitting idle!
+	- **Code division multiple access (CDMA)** assigns a *code* to each node, just TDM assigns time slots and FDM assigns frequencies. Each node encodes its signal in its assigned code. CDMA allows sending nodes to send signal simultaneously and enables receiving nodes that know the code to receive signal correctly without collision even though signal is entangled. We will see more about CDMA in the mobile chapter. 
 
 ### Random Access Protocols:
--
+- Random access protocols allow nodes to send at the full transmission rate of the channel (R bps). When a collision occurs, the sending node retransmits its packet repeatedly until it gets through without a collision. The retransmission doesn't occur immediately after the collision but takes place after a *random delay*. If two nodes have sent colliding frames, each of the two nodes chooses an independently random delay so their frames to be retransmitting would be less likely to collide again. 
+- There is a ton of random access protocols. Here we will describe the *ALOHA* and *carrier sense multiple access (CSMA)* protocols.
+
+#### Slotted ALOHA:
+- The **slotted ALOHA** protocol is one of the simplest random access protocols. In this scheme, all frames have a fixed size L bits. Time is divided into L/R slots (the time it takes for a frame to be transmitted). Nodes can start transmitting frames at the beginnings of time slots. Nodes in the channel are synchronized so they know when the time slot starts. If two or more frames collide during the current time slot, all the nodes detect the collision before the current slot ends. 
+- When a node has a new frame to send, it waits until the beginning of the next time slot and then sends the frame. If there is no collision, the frame is sent successfully and the node can proceed into sending another frame if it has one. If there is a collision, the node retransmits its frame with probability p (between 0 and 1) until that frame is transmitted.
+- The probability p is akin to tossing a biased coin (biased towards the retransmission of the frame) so heads (p) would mean retransmit the frame and tails (1 - p) is for waiting until the next time slot to toss the coin again and proceed from there. All nodes involved in the collision toss their coins independently.
+- Slotted aloha seems better than channel partitioning protocols like TDM and FDM because it at least allows a node to transmit data at full speed when it is the only active one. It eliminates idle time. It is also decentralized. Each node decides when to retransmit independently of other nodes. 
+- When multiple nodes active some problems arise:
+	* Slots involved in a collisions are effectively wasted.
+	* Other slots will also be wasted/empty because of the probabilistic transmission policy. A retransmitted frame might again collide with a retransmitted or fresh frame, I think!!
+- The book went through some mathy voodoo to  conclude that when a large number of nodes are active concurrently, the maximum capacity of a channel using slotted ALOHA is capped 0.37 R bps.
+- Slotted ALOHA is itself a modified synchronized of an older unslotted pure *ALOHA* protocol that was unslotted and unsynchronized but there is really no point in discussing it here!
+
+#### Carrier Sense Multiple Access (CSMA):
+- In the ALOHA protocols, slotted and otherwise, every node would attempt to transmit packets whenever it has one, independently of one or more of the other nodes are also transmitting their own packets at the same time. ALOHA is akin to a conversation among impolite imbeciles who all talk at the same time. They can be more polite:
+	* *Listen before speaking*. This is equivalent to **carrier sensing** in networking lingo. A node listens to the channel. If frames are being sent, the node waits until it detects no transmission is being carried out for a short time and then it starts transmitting its frame. 
+	* *If someone else begins talking at the same time, stop talking* or **collision detection**. When a node is transmitting bits, it listen simultaneously to the channel and if it senses that another node is transmitting data it stops a random amount of time before it resumes "the sense-and-transmit-when-idle cycle". 
+- These two rules are used in a family of protocols: **carrier sense multiple access (CSMA)** and **carrier sense multiple access with collision detection (CSMA/CD)** protocols. There are different variations of these and here we will focus on their main features.
+- One confusing question one might have is "why is there collision in the first place, if nodes do carrier sensing before sending their bits?" The answer is simple: It takes time for bits a node to another to arrive to other nodes. This time is called **channel propagation delay**. Although bits are moving close to light speed or something, they still take time. The larger the channel propagation delay, the less efficient it is and the more and worse collision CSMA suffers from.
+
+#### Carrier Sense Multiple Access with Collision Detection (CSMA/CD): 
+- CSMA continues to transmit a frame in its entirety even after a collision is detected which can be wasteful. In CSMA/CD, on the other hand, the nodes involved in a collision cease to transmit bits a short time after detecting a collision. They don't continue to transmit a damaged frame in its entirety. 
+- The actions of a node attached to a broadcast channel using CSMA/CD can be summarized as follows:
+	1. The node's adapter receives an IP datagram, wraps it in a frame and has it ready for transmission.
+	2. The adapter listens on the channel. If the channel is idle (no other node is transmitting data through the channel), the node starts transmitting its frame. If the channel is busy, the node waits until the channel is idle to start transmitting its frame.
+	3. While transmitting its frame, the node keeps listening for the presence of signal from other nodes.
+	4. If no signal is detected from other nodes, the node continues to transmit its frame until the whole frame is transmitted. If the node detects a collision, it aborts transmission and waits a *random amount of time* before returning to step 2. 
+- It is necessary for the wait time after a collision to be random because otherwise the colliding nodes will try to retransmit frames at the same time and re-collide forever! Choosing an interval of time from which to pick a random delay is kinda tricky. If it is small and there are many nodes, the nodes will try to retry to retransmit at near the same time which means they will most likely collide again. If this backoff time is large with a few nodes, the wait before the retransmission will be unnecessarily long. We need a backoff time that is short when there are a few colliding nodes and large when there are many of them. The **binary exponential backoff** is an algorithm that does just this. It is used in Ethernet. When retransmitting a frame that has experienced ***n*** collisions (in the past/number of retransmissions), the node picks a random delay ***K*** from the the interval ***{0, 1, 2, ...., 2<sup>n</sup> - 1}***. For Ethernet, the actual wait time is ***k · 512 bit times*** (the amount of time needed to send 512 bits through Ethernet). The maximum value of ***n*** is 10.
+- The node can still sneak new frames through regardless of whether there are frames waiting to be retransmitted. 
 
 ### Taking-Turns Protocols:
--
-
-### The Link-Layer Protocol for Cable Internet Access:
--
+- It is ideal if the channel's capacity is equal to R bps when there is only one active node, and R/N bps when there are N active nodes. The **taking-turns** protocols (there are several) try to reach this ideal. 
+- One popular taking-turns protocol is the  **polling protocol** which designates a master node which polls the other nodes continuously. The master node sends a message to node 1 telling it it can start transmitting up to a maximum number of frames. When the master node detects lack of signal in the channel it determines that node 1 has stopped sending frames, so it moves on to instruct node 2 to start sending its packets. This continues on forever!
+- Advantages of the polling protocol include the elimination of empty slots and collisions. The protocol, however, has its drawbacks which include:
+	* Polling delay. If a node is the only active node and after sending its maximum number of frames, the master node takes over and polls all other nodes before returning to the active node and let it resume sending its frames.
+	* If the master node fails, the entire channel fails. 
+- Bluetooth and 802.15 are examples of polling protocols.
+- Another taking-turns protocols is the **token-passing protocol**. In this protocol, there is a small special-purpose frame called a **token** which is exchanged among nodes in a fixed manner. Node 1 sends the token to node 2, node 2 to node 3, etc. and node N back to node 1. If a node has no frames to transmit, it immediately forwards the token to the next node. If the node has frames, it transmits up to a maximum number of frames and then it releases the token for the next node. This scheme is decentralized and very efficient, but suffers for a problem similar to the polling delay problem. If a node fails, the whole channel may fail. If a node fails to release the token, then something need to be done to recover the token.
 
 ## Switched Local Area Networks:
--
+### Link-Layer Addressing and ARP
+### Ethernet:
+### Link-Layer Switches:
+### Virtual Local-Area Networks (VLANs):
 
 ## Link Virtualization: Network as a Link Layer:
 -
