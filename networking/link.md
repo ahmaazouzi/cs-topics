@@ -133,9 +133,86 @@
 - Another taking-turns protocols is the **token-passing protocol**. In this protocol, there is a small special-purpose frame called a **token** which is exchanged among nodes in a fixed manner. Node 1 sends the token to node 2, node 2 to node 3, etc. and node N back to node 1. If a node has no frames to transmit, it immediately forwards the token to the next node. If the node has frames, it transmits up to a maximum number of frames and then it releases the token for the next node. This scheme is decentralized and very efficient, but suffers for a problem similar to the polling delay problem. If a node fails, the whole channel may fail. If a node fails to release the token, then something need to be done to recover the token.
 
 ## Switched Local Area Networks:
-### Link-Layer Addressing and ARP
+- The following diagram shows a *switched local network* which connects 3 departments, 2 servers, and a router, using 4 switches. Switches operate at the link layer, so they switch link-layer frames rather than network-layer datagrams. They also don't understand IP addresses, but use link-layer addresses instead for forwarding link-layer frames:
+![Institutional network with 4 switches](img/network4Switches.png)
+- In this section, we will study link-layer addressing and how it relates to network-layer addressing, then study Ethernet and how link-layer switches work and finish the section with how switches are used to build large LANs. 
+
+### Link-Layer Addressing and ARP:
+#### MAC Addresses:
+- Link-layer addresses are not part of routers or hosts. They are part of the network adapters/interfaces of these computers, so a router with multiple interfaces has multiple link-layer addresses in the same way that it has multiple IP addresses.
+- Link-layer switches themselves don't have link-layer addresses associated with their interfaces?! :confused:!!
+- A link-layer address is known by several names including **LAN address**, **physical address**, and **MAC address** with the latter being the most common name. For most LANs (including Ethernet and 802.11 LANs), a MAC address is 6 bytes long which allows for 2<sup>48</sup> possible addresses. As the following diagram shows how MAC addresses are expressed: in hexadecimal notation with each byte expressed with 2 hexadecimal numbers. MAC addresses were designed originally to be permanent but it is possible now to change a MAC address with software!! Wow:
+![MAC addresses in a LAN](img/LANMACs.png)
+- Although network adapters are manufactured by different companies across different countries, they MAC addresses are unique and no two adapters have the same address! This is possible thanks to the IEEE which manages the allocation of MAC addresses. Companies wishing to manufacture adapters buy a chunk of 2<sup>24</sup> addresses from the IEEE. The IEEE fixes the first 2<sup>24</sup> for the company and allowing it to create combinations of the last 2<sup>24</sup> bits of the MAC address.
+- A MAC address is flat and not hierarchical like an IP address where the different portions of the IP address might point to networks and subnets within subnets while other portions point to hosts, etc. MAC addresses also don't change if the host or device is moved. A MAC address is a non-changing identifier of a device across networks as opposed to the IP address of a host which changes when the computer is moved from one network to another. If the computer were a person, it's MAC address would be its social security number while it's IP would be its address.
+- When a node wants to send a frame to a given destination, it places the MAC address of the destination in the frame and transmits it. An adapter receives this frame and checks its destination MAC address. If the destination address matches the adapter's addresses it unpacks the datagram within it and passes it up to the network layer, and otherwise it discards it. It often happens that an adapter receives frames not addressed to it, as is the general case with broadcast frames, that's why it checks the destination MAC address of the frame.
+- When a sending adapter wants all other adapters on the LAN to receive the and process the frame, it uses a special MAC **broadcast address**. In Ethernet and 802.11, this special broadcast address is 48 consecutive 1s: ***FF:FF:FF:FF:FF:FF***.
+
+#### Address Resolution Protocol (ARP):
+- We need a way to translate between MAC addresses and IP addresses because they are both used to exchange data. This is done with the **address translation protocol (ARP)**. 
+- Imagine a source host with given IP address wants to send a datagram to a destination host within the same subnet that contains other hosts, switches, etc. The source host needs to give its adapter the MAC address as well as the IP address of the destination to be able to send data to it. The sending adapter can use this MAC address to create a frame it then sends to the destination.
+- To determine the MAC address corresponding to the given destination IP address, the sending host uses its *ARP module*. The ARP module in the host takes the IP address as an input returns the corresponding MAC address.
+- ARP basically resolves IP addresses to MAC addresses in the same way that DNS resolves hostnames to IP addresses, but while DNS resolves hostnames across the Internet, ARP functions only within the same subnet and not outside it.
+- How does ARP do it? Each router and host has an **ARP table** which contains mapping between IP addresses and MAC addresses. The following is an example of an ARP table:
+
+| IP address | MAC address | TTL |
+| --- | --- | --- |
+| 212.212.200.123 | AB:33:13:54:0F:0A | 12:00:29 |
+| 212.212.200.213 | 1B:3B:13:54:0F:7A | 00:00:53 |
+
+- The third column of the table contains the time-to-live (TTL) values of mappings after which the mappings are dropped from the table. A given ARP table doesn't have an entry for every host and router in the subnet. Some of these hosts/routers might never make it to the ARP table. Others might have expired. The typical time-to-live of an entry is about 20 minutes. 
+- If a host wants to send a datagram to another host or router in the same subnet whose IP address it knows, it must also get its MAC address before it can send that datagram. It checks its ARP table and just grab the MAC address if it is in the table. If the table doesn't have that entry, the host uses the ARP protocol to resolve this address. It constructs a special packet called the **ARP packet**. The ARP packet has multiple fields including the IP and MAC addresses of the sending and receiving nodes. In fact, there are two of these packets which have the same format. The **ARP query packet** is used to query all other hosts/routers in the subnet to find the MAC address corresponding to the IP address being resolved. The sending host passes the ARP query packet to the adapter and instructs it to send it to the MAC broadcast address ***FF:FF:FF:FF:FF:FF***. The ARP query packet is packed into a frame, the broadcast address is placed into its destination field and the frame is transmitted into the subnet. This frame is received by all other hosts/routers in the subnet. Each one of these guys checks passes the query packet up to its ARP module which checks if its IP address matches the IP address in the ARP query packet, and if it is so, this machine sends back to the querying host/router an **ARP response packet** containing the desired MAC-IP mapping. The querying host then updates its ARP table. It is now also capable of sending its datagram to the destination given by the IP address. 
+- The query packet is sent in a broadcast frame but the response is sent in a regular frame, because they query is searching for something it doesn't know! Any other router/host could have the MAC address being searched!! Maybe, this is getting a little trippy!
+- ARP is also a plug-and-play protocol. There is no need for manual configuration. The ARP tables get updated with entries added and deleted automatically and continuously. 
+- ARP is one of those protocols that don't strictly belong to just one layer but is part of both the network and link layers. Some protocols involve the interplay of different elements from different layers. 
+
+#### Sending a Datagram off the Subnet:
+- How does a datagram go from a host in the current subnet to another host in a different subnet? Let's say we have two subnets 1 and 2 connected by a router and we want to send a datagram from a host in subnet 1 to a host in subnet 2. The sending host first finds the MAC address of the interface of the first-hop router in the path to the destination using ARP. It uses this MAC address to create a frame that it sends to that router's interface. The router's interface receives the frame which it passes up to the network's layer. The router's forwarding table is checked for which other router's interface the datagram needs to be forwarded to. Once this IP address of this interface is decided, the router uses ARP to get this interface's MAC address. A frame is created and transmitted to this outgoing router's interface. The outgoing interface receives the frame and the datagram is extracted and passed up to the network layer. This one checks its forwarding table and determines the IP address of the destination host. It then uses its ARP module to find the MAC address associated with the destination's IP address. It packs the datagram in a frame and sends it to the destination. The destination accepts the frame and unpacks the datagram. Wow, what an arduous trip!!!
+- Let's just note that a router with multiple interfaces does actually have multiple IP addresses, MAC addresses, and ARP modules for each of these interfaces. 
+
 ### Ethernet:
+- Ethernet has dominated wired LANs for a long time and might continue to do so for a long time. It might not be irresponsible to claimed that Ethernet has been "to local area networking what the Internet has been to global networking."
+- It has witnessed a lot of evolution since its inception sometime during the 1970s. 
+
+#### Ethernet Frame Structure:
+![The structure of an Ethernet frame](img/ethernetFrame.png)
+- An Ethernet frame consists of the following 6 fields:
+	* **Data** *field (46 to 1,500 bytes)*: This field capped at 1500 bytes and it carries the network-layer packet (e.g. an IP datagram). The minimum size of this field is 64 bytes so if the datagram is smaller than 64 bytes, the data field is stuffed/padded. When a frame is received, the datagram it contains has both the datagram and stuffing. The network layer uses the length field in the datagram header to remove the stuffing.
+	* **Destination address** *(6 bytes)*: It contains the MAC address of the destination adapter. If this MAC address is the same as the adapter's MAC address or is a broadcast address, it unpacks the frame's data field and passes it up to the network layer. Otherwise, it discards the frame. 
+	* **Source address** *(6 bytes)*: contains the sending adapter's MAC address. 
+	* **Type** *field (2 bytes)*: Allows Ethernet to multiplex network-layer protocols. IP is not the only network layer protocols. The same host might support multiple network-layer protocols and this type field allows Ethernet to pass the contents of the frame's data field to the appropriate network-layer protocol. For example, the type for a frame containing an ARP packet is different from the one in a frame containing an IP datagram. 
+	* **Cyclic redundancy check (CRC)** *(4 bytes)*: As we've seen earlier, CRC is used to detect bit errors.
+	* **Preamble** *(8 bytes)*: The Ethernet frame starts with an 8-byte preamble. Each of the first 7 bytes consists of the pattern ***10101010***, while the last byte in the preamble is ***10101011***. The book says, the preamble "wakes up" the the receiving adapter (whatever that means!! :confused:), and to synchronize the two adapters clocks!!! The last two bits of the 8th byte of the preamble signals to the receiver that the content of the frame is about to start. 
+- Ethernet is connectionless, meaning it provides an unreliable service to the network-layer protocols that involves no handshaking! The adapter receiving a frame performs a CRC check for errors but doesn't sends back an acknowledgment or negative acknowledgment back to the sending adapter. The receiving adapter might drop a frame or receive a bad frame without the sending adapter knowing anything about such a event. Datagrams might be lost because of issues at the link layer. Neither the link layer nor the network layer will try to restore such missing datagrams, In most systems, this is done at the transport layer with TCP.
+
+#### Ethernet Technologies:
+- In practice, Ethernet is not a single uniform protocol but comes in different varieties with weird names such as 10BASE-T or 1000BASE-LX. These and others have been standardized by the so-called IEEE 802.3 CSMA/CD working group. The different parts of these cryptic acronyms list the features of each of the technologies they name. For example in 10BASE-T, 10 means its transmission rate is 10 Mbps, BASE means it's "baseband Ethernet"; it only carries Ethernet traffic. T means the physical medium it uses is twisted-pair copper wire. By the way, actual commercial Ethernet is also a physical-layer specification not just a link-layer protocol. 
+- Different Ethernets might use different physical media and specifications and transfer data at different rates (10 Mbps, 100 Mbps and 1000 Mbps). They are compatible with each other, though, and have the same frame structure. 
+
 ### Link-Layer Switches:
+- I still have no idea what a **switch** is and what it does exactly! It says that the role of a switch is to receive a incoming link-layer frames and forward them unto outgoing links. Switches are also **transparent** to the hosts and routers in a subnet, meaning that hosts/routers address their frames to other hosts/routers rather than to switches separating senders from receivers. If a group of routers forward datagrams from a source host to a destination host, then a switch can forward frames in the same subnet from a sending host/router to a receiving host/routers. Another vital function switches can play within a subnet is the ability to buffer frames to lessen jamming if their outgoing links have a capacity lower than the incoming frames. 
+ 
+#### Forwarding and Filtering:
+- **Filtering** refers to the action of the switch determining whether a frame should be forwarded to some interface or just  dropped.
+- **Forwarding** refers to the switch's function of determining to which interface a frame is to be directed and the moving of the frame to such interface.
+- The switch performs filtering and forwarding using its **switch table** which contains entries for some but not necessarily all hosts/routers in the LAN. As the following table shows, each entry contains: a MAC address, the interface leading to that MAC address, and the time when the entry was placed in the table:
+
+| MAC address | Interface | Time |
+| --- | --- | --- |
+| A2:BB:C7:E1:22:3F | 1 | 5:23 |
+| A2:BB:C7:E1:22:11 | 3 | 2:43 |
+| .... | .... | .... |
+
+- Frame forwarding might seem similar to datagram forwarding, but the similarity is only skin deep. Differences include the fact that switch forwarding uses MAC addresses rather than IP addresses and switch tables are constructed in a manner different from that of router forwarding tables.
+- When a switch receives a frame at an interface x, the switch indexes its table with the MAC address of that frame and one of 3 things could happen:
+	1. The given MAC address is not in the table, at which point copies of the frame are broadcast to each of the buffers of other interfaces except for interface x.
+	2. The given MAC address is in the table, but the interface associated with it is x. In this case, the frame is dropped. Why forward a frame to yourself? :confused:
+	3. The given MAC address is in the table, and the interface associated with is not x. The switch simply forwards the frame to that interface so it would be transmitted through the link attached to it.
+
+#### Self-Learning
+#### Properties of Link-Layer Switching:
+#### Switches vs. Routers:
+
 ### Virtual Local-Area Networks (VLANs):
 
 ## Link Virtualization: Network as a Link Layer:
