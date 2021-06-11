@@ -209,20 +209,43 @@
 	2. The given MAC address is in the table, but the interface associated with it is x. In this case, the frame is dropped. Why forward a frame to yourself? :confused:
 	3. The given MAC address is in the table, and the interface associated with is not x. The switch simply forwards the frame to that interface so it would be transmitted through the link attached to it.
 
-#### Self-Learning
+#### Self-Learning:
+- How does a switch table get configured/constructed? This is done  with no manual intervention or the use of a configuration protocol. Switches do this automatically through **self-learning** which is accomplished as follows:
+	1. The switch table is initially empty.
+	2. For each frame coming through an interface, the switch stores in its switch table the source MAC address of the frame, the interface where the frame was received and the current time.  
+	3. The switch deletes an address from the table if no frame has been received after a certain period of time (the so-called **aging time**). This means when a host is replaced by another, the old MAC address for the old host is dropped. 
+- Switches are another **plug-and-play** technology that require no manual intervention by an administrator. Installing a switch or a changing or removing a host doesn't require any kind of configuration.All you need to do is to plug LAN segments in appropriate interfaces. Switches are also full-duplex meaning they can send and receive frames at the same time.  
+
 #### Properties of Link-Layer Switching:
-#### Switches vs. Routers:
+- This subsection lists advantages LANs using switches over LANs based on buses star topologies (*W haven't studied these to make the comparison!!!*).
+- Anyways, switches have the ability to:
+	- *Eliminate collisions* precisely because switches buffer frames at interfaces and never transmit more than one frame at a time. 
+	- Allow for *heterogeneous links*. Since link segments are isolated by switches, different links with different speeds and different media can be part of the same LAN. 
+	- Switches can help with *network management* by disconnecting rogue and malfunctioning adapters, etc. 
 
 ### Virtual Local-Area Networks (VLANs):
-
-## Link Virtualization: Network as a Link Layer:
--
+- As the following figure (which we've seen earlier) shows, networks can be configured into hierarchical switched LANs interconnected with a switch hierarchy:
+![Institutional network with 4 switches](img/network4Switches.png)
+- The hierarchical configuration shown in the image suffers from several drawbacks:
+	- **Lack of traffic isolation**: intergroup traffic behind a switch is local to the area behind that switch, but broadcast traffic such as ARP and DHCP packets whose destinations haven't been learnt by by self-learning switches must still traverse the whole network. This broadcast traffic adversely affects the performance of the network as a whole and does also lead heavy security/privacy issues because these broadcast ARP, etc. packets can reveal dangerous information to other departments.
+	- **Inefficient use of switches**: Can you isolate traffic with one switch that have many ports? What if you have 3 switches with many ports, but also need to create 10 isolated LANs? Can you do this with the few switches you have?
+	- **Limited user management**: Can a host stay connected to its intended LAN even if it's physically moved to a different location?
+- These problems are addressed with **virtual local area networks (VLANs)**. A VLAN allows you define multiple *virtual* LANs over single physical LAN infrastructure. Hosts in a VLAN communicate with each other as if they were the only ones connected to that switch so they can't see traffic of hosts in other VLANs in the same LAN nor can other VLAN hosts see their traffic.
+- Switch management software is used to configure VLANs. Hosts are added or removed from VLANs using this switch management software. 
+- The switch contains a table for maintaining port-to-VLAN mappings. Traffic is isolated based on these mappings.
+- There are other details about VLANs that have to do with interconnecting different VLANs, etc. This was a very brief intro to just get an idea. 
 
 ## Data Center Networking:
--
+- Large companies like googal maintain unbelievably large data centers containing many many thousands of hosts. These data centers are at the heart of the so-called cloud application. A data center has a **data center network** which interconnects its hosts and connects the data center itself to the Internet.
+- Enormous amounts of money can go into running and maintaining a data centers which are used for hosts, networking equipment such as routers, switches, power supply, etc. Networking is an important part of a data center and making good networking decisions can reduce the costs of a data center drastically.
+- Data centers store and serve a lot of content and do a lot of distributed computation. This work is done by hosts which come in the form of **blades** that look like pizza boxes. Blades are regular computers with CPUs, memories and disk storage and are stacked in **racks**. A typical rack contains 20 to 40 blades. At the top of a rack is a so-called **top-of-the-rack (TOR)** switch which interconnects the blades in the rack and other switches in the data center. Each blade has its own network interface card which allows it to be connected to its TOR switch. Each TOR has ports that ports that connect to the rack's blades and others that can be connected to other switches. These connections run over 1 Gbps Ethernet and more!
+- Data centers handle two types of traffic: internal traffic between hosts in the data center and external traffic between the data center hosts and the Internet. One or more **border routers** connect the data center to the rest of the world. The job of the data center network then is connecting the racks to each other and connecting the racks to the border routers. There is a whole *science* called **data center network design** dedicated to protocols, techniques, etc. of connecting racks to other racks and to the border routers. 
+
+### Load Balancing:
+- External clients connect to an application running in a cloud data center (there are usually several of these application running in each of these data centers) through a publicly visible IP address. External requests to the application are first directed to a **load balancer** which distributes the requests to the hosts based on their current load. A large data center usually has several load balancers each devoted to a set of applications. A load balancer is sometimes called a layer-4 switch because it directs traffic based on port numbers and IP addresses. Probably, there would be multiple hosts handling the same application concurrently, so load balancer would forward the request to the least busy host?!!! The host might trigger other hosts to help it process the requests and when all is done, the response is sent back to the load balancer which forwards it to the border router. A load balancer might also provide a NAT-like function of translating the public address to internal host IP addresses and vice-versa. 
 
 ## Actual Day in the Life of a Web page Request:
--
+- 
 
 
 

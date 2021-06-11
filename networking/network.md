@@ -24,7 +24,7 @@
 		+ [Obtaining a Host Address the Dynamic Host Configuration Protocol](#obtaining-a-host-address-the-dynamic-host-configuration-protocol)
 		+ [Network Address Translation](#network-address-translation)
 		+ [Problems with NAT and UPnP](#problems-with-nat-and-upnp)
-	+ [Internet Control Message Protocol (ICMP)](#internet-control-message-protocol-(icmp))
+	+ [Internet Control Message Protocol (ICMP)](#internet-control-message-protocol-icmp)
 	+ [IPv6 Addressing](#ipv6-addressing)
 		+ [IPv6 Datagram Format](#ipv6-datagram-format)
 		+ [Transitioning from IPv4 to IPv6](#transitioning-from-ipv4-to-ipv6)
