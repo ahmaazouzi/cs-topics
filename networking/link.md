@@ -245,7 +245,12 @@
 - External clients connect to an application running in a cloud data center (there are usually several of these application running in each of these data centers) through a publicly visible IP address. External requests to the application are first directed to a **load balancer** which distributes the requests to the hosts based on their current load. A large data center usually has several load balancers each devoted to a set of applications. A load balancer is sometimes called a layer-4 switch because it directs traffic based on port numbers and IP addresses. Probably, there would be multiple hosts handling the same application concurrently, so load balancer would forward the request to the least busy host?!!! The host might trigger other hosts to help it process the requests and when all is done, the response is sent back to the load balancer which forwards it to the border router. A load balancer might also provide a NAT-like function of translating the public address to internal host IP addresses and vice-versa. 
 
 ## Actual Day in the Life of a Web page Request:
-- 
+- We took a very deep dive up to this moment into the world of networking and its many interleaved protocols. We will now take an "integrated, holistic view of the[se] protocols" by examining how a web page is downloaded. Some unnamed student connects her laptop to the her school's Ethernet switches and downloads some web page like `www.github.com`. What happens for this web page to be downloaded?
+- The following figure shows the general path of such a request:
+![The journey of a web page request](img/webPageRJourney.png)
+- The Ethernet switch to which the laptop is connected is itself connected to the school's router. The school's router itself is connected to an ISP (Comcast) which provides DNS service to the school. In our example DHCP runs in the school's router. 
+- When the laptop is first connected to the network, it cannot do anything because it doesn't even have an IP address. The first thing it must do is to run DHCP to obtain an IP address and some other useful network information, so downloading our web page following these steps:
+	1 . The OS in our laptop creates a **DHCP query message**; places the DHCP query messages in a **UDP segment** whose destination port is 67 (port for DHCP server), and source port 68 (DHCP client); and places the UDP segment inside an **IP datagram** with a *broadcast* destination *IP address* 255.255.255.255 and a source address 0.0.0.0 (because it hasn't obtained an IP address yet).
 
 
 
