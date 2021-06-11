@@ -250,7 +250,7 @@
 ![The journey of a web page request](img/webPageRJourney.png)
 - The Ethernet switch to which the laptop is connected is itself connected to the school's router. The school's router itself is connected to an ISP (Comcast) which provides DNS service to the school. In our example DHCP runs in the school's router. 
 - When the laptop is first connected to the network, it cannot do anything because it doesn't even have an IP address. The first thing it must do is to run DHCP to obtain an IP address and some other useful network information, so downloading our web page following these steps:
-	1 . The OS in our laptop creates a **DHCP query message**; places the DHCP query messages in a **UDP segment** whose destination port is 67 (port for DHCP server), and source port 68 (DHCP client); and places the UDP segment inside an **IP datagram** with a *broadcast* destination *IP address* 255.255.255.255 and a source address 0.0.0.0 (because it hasn't obtained an IP address yet).
+	1. The OS in our laptop creates a **DHCP query message**; places the DHCP query messages in a **UDP segment** whose destination port is 67 (port for DHCP server), and source port 68 (DHCP client); and places the UDP segment inside an **IP datagram** with a *broadcast* destination *IP address* 255.255.255.255 and a source address 0.0.0.0 (because it hasn't obtained an IP address yet).
 
 
 
