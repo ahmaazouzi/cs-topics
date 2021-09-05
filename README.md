@@ -18,7 +18,8 @@
 	+ [The Transport Layer](networking/transport.md) :white_check_mark:
 	+ [The Network Layer](networking/network.md) :white_check_mark:
 	+ [The Link Layer](networking/link.md) :white_check_mark:
-	+ [Wireless and Mobile Networks](networking/wireless.md) :arrows_counterclockwise:
+	+ [Wireless and Mobile Networks](networking/wireless.md) :white_check_mark:
+	+ [Multimedia Networking](networking/multimedia.md) :arrows_counterclockwise:
 
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables](algorithms/basicDS.md) :arrows_counterclockwise:

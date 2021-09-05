@@ -1,6 +1,27 @@
 # Wireless and Mobile Networks:
 
 ## Table of Contents:
+- [Wireless and Mobile Networks](#wireless-and-mobile-networks)
+	* [Table of Contents](#table-of-contents)
+	* [Introduction](#introduction)
+	* [Components of a Wireless Network](#components-of-a-wireless-network)
+	* [Wireless Links and Network Characteristics](#wireless-links-and-network-characteristics)
+		+ [CDMA](#cdma)
+	* [WiFi 802.11 Wireless LANs](#wifi-80211-wireless-lans)
+		+ [The 802.11 Architecture](#the-80211-architecture)
+			+ [Channels and Association](#channels-and-association)
+		+ [The 802.11 MAC Protocol](#the-80211-mac-protocol)
+			+ [Link-layer Acknowledgment Scheme](#link-layer-acknowledgment-scheme)
+			+ [How CSMA/CA Avoids Collisions](#how-csma/ca-avoids-collisions)
+			+ [Dealing with Hidden Terminals through RTS and CTS](#dealing-with-hidden-terminals-through-rts-and-cts)
+			+ [802.11 as a Point-to-Point Link](#80211-as-a-point-to-point-link)
+		+ [The IEEE 802.11 Frame](#the-ieee-80211-frame)
+			+ [Payload and CRC Fields](#payload-and-crc-fields)
+			+ [Address Fields](#address-fields)
+			+ [Sequence Number, Duration, and Frame Control Fields](#sequence-number-duration-and-frame-control-fields)
+		+ [Mobility in the Same IP Subnet](#mobility-in-the-same-ip-subnet)
+	* [Mobility Management Principles](#mobility-management-principles)
+	* [Mobile IP](#mobile-ip)
 
 ## Introduction:
 - Wireless is king in our days. The reason a separate chapter was dedicated to to wireless networking is that it poses challenges that are different from the challenges encountered in traditional wired networks at both the data link and network layers. 
@@ -8,9 +29,8 @@
 - Specific topics we will see include:
 	- How a device connects to the network through a wireless link.
 	- How multiple access is done in wireless links, with a focus on CDMA.
-	- How wireless LANs work at the link level with such protocols as IEEE 802.11 (WiFi), Bluetooth, etc.
-	- How cellular Internet works with 3G and 4G technologies.
-	- The issue of mobility and networking and how it's tackled with mobile IP and GSM.
+	- How wireless LANs work at the link level with such protocols as IEEE 802.11 (WiFi).
+	- The issue of mobility and networking and how it's tackled with mobile IP.
 	- The effect of wireless links and mobility on transport-layer protocols and networked applications. 
 - *I will just skim over these topics and not spend to much time trying to summarize the material*.
 
@@ -142,8 +162,17 @@ bytes, but most payloads are less than 1,500 bytes in length. The CRC field is u
 - When a device moves away from a given BSS 1 towards a BSS 2, it senses the signal is weakening so it starts looking for associating with a new BSS. It receives a beacon frame from BSS 2 and and associates with it while keeping its IP address. This is made easier by the fact that BSSs in the same subnet would usually have the same SSID, so the handoff is seamless. 
 - BSSs in the same subnet are connected through switches and while switches are smart and update their MAC address tables, they might think the device hasn't moved to a new BSSs. A hacky solution to this is when a device associates with the new BSS, the AP of the new BSS broadcasts an Ethernet frame to the switch instructing its to update its table the device can be reached through this new AP in this new BSS.
 
-## Cellular Internet Access:
-## Mobility Management, Principles:
+## Mobility Management Principles:
+- *I've skipped the section on cellular networks because it was mostly about how cellular networks work and has very little information about the Internet.*
+- The issue of mobility is especially important and interesting in the context of a cellular Internet, and not much of a problem in wireless LANs. From a network's perspective, mobility doesn't mean movement through space, but moving from one wireless network (BSS in LANs) to another or moving between cells in a cellular network (a cell can be described as something similar to a BSS but covers a larger area probably around a cell tower). One doesn't need to maintain a TCP connection when carrying a laptop from home to office, but maintaining a TCP while driving a car or in train while using 3G or LTE data is expected. 
+- I've always wondered how IP works when one is moving between different cell coverage areas. Joining a new WiFi network definitely means changing one's IP address which will interrupt a TCP connection, but that's not the case in cellular networks. 
+- One way cellular networks handle IP is that a device is allotted a permanent address which doesn't change based on the cell where it currently resides. The device does also have a home network which is probably the initial cell it used or the one which it uses mostly. Other cells that it occasionally visits are called visited networks. Each time the device visits one of these networks, these visited networks or the device itself tell the home network that the given device has joined them. THe foreign networks also creates and gives the device a *care-of address (COA)* and the COA is also sent to the home network. 
+- It seems like the wider Internet is not aware of what goes inside the cellular network. So how can a datagram be forwarded to a mobile node using cellular Internet? Two approaches are used to achieve this:
+	- In **indirect routing**, some node sends datagram to the mobile device's permanent address. The home network receives the datagram. The home network knows the device's COA, so it wraps the datagram in a second datagram whose destination is the COA, the address of the foreign network where the device resides. The foreign network extracts the original datagram and forwards it to the device. When the mobile device wants to send a datagram to the Internet, this datagram can go directly to the foreign network and doesn't have to go through the home network.
+	- **Direct routing** solves the inefficiencies introduced of indirect routing where datagrams need to go through the home network and then the foreign network even though there are more efficient routes. Direct routing is kinda more complex, however! In direct routing, the node wishing to exchange datagrams with our mobile node or something called a *correspondent age* queries the home network of the mobile node for the COA. The correspondent agent, then directly tunnels the datagram to the foreign network. There is a problem, however, with direct routing. The correspondent agent only queries the home network for the COA at the beginning of a session, so how can we still keep track of the mobile node if it moves to a new foreign network? This solved by turning the first foreign network the mobile found itself in into a so-called **anchor foreign agent**. Every time the mobile device moves to a new foreign network, the anchor foreign agents is informed of the new COA of the device. Datagrams basically start getting *indirectly rerouted* trhough the anchor foreign agent (in a similar way to how home network is used in indirect routing). Most cellphone users it seems are using their phones within a single cell for most of the time, so there is still a lot of efficiency gained from this!
+
 ## Mobile IP:
-## Managing Mobility in Cellular Networks:
-## Wireless Mobility, Impacts on Higher-Layer Protocols:
+- **Mobile IP** refers to the Internet architecture and protocols used to support mobility. RFC 5944 specifies how mobile IP works (for at least IPv4) and uses indirect routing we discussed eaerlier. It is a vast topic that we will only cover briefly here. Mobile IP consists of 3 main subjects:
+	- **Agent discovery** which concerns how foreign and home agents advertise their services to mobile devices, and how mobile devices request such services.
+	- **Registration with the home agent** encompasses the protocols used by foreign agents and mobile nodes to register and de-register COAs with the home agent.
+	- **Indirect routing of datagrams** refers to how datagrams are forwarded by home agents to mobile nodes, including encapsulation an de-encapsulation, errors and datagram forwarding.
