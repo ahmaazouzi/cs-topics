@@ -1,5 +1,4 @@
 # Multimedia Networking:
-
 ## Table of Contents:
 
 ## Introduction:
@@ -37,7 +36,28 @@
 - People can tolerate video glitches, but are somehow very sensitive to audio glitches. Live or sored videos that have many audio glitches are mostly unusable, while video glitches are OK.
 
 ### Types of Multimedia Applications:
-- 
+- Networked multimedia applications can be divided into 3 broad categories: **streaming stored audio/video**, **conversational voice/video-over-IP**, and **streaming live audio/video**. Each one of these categories has its own restrictions and challenges.
+
+#### Streaming Stored Audio and Video:
+- We will focus on streaming video (which mostly also contain audio). Streaming stored audio is similar to streaming stored video but at a lower bit rate!
+- YouTube and Netflix are classic applications for streaming stored video. Prerecorded video content is stored in some server somewhere and users send requests to view such content.
+- Streaming stored video has three main characteristics:
+	- *Streaming*: The user starts playing the video shortly after video content is received. The user can continue to play the video while later parts of the video are being received. This is as opposed to first downloading the video file and then playing it.
+	- *Interactivity*: The user can pause, play, fast forward, etc.
+	- *Continuous playout*: This probably refers to freezes experienced when data hasn't been downloaded "no buffering".
+- A good streamed video is one with a good average throughput which at least equal to the bit rate of the streamed video. Prefetching and buffering (we will see these later) allow for continuous playout even when throughput fluctuates but with the condition that the average rate (over 5 to 10 seconds stays higher than the video's bitrate).
+
+#### Conversational Voice- and Video-over-IP:
+- Conversational voice over the Internet is also called *Internet telephony* as it acts as a transmitter of voice just like a telephone does. It is also commonly called **voice-over-IP (VoIP)**. It often involves video as well and involve more than just two users but many (in so-called teleconferences).
+- Conversational VoIP applications needs to pay close attention to two requirements:
+	- *Timing considerations*: These applications are *delay sensitive*. A conversation can be become really hard if it experiences delays more than 400 milliseconds as the user cannot know if their interlocutor is still listening or has already started speaking. The user starts speaking only to receive the voice of the interlocutor and then apologizes, etc. 
+	- *Loss tolerance*: Conversational applications can tolerate occasional loss of data which appears in the form of video and audio glitches such as those of Skype.
+- Conversational VoIP applications are the opposite of elastic applications such as websites and email. The latter can tolerate a lot of delay, but cannot tolerate data loss.
+
+#### Streaming Live Audio and Video:
+- This is like broadcasting TV/radio, but over the Internet. It allows for live transmission of audio/video. 
+- Live streaming is delivered through application-level multicast (By CDNs) or through "multiple separate unicast streams".
+- Live streaming of video is largely similar to streaming audio/video, but with a little time constraint. Since it's live, the video being streamed needs to be available almost immediately, but while conversational VoIP has a timing constraint of a coupe 100 milliseconds, a live streamed video can have 10 seconds or more of delay and be still usable.
 
 ## Streaming Stored Videos:
 
