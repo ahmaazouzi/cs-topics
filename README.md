@@ -19,10 +19,11 @@
 	+ [The Network Layer](networking/network.md) :white_check_mark:
 	+ [The Link Layer](networking/link.md) :white_check_mark:
 	+ [Wireless and Mobile Networks](networking/wireless.md) :white_check_mark:
-	+ [Multimedia Networking](networking/multimedia.md) :arrows_counterclockwise:
+	+ [Multimedia Networking](networking/multimedia.md) :white_check_mark:
+    + [Network Security](networking/security.md) :arrows_counterclockwise:
 
 - [Algorithms and Data Structures:](algorithms/)
-	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables](algorithms/basicDS.md) :arrows_counterclockwise:
+	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables)](algorithms/basicDS.md) :arrows_counterclockwise:
 	+ [Binary Search Trees](algorithms/bst.md) :arrows_counterclockwise:
 
 - Discrete Math:

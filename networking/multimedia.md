@@ -1,5 +1,38 @@
 # Multimedia Networking:
 ## Table of Contents:
+* [Introduction](#introduction)
+* [Multimedia Networking Applications](#multimedia-networking-applications)
+	+ [Properties of Video](#properties-of-video)
+	+ [Properties of Audio](#properties-of-audio)
+	+ [Types of Multimedia Applications](#types-of-multimedia-applications)
+		+ [Streaming Stored Audio and Video](#streaming-stored-audio-and-video)
+		+ [Conversational Voice- and Video-over-IP](#conversational-voice--and-video-over-ip)
+		+ [Streaming Live Audio and Video](#streaming-live-audio-and-video)
+* [Streaming Stored Videos](#streaming-stored-videos)
+	+ [UDP Streaming](#udp-streaming)
+	+ [HTTP Streaming](#http-streaming)
+		+ [Prefetching Video](#prefetching-video)
+		+ [Client Application Buffer and TCP Buffers](#client-application-buffer-and-tcp-buffers)
+		+ [Early Termination and Repositioning the Video](#early-termination-and-repositioning-the-video)
+	+ [Adaptive Streaming and DASH](#adaptive-streaming-and-dash)
+	+ [Content Distribution Networks](#content-distribution-networks)
+		+ [CDN Operation](#cdn-operation)
+		+ [Cluster Selection Strategies](#cluster-selection-strategies)
+* [Voice-over-IP](#voice-over-ip)
+	+ [Limitations of the Best-Effort IP Service](#limitations-of-the-best-effort-ip-service)
+		+ [Packet Loss](#packet-loss)
+		+ [End-to-End Delay](#end-to-end-delay)
+		+ [Packet Jitter](#packet-jitter)
+	+ [Removing Jitter at the Receiver of Audio](#removing-jitter-at-the-receiver-of-audio)
+		+ [Fixed Playout Delays](#fixed-playout-delays)
+		+ [Adaptive Playout Delays](#adaptive-playout-delays)
+	+ [Recovering from Packet Loss](#recovering-from-packet-loss)
+		+ [Forward Error Correction](#forward-error-correction)
+		+ [Interleaving](#interleaving)
+		+ [Error Concealment](#error-concealment)
+* [Protocols for Real-Time Conversational Applications, RTP](#protocols-for-real-time-conversational-applications-rtp)
+		+ [RTP Packet Header Fields](#rtp-packet-header-fields)
+* [Network Support for Multimedia](#network-support-for-multimedia)
 
 ## Introduction:
 - We all want to know how to create a video streaming service or a live video chatting application like WhatApp!! This chapter will cover the networking issues of transmitting sound and video through the network.
@@ -8,7 +41,6 @@
 	- Conversational voice/video over-IP.
 	- Streaming live video/audio.
 - We will look at content distribution networks (CDNs) and they are the backbone of streaming services.
-- We will take a look at popular streaming services such as Netflix and YouTube. and much more. 
 
 ## Multimedia Networking Applications:
 - A multimedia applications is any that involves audio or video. In this section we will look at the special characteristics of video and audio that make them different from other types of media, and then we will study the different types of networked multimedia applications.
@@ -140,7 +172,67 @@
 - CDNs must also not put too much pressure on specific clusters that are otherwise excellent candidates to direct traffic to. There are also business considerations concerning CDN contractual relationships with ISPs. Some ISPs might be cheaper than others so an optimal cluster maybe ignored because the ISP it uses is too costly. 
 
 ## Voice-over-IP:
+- Real-time conversational voice over the Internet is also called telephony, because it somehow acts like circuit-switched telephone service. Nerds call it **voice-over IP (VoIP)**.
 
-## Protocols for Real-Time Conversational Applications:
+### Limitations of the Best-Effort IP Service:
+- IP tries its best effort to get a packet from host A to host B as quickly as possible, but it offers no guarantees whatsoever about when the packet will arrive or if it will even arrive. This approach works fine for most applications, but it is very bad for VoIP due to the fact that a natural conversation between two people cannot tolerate large amounts of delay or missing sounds. This section will describe the challenges best-effort IP poses to VoIP applications, and how a application-level techniques are used to overcome such challenges. 
+- We will discuss these limitations in the context of a specific example that has the following characteristics:
+	- The sender generates sounds at the rate of 8,000 bytes per second.
+	- Every 20 milliseconds, a chunk of these bytes if gathered and encapsulate into a UDP datagram through a call to the socket interface. This means each chunk has a size of 160 bytes.
+	- A chunk is sent every 20 milliseconds.
+- If each chunk arrives after a constant end-to-end delay, then the receiver receives a chunk every 20 milliseconds. But this doesn't happen in the real world. Some packets go missing, and many might have different delays so they don't arrive in the order they were sent. The receiver need to decide when to play a chunk (some reordering might be needed), and what do about missing chunks.
+
+#### Packet Loss:
+- We all know IP packets get lost, so what can we do about these lost packets. We might use TCP, but TCP retransmission and congestion control can really really delay what's being said and making a conversation almost impossible.
+- Data loss is normal in the Internet, and a loss rate between 1 and 20% is fine and doesn't have a huge effect on a conversation over IP if the loss is well concealed at the receiver and based on the encoding and transmission scheme used. VoIP applications use *forward error correction (FEC)* to conceal packet loss. With EFC, the sender sends redundant information along with the original data, so original data can be recovered with the help redundant ones. If the loss rate is too high, then there is nothing we can do but suffers through a glitchy unintelligible conversation.
+
+#### End-to-End Delay:
+- **End-to-end delay** is the sum of all types of delay a packet suffers from before it reaches its destination: transmission, processing and queuing delays in routers + propagation delays in links + end-system processing delays, etc. I don't know where they got these numbers, but 150 milliseconds of delay are not really perceived by humans, 150 to 400 milliseconds are irritating but acceptable, and anything above 400 milliseconds is practically unusable. Receivers set a threshold, such 400 millisecond, and they ignore any packets with delays larger than this threshold.
+
+#### Packet Jitter:
+- Due to the varying delays caused by packet queuing in routers, an interesting and annoying phenomenon called **jitter** occurs. Jitter means the period of time between the sending and receiving of a packet fluctuates from a packet to another. The result is that the spacing between the consecutive received packets is not uniform. In our example, there is a 20-millisecond space between sent a packet and next packet. Spaces between received packets can very from distances much larger than 20 milliseconds, or smaller. I believe packets can even arrive out of order (although I don't know why the writer insists on ignoring this fact). To mitigate jitter, VoIP applications use such techniques as **sequence numbers**, **timestamps**, and **playout delay**.
+
+### Removing Jitter at the Receiver of Audio:
+- To recover from jitter, applications combine the following two mechanisms:
+	- The sender prepends each chunk with a **timestamp** when the chunk was created.
+	- The receiver **delays playout** of received chunks. There needs to be long enough delays before playing received audio chunks. Such delays can be fixed or change adaptively during the conversation. 
+- THe rest of this section will study how combining timestamping with delayed playout (both fixed and delayed) can reduce if not remove the effects of jitter altogether.
+
+#### Fixed Playout Delays:
+- In a fixed playout delay scheme, the receiver plays each chunk with time stamp *t* after exactly a given period of *q* milliseconds(after, let's say 150 milliseconds). Each chunk is played at *t + q*. If a chunk arrives after its scheduled playout, it is discarded. 
+- What is a good fixed playout delay? 400 can be tolerable but results in bad user experience, but a very small delay can result in the loss of many chunks, also leading to bad user experience. If the delay is large and varies a lot, the fixed delay can be fixed at 400, but with end-to-end paths with small delays with little variation, it's preferable to make playout delays smaller than 150 milliseconds.
+
+#### Adaptive Playout Delays:
+- This delay is dynamic and changes probably through the conversation. At the beginning of each talk spurt (whatever this means), network delay and variation is examined and a suitable playout is chosen so periods of silence are either compressed or elongated, etc. Some algorithms are used to govern this adjustment of the delay.
+
+### Recovering from Packet Loss:
+- A lost packet can be defined as either a packet that never arrived at the receiver or a packet that arrived after its scheduled playout. VoIP applications uses techniques called *loss anticipation schemes* to preserve audio quality in spite of packet loss. Examples of such schemes include: **forward error correction (FEC)** and **interleaving**.
+
+#### Forward Error Correction:
+- FEC adds redundant information to the original packet stream so if a packet is lost, an approximation of that packet might be reconstructed. Simple FEC methods include:
+	- A redundant chunk is sent after every *n* chunks. The redundant chunks created by XORing the *n* original chunks. If a packet of the *n + 1* packets is list, the missing chunk can be fully reconstructed. This method cannot recover from the loss if two ore more packets are lost. If *n* is too small it increases the transmission rate greatly. Transmission rate added by the redundant packet is equal to *1/n*. If *n = 3*, then the transmission increases by 33 %. A large *n* is also bad as it increases delay. The receiver must wait *n* packets before playout.
+	- The second method involves sending as second lower-resolution stream along with the original normal quality stream. The lower-resolution stream here is called the redundant stream. The application creates the *n*th packet by taking the *n*th chunk from the high-resolution stream and appending to it the *(n - 1)*th chunk from redundant stream (*Wow, genius!! I love these hacky tricks!!!*). Now when there is a nonconsecutive packet, loss, the receiver can hide this fact by playing the redundant version of the lost packet that is appended to the next packet. Yes, that chunk will have low quality, but a stream of mostly high quality chunks peppered by a few lower-quality chunks is mostly good. The receiver only needs to wait two packets before it starts playout (as opposed to 8 of the previous method), and the transmission rate will most probably increase by much as the redundant chunks use a low bit rate and are thus much smaller than the high-resolution stream chunks. *(n - 1)*st, and *(n - 2)*nd, etc. can be appended to the *n*th packet to mitigate consecutive packet loss. This can greatly improve the overall quality of the conversation, but it comes at the expense of increasing the transmission bandwidth and delays.
+
+#### Interleaving:
+- Interleaving is kinda genius as well. Basically, as the following image shows, the sender slices each one of multiple consecutive (e.g 4) chunks (each with 20 milliseconds of audio), into 4 (which equals the number of consecutive chunks) units of 5 millisecond units, and then scrambles/interleaves these units among the consecutive chunks. The receiver reconstruct the original chunks from the received interleaved ones. If a packet was lost, maybe one unit from each chunk is lost. A chunk will be missing a tiny unnoticeable chip:
+![Interleaving in action](img/interleaving.png)
+- Interleaving adds little overhead and can greatly improve audio quality, but can also increase latency. 
+
+#### Error Concealment:
+- Error concealment attempts to produce replacements for lost packets that are similar to the original audio. Audio signal tends to displayed a lot of short-time similarity especially human speech (don't take my word for it; I'm just parroting here). But these only work for very short times like 15 milliseconds. The larger the loss, the harder it is to conceal. A simple error concealment techniques is done through repetition. a lost packet is replaced by the chunk immediately preceding it. It performs well and is also easy from a computational perspective. A more computationally complex approach of error concealment is based on interpolation, where audio from the packet preceding the lost one and the packet following it are somehow used to interpolate a replacement of the lost packet. This works well, but is costly!
+
+## Protocols for Real-Time Conversational Applications, RTP:
+- Open standards have been developed to support real-time conversational applications. The most important ones are **RTP** and **SIP**. We will only look at RTP here.
+- The RTP protocol defines such things as the sequence number and timestamps fields appended to video/audio chunks we've seen earlier, and it is used in transporting real time audio/video. It can be used with common formats such MP3 or proprietary formats. 
+- RTP runs over UDP. The sender adds an *RTP header* to  a video or audio chunk to create an *RTP packet*. The RTP header contains such information as the sequence number, timestamp, and audio/video encoding. The RTP packet is wrapped into a UDP segment, and the UDP packet is sent to the socket interface. The receiver unwrap the UDP segments and reads to header fields to properly decode and play the received media.
+- RTP allows each source to be assigned its own RTP stream. In a teleconference between two people, there can be 4 streams, one for video and one for audio in each direction. If audio and video are bundled into one as in MPEG4, then there are only 2 streams.
+
+#### RTP Packet Header Fields:
+- Important header fields of an RTP packet include:
+	- The *payload type* field indicates the type of encoding used in the media being streamed. This allows the receiver to use the appropriate decoder to consume the received bytes. The sender can decide in the middle of conversation to change the encoding it uses. It indicates that by changding the payload type field, and the user can make note of that and immediately change its decoding method.
+	- *Sequence number* is used to detect packet loss and probably even  the arrival of out-of-order packets.
+	- *Timestamp field* indicates when each chunk has been created. It helps the receiver recover from jitter as we've seen and to synchronize playout.
+	- *Synchronization source identifier (SSRC)* is used to identify each stream source in an RTP session.  
 
 ## Network Support for Multimedia:
+- *This section revolves around the authors' grandiose dreams about a brave new world. The Internet as it stands today is working well and there is really no point in messing with the network!!*
