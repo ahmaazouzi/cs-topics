@@ -2,7 +2,7 @@
 ## Table of Contents:
 
 ## Introduction:
-- We all want to know how to create a video streaming service or a live video chatting application like Whatsapp!! This chapter will cover the networking issues of transmitting sound and video through the network.
+- We all want to know how to create a video streaming service or a live video chatting application like WhatApp!! This chapter will cover the networking issues of transmitting sound and video through the network.
 - We will start by dividing networked multimedia services into 3 broad categories and look at the special challenges they pose that differ from traditional elastic applications such as email or web browsing:
 	- Streaming stored videos.
 	- Conversational voice/video over-IP.
@@ -45,7 +45,7 @@
 	- *Streaming*: The user starts playing the video shortly after video content is received. The user can continue to play the video while later parts of the video are being received. This is as opposed to first downloading the video file and then playing it.
 	- *Interactivity*: The user can pause, play, fast forward, etc.
 	- *Continuous playout*: This probably refers to freezes experienced when data hasn't been downloaded "no buffering".
-- A good streamed video is one with a good average throughput which at least equal to the bit rate of the streamed video. Prefetching and buffering (we will see these later) allow for continuous playout even when throughput fluctuates but with the condition that the average rate (over 5 to 10 seconds stays higher than the video's bitrate).
+- A good streamed video is one with a good average throughput which at least equal to the bit rate of the streamed video. Prefetching and buffering (we will see these later) allow for continuous playout even when throughput fluctuates but with the condition that the average rate (over 5 to 10 seconds stays higher than the video's bit rate).
 
 #### Conversational Voice- and Video-over-IP:
 - Conversational voice over the Internet is also called *Internet telephony* as it acts as a transmitter of voice just like a telephone does. It is also commonly called **voice-over-IP (VoIP)**. It often involves video as well and involve more than just two users but many (in so-called teleconferences).
@@ -98,8 +98,46 @@
 - Early termination of a video and repositioning to a future point in the video results in wasting all previously buffered bytes. This can be very costly. This is the reason why buffers are made small. Small buffers limit the amount of prefetched data that can go unused.
 
 ### Adaptive Streaming and DASH:
+- Simple HTTP streaming is amazing and all, but it suffers from a major drawback: it serves video at a uniform bit rate to different clients, and to the same client over time, without considering the fluctuating available bandwidth. This is a problem in today's world where mobility is major feature of networking in general. Technologists figured a new way to battle this shortcoming and they called it **dynamic adaptive streaming over HTTP (DASH)**. In DASH, the server content different versions of the video that are encoded in different bit rates that have different levels of quality, and the client can dynamically request chunks from the different versions. When the bandwidth is high, chunks of higher bit rates are requested, and when the bandwidth is low, the client goes for chunks with lower bit rates.
+- DASH stores each version of the video in the server and provides with it the **manifest file** which gives the URL of each version of the video and its bit rate. When the client first accesses the video, it requests its manifest file to learn about the different available versions. The client then can request a chunk from a given version with a GET request specifying the version's URL and a byte-range (does it really do this for each chunk?!!). As the chunks are being downloaded, the application measures the bandwidth runs a so-called *rate determination algorithm* to select the chunk to request next. The client requests high quality chunks when the bandwidth is high and when it has a lot of buffered video, and the reverse is true. The client switches between different versions almost seamlessly. It even gradually requests chunks with the next lower quality and doesn't just suddenly jump from a very high quality chunks to the lowest one. The user might not even realize the change in quality.
+- Advantages of DASH include:
+	- Allowing video playout to continue without freezing or skipping regardless of the fluctuating and uncertain bandwidth.
+	- The fact that the client manages which chunks to request frees the server from such a chore making servers very scalable.
+- DASH also stores different audio versions with their own URLS for each video. Upon a request, the client downloads both video and audio chunks and synchronizes them locally.
+
 ### Content Distribution Networks:
-### Examples: Netflix, YouTube and Kankan: 
+- How can a service like YouTube serve many many hours of streamed video each day to millions if not billions of clients each day? How can this happen all over the world?
+- You can store a video for streaming in a single data center, but that has several disadvantages that have to do mainly with networking:
+	- Users around the world who stream a video from your service can be far away from your data centers. This means the content has to cross many communication links. If the throughput of one link is below the bit rate of the video, the end-to-end throughput will also be below that bit rate. The more links there are in an end-to-end communication line, the more likely it is to have such a low throughput link.
+	- A popular (or *viral*) video will be sent over the same path over and over again which is such a waste of bandwidth and money, as your service will pay for such high bandwidth usage for identical copies of the same data
+	- Using a single data center also means having a *single point of failure*. If that data center fails or is cut from the Internet for whatever reason, the video is not available for streaming for anybody. 
+- The alternative to this is the use of a **content distribution network (CDN)**. A CDN maintains a network of geographically distributed servers, and stores copies of content (which can be audio, video, text, or whatever), and direct traffic to optimal servers that are closest to the user.
+- A CDN can be private, so Google has its own CDN that distributes YouTube and its other content. There can also be third-party CDNs such as Akamai CDN which has been or is still used by Netflix and Hulu, and I think early YouTube used it, too.
+- Two major philosophies guide the placement of servers in a CDN:
+	- **Enter deep**, championed by Akamai, means deploy server clusters in access ISPs all over the world and get as close to the user and ubiquitous as possible.
+	- **Bring home**: deploy server clusters in key locations cluster to higher tier ISPs and whatnot, and connect these clusters or data centers with a private high speed network. This approach is easier to maintain, but this comes at the expense of service quality to the user who gets higher delay, etc.
+- CDNs copy content across clusters, but they don't copy arbitrarily, as some content is popular in some regions only. Some CDNs use a *pull strategy*, where the video is stored in a central repository and is only sent to a cluster when a user close to that cluster requests it. The cluster stores a copy of that video as it serves it to that user. Clusters do even act like caching systems, sometimes! A video that is rarely used can be deleted from the cluster. 
+
+#### CDN Operation:
+- When you request a video or something using a specific URL, the CDN intercepts your requests and:
+	1. Determines the right CDN cluster suitable for your at that specific time.
+	2. Redirects your request to a server in that cluster.
+- DNS is a major piece of infrastructure that the CDNs rely on to operate. The following image shows how DNS is involved in CDNs ability to intercept and redirect a client's request to a specific server cluster. The user is using a streaming service called NetCinema which on its part relies on a third-party CDN called KingCDN:
+![DNS redirects a request to a CDN server](img/DNSCDN.png)
+- In the NetCinema website, each video is assigned a unique identifier which is its URL. When the user requests this URL, six steps take place:
+	1. User goes to NetCinema web page.
+	2. User clicks on a movie URL, and a DNS query is sent for a specific domain within the NetCinema containing the given video.
+	3. The local DNS server (LDNS) relays the query to an authoritative DNS server for NetCinema. NetCinema needs to 
+	"handover" the DNS query to KingCDN so it returns to the LDNS a specific URL such as `a1105.kingcdn.com`.
+	4. From now on, the DNS query is in the hands of KingCDN private DNS system. The LDNS sends a second DNS query but this time to KingCDN at URL `a1105.kingcdn.com`. KingCDN CDN responds with the IP addresses of KingCDN servers to the LDNS. The client will start receiving video from this CDN server.
+	5. The LDNS sends the IP address of the CDN server to the host.
+	6. The host establishes a TCP connection with the server at the specified IP address, and issues an HTTP request for the video. If the NetCinema uses DASH, the client will first receive a manifest file with a list of URLs for the different versions of the video and their bit rates and it can start to dynamically select chunks from these different versions.
+
+#### Cluster Selection Strategies:
+- An important question is "how does the CDN select a specific server cluster to redirect traffic to?" CDNs use propriety cluster selection strategies, but wee can guess who they do it. Approaches to this include:
+	- Assigning the client to a cluster that is **geographically closest**. LDNS IP addresses are mapped to locations and the client is assigned to a cluster that is within the fewest possible kilometers. This doesn't always work well as a geographically close cluster can be far away in terms of the network path. Another problem is that some clients use LDNSs that are far from them. This approaches also ignores the fact that the path to a cluster can have different bandwidth over time, and an optimal cluster at a point of time can be really a bad choice at other times.
+	- CDNs instead can perform periodic**real-time measurements** to assess the current traffic conditions. They can track delay and less to determine optimal paths between clients and clusters through, for example, probe queries to LDNSs. Many LDNSs don't respond to such probes, however. The clients can also be redirected to other clusters until a really optimal cluster is found for a client. There are other ways doing these measurements.
+- CDNs must also not put too much pressure on specific clusters that are otherwise excellent candidates to direct traffic to. There are also business considerations concerning CDN contractual relationships with ISPs. Some ISPs might be cheaper than others so an optimal cluster maybe ignored because the ISP it uses is too costly. 
 
 ## Voice-over-IP:
 
