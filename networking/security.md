@@ -82,9 +82,47 @@
 - *I won't into more detail! Cryptography needs its own book, and maybe someday I'll read one! For the moment, we at least have a general idea about how how symmetric-key encryption works and some of the challenges it needs to respond to.*
 
 ### Public Key Encryption:
+- Before Alice and Bob can exchange secure messages, they need to agree to a common key they use to encrypt and decrypt the messages. In olden days, they'd meet and agree upon a shared key, but this is not the case anymore in our networked world, Alice and Bob might never meet but will still need to exchange messages in a secure manner? If they exchanged the keys, Trudy will easily break their encryption. Can Alice and Bob encrypt and decrypt the messages they exchange without first sharing a common secret key? 
+- In 1976, the brainiacs Diffie and Hellman gave use the **Diffie-Hellman key exchange** algorithm which allows Alice and Bob to exchange secure encrypted messages without having shared secret key in advance. This was the basis for modern public key cryptography systems. These systems are the backbone of today's network security and are used not only for encryption, but also for authentication and digital signatures.
+- The following figure shows how public key cryptography works:
 ![Public key cryptography](img/publicKeyEnc.png)
+- If Alice wants to send a message to Bob, Bob needs to have two keys:
+	- A **public key** known by the whole world.
+	- A **private key** know by Bob only.
+- Anybody, including Alice, who wants to send a message to Bob can encrypt the message with the public key. Only Bob can decrypt the message with his private key.
+- Let's call Bob's public key ***K<sup>+</sup><sub>B</sub>*** and his private key ***K<sup>-</sup><sub>B</sub>***. To send a message ***m*** to Bob, Alice first obtains his public key and some standard encryption algorithm, and computes ***K<sup>+</sup><sub>B</sub>(m)***. Bob on his part, decrypts the received encrypted message by computing ***K<sup>-</sup><sub>B</sub>(K<sup>+</sup><sub>B</sub>(m))***. There are techniques and algorithms that allow ***K<sup>-</sup><sub>B</sub>(K<sup>+</sup><sub>B</sub>(m)) = m***. This allows the two parties to exchange secure messages without having to first exchange secret keys.
+- There are two problems so far with public-key cryptography:
+	1. Trudy knows both the public key and the encryption algorithm, so she can mount a chosen-plaintext attack. *I am aware of how this can break a symmetric key, but not really sure, however, how it works on a private key.* Anyways, the authors suggest that selecting keys and encryption/decryption should be done in such a way as to make it impossible or very hard to find the private key or guess the contents of a sent message.
+	2. Trudy and anyone really can masquerade as Alice, and gets Bob to say things that are supposed to be secret or do things he is not supposed to do. With symmetric key, knowing the secret itself implicitly identifies the sender, but with public keys that anybody knows, it's easy for intruders to masquerade as Alice. This is actually solved using a digital signatures which bend the sender to the message. We'll see this in a later section
+
+#### RSA:
+- Several algorithms have immersed to deal with the two problems mentioned earlier, but **RSA** named after its inventors Ron Rivest, Adi Shamir, and Leonard Adleman, reigns supreme as the most popular public-key encryption algorithm.
+- I think the details of RSA are at best confusing to a feeble-minded mortal like me. Let's just say that it's extremely hard to break RSA so far, and there are no easy ways to break it so far!
+- The problem with RSA is that it's slower than symmetric keys, so it can be time consuming to encrypt a large amount of data using RSA. The solution to this is to exchange symmetric keys like AES using RSA, and then use AES to exchange data. Such symmetric key is called a **session key**, I think its use is limited to a single session and it changes from session to session.
 
 ## Message Integrity and Digital Signatures:
+- **Message integrity** means the message:
+	1. Came from the actual sender who claims to have sent it.
+	2. Hasn't been tampered with in transit.
+
+### Cryptographic Hash Functions:
+- A hash functions takes an input ***m*** and outputs a fixed-size string ***H(m)*** known as a hash. A **cryptographic hash functions** must also behave in such a way that it is very hard for two messages produce the same hash. This means the intruder cannot replace a message by a different message that has the same hash. Examples of cryptographic hash functions considered strong include **MD5** and **SHA-1**. I am not sure if these are still considered strong!
+
+### Message Authentication Code:
+- Let's have a look a naive flawed scenario where hashes are used to preserve message integrity:
+	1. Alice computes the hash ***H(m)*** of message ***m*** using SHA-1.
+	2. Alice appends ***H(m)*** to ***m*** thus creating an extended message ***(m, H(m))*** and sends this extended message to Bob.
+	3. Bob receives the extended message ***(m, h)***, calculates ***H(m)***, and if ***H(m) = h*** then all is fine.
+- There is a problem with this scenario. Trudy can take the message, strip the hash from the extended message, change the message and calculate her own hash and appends it to the message and sends it to Bob. Trudy can also create her own bogus messages and send them to Bob and Bob wouldn't suspect a thing.
+- To really preserve message integrity using a hashing function, Alice and Bob need to first have a shared secret key called an **authentication key** which can be used in the following fashion:
+	1. Alice concatenates  the authentication key ***s*** to the message ***m*** to get ***m + s***, and calculate the results hash ***H(m + s)***. This hash ***H(m + s)*** is called the **message authentication code**.
+	2. Alice appends the MAC to the message to create the extended message ***(m, H(m + s))*** and sends that to Bob.
+	3. Bob who knows the authentication key ***s***, receives the extended message ***(m, h)***. He calculates the MAC ***H(m + s)***. If ***H(m + s) = h*** then everything is fine
+- One popular standard for MAC is the so-called **HMAC**.
+- Message integrity is a separate topic from message confidentiality even though they usually go together. There are information that are public by nature such as routing information exchanged by routers. Routing information need not be secret, but it must be integral and not tampered with.
+
+### Digital Signatures:
+
 ## End-Point Authentication:
 ## Securing E-Mail:
 ## Securing TCP connection with TLS/SSL:
