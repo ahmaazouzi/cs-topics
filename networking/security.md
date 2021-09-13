@@ -142,9 +142,51 @@
 	2. When the CA verifies the identity of an entity, it creates a **certificate** which binds the public key of the entity to its identity. The certificate contains the public key along with information identifying the entity such as a name, an IP address, etc. The certificate is then digitally signed by the CA.
 - Now receivers of messages only use CA certificates (which include certified public keys) to verify messages and they were sent from those claiming to have sent them. If Alice receives a message from Trudy claiming it is from Bob, Alice verifies the message using Alice's certificate to check its validity and that it's actually coming from Alice.  
 
-## End-Point Authentication:
-## Securing E-Mail:
 ## Securing TCP connection with TLS/SSL:
+- **Transport layer security (TLS)**, previously called **secure sockets layer (SSL)**, provides confidentiality, data integrity, and end-point authentication to TCP connections.
+- TLS is everywhere around today, and has been around since the days of Netscape. URLs starting with **`https`** rather than **`http`** use TLS.
+- I will repeat this: TLS provide confidentiality, data integrity, client authentication, and server authentication.
+- TLS is mostly used to secure data used by HTTP, but any application that runs over TCP can make use of TLS because it provides security to TCP rather than HTTP.
+![Enhancing TCP with TLS/SSL](img/TLS.png)
+- TLS is actually implemented at the application layer, because it is an API that works with sockets just like TCP's APIs. However it is a transport layer protocol. It only handles what goes in the transport layer, which obviously also affects all applications using TCP.
+- This subsection will not be about the real TLS/SSL, but something the author calls almost-SSL which will be like a gentle overview of the main functionality of TLS/SSL. We will focus on how and why SSL/TLS works.
+- Both almost-SSL and TLS have 3 phases: *handshake*, *key derivation*, and *data transfer*. We will describe these three phases in the context of a communication session between Bob (the client) and Alice (the server). Alice has a private/public key pair and certificate binding her to her public key.
+
+#### Handshake:
+- During an almost-SSL handshake, 3 things happen:
+	1. Bob establishes a TCP connection with Alice.
+	2. Bob verifies that Alice is really Alice.
+	3. Bobs sends Alice a master secret key.
+- The following figures shows what happens during an almost-SSL handshake:
+![An almost-SSL handshake](img/almostSSLHandshake.png)
+- After a TCP connection is established Bob sends Alice a "hello" message. Alice responds with a certificate containing her public key. Bob then generates a master secret (MS) key that will be used only in this almost-SSL session. Bob then encrypts this MS key with Alice's certified public key to produce an encrypted master secret (EMS) key, and sends the the EMS to Alice. Alice then decrypts the EMS to get the MS. At this moment both Bob know the MS key for this SSL session.
+
+#### Key Derivation:
+- Bob and Alice can now probably use the MS to probably encrypt and data-integrity check all subsequent messages in the almost-SSL session. However it's considered safer for Bob and Alice to each use different keys for encryption and data integrity checking. The MS could be sliced into 4 slices, but real SSL uses more complex schemes to generate the 4 keys for the SSL session. These 4 keys are:
+	- ***E<sub>B</sub>*** is used to encrypt data sent from Bob to Alice.
+	- ***M<sub>B</sub>*** is the session MAC key for data sent from Bob to Alice.
+	- ***E<sub>A</sub>*** is used to encrypt data sent from Alice to Bob.
+	- ***M<sub>A</sub>*** is the session MAC key for data sent from Alice to Bob.
+- The four keys are all derived from the MS. E keys will be used to encrypt messages to be sent, and MAC keys will be used to check the integrity of received data. MAC keys are the keys used to generate the MAC of each message, not the MACs themselves. Each message has its own MAC.
+
+#### Data Transfer:
+- Both Alice and Bob now possess the four session keys, so they can start exchanging secure data over the TCP connection. TCP is a byte-stream protocol so maybe data can be encrypted first and then sent to TCP, but there is an issue of where MACs would be placed!! :confused: *I am not really sure why this is a problem, why wouldn't every segment have its own MAC (data + MAC inside the segment)??!! Maybe, it's the fact something like a large JPEG will be broken into multiple TCP segments, and the same segment might have a fragment of a JPEG, and the start of a text??!!! Who knows!!?*.
+- Anyways, networking nerds did what they do best which breaking everything into packets of sorts. SSL divides a data stream into records, appends a MAC to each record for integrity checking and then encrypts the whole record+MAC. The sender uses a hashing algorithm to hash the record along with the MAC key to produce the data's MAC. The record along the MAC are encrypted with the encryption key, and then sent away.
+- This is good so far, but Trudy can still do cause some damage. She can intercept Alice and Bob's communication, delete some segments, reverse the order of some or modify some segment sequence numbers. This can be done because TCP is not encrypted. SSL only encrypt SSL payloads which are the SSL records.
+- The solution to this problem is the use of a form of sequence number. The sender maintains a sequence number counter which starts at 0 which is incremented for each record it sends. The sequence number is not included in the record. Instead, the MAC of each record is achieved by calculating the hash of data + MAC key + sequence number. The receiver keeps track of the sender's sequence numbers, so when verifying the MAC it includes the correct sequence number. If this doesn't match, it senses foul play.  
+
+#### SSL Record:
+- The following figure shows the format of an SSL and almost-SSL record:
+![Format of SSL record](img/SSLrecord.png)
+- Notice the first three fields of the record are not encrypted.
+- Some of these fields are:
+	- The **type field** used to indicate whether the record is a handshake message or one used for carrying application data. It's also used for closing a an SSL connection.
+	- The **length** field is used for extracting the SSL record out of the TCP byte stream.
+
+#### Actual TLS:
+- Almost-SSL largely does what actual TLS does. A few things that actual TLS does include the fact that at the beginning of a handshake, the client sends to the a list of server symmetric key algorithms, public key algorithms, and a MAC algorithms that it supports. The server chooses one and tells the client about it. The client and server also uses nonces ("A nonce is a number that a protocol will use only once in a lifetime. That is, once a protocol uses a nonce, it will never use that number again.") Nonces are used in the MACs in order to prevent replay attacks, where an intruder comes at a later time and resends segments they've captured in the past from a previous session.
+- The type field in an SSL record can be used to prevent a so-called **truncation attack**, where Trudy sends a TCP FIN segment which maliciously closes the the connection before the exchange actually ends. If the receiver receives a TCP FIN before an SSL closure record (which needs to be indicated in the type field), it concludes that something fishy is going on!
+
 ## Network Layer Security, IPsec and VPNs:
 ## Securing Wireless LANs:
 ## Operational Security, Firewalls and Intrusion Detection Systems:
