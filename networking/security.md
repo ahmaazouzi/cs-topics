@@ -122,6 +122,25 @@
 - Message integrity is a separate topic from message confidentiality even though they usually go together. There are information that are public by nature such as routing information exchanged by routers. Routing information need not be secret, but it must be integral and not tampered with.
 
 ### Digital Signatures:
+- A **digital signature** is a cryptographic technique for indicating the owner or creator of a document, or for indicating someone's agreement with the content of a document. Digital signatures try to mimic real paper signatures in that they can prove a document was signed by a certain individual and only that individual.
+- A digital signature of a document can be very easily done by simply encrypting (or signing) the message with the sender's (or owner's) private key. Anyone possessing the public key can be sure that the owner of the corresponding private key is the owner of the document. The public key can be used to unscramble the original message. Usually messages are encrypted with public keys and decrypted with private keys, but with digital signatures, messages are signed with the private key, and signatures are verified with the public keys. Basically, the public key reverses the work of the private key, the opposite is true. *This is one of those situations where math hold true regardless of the context!!*
+- The problem with the approach we've described above is that encryption and decryption are expensive procedures and need to be done only when really necessary. The alternative is to compute the hash of a message (which is probably a much cheaper procedure), and then sign only the resulting fixed-length hash which is usually shorter than the original message. 
+- Let's look at a scenario involving signing a document and verifying the signature:
+	1. On Bob's side:
+		- Bob calculates the hash ***H(m)*** of message ***m***.
+		- Bob uses his private key ***K<sup>-</sup><sub>B</sub>*** to sign the document by computing ***K<sup>-</sup><sub>B</sub>(H(m))***.
+		- The message along with the digital signature are sent to the Alice.
+	2. On Alice's side:
+		- Alice uses Bob's public key ***K<sup>+</sup><sub>B</sub>*** and extracts the original hash of Bob's message ***H(m)***.
+		- Alice hashes the received message ***m*** to get ***H(m)***.
+		- Alice compares the hash she has extracted from the digital signature with the hash she obtained by hashing the message and if the two match, all is OK.
+
+#### Public Key Certification:
+- Even with digital signatures, intruders can still cause damage. Trudy can masquerade as Alice and send digitally-signed messages to Bob. Bob will verify the signature and everything will pass, because Bob doesn't know which specific public key really belongs to Alice. We need to verify that such and such public key belongs to so and so.
+- **Public key certification** refers to binding a public key to a particular entity and it is done by an **certification authority (CA)**. CAs validate identities and issue certificates. A CA has two roles:
+	1. It verifies that an entity is who it says it is. It employs some rigorous procedures to verify identities. CAs are not angels and some might be more trustworthy than others. 
+	2. When the CA verifies the identity of an entity, it creates a **certificate** which binds the public key of the entity to its identity. The certificate contains the public key along with information identifying the entity such as a name, an IP address, etc. The certificate is then digitally signed by the CA.
+- Now receivers of messages only use CA certificates (which include certified public keys) to verify messages and they were sent from those claiming to have sent them. If Alice receives a message from Trudy claiming it is from Bob, Alice verifies the message using Alice's certificate to check its validity and that it's actually coming from Alice.  
 
 ## End-Point Authentication:
 ## Securing E-Mail:
