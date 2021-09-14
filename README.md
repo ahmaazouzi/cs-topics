@@ -20,7 +20,7 @@
 	+ [The Link Layer](networking/link.md) :white_check_mark:
 	+ [Wireless and Mobile Networks](networking/wireless.md) :white_check_mark:
 	+ [Multimedia Networking](networking/multimedia.md) :white_check_mark:
-    + [Security in Computer Networks](networking/security.md) :arrows_counterclockwise:
+    + [Security in Computer Networks](networking/security.md) :white_check_mark:
 
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables)](algorithms/basicDS.md) :arrows_counterclockwise:
