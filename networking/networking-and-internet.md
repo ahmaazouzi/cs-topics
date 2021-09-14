@@ -1,4 +1,25 @@
 # Networking and Internet: an Overview:
+## Table of Contents:
+* [Table of Contents](#table-of-contents)
+* ["I heard there is rumors on the Internets"](#i-heard-there-is-rumors-on-the-internets)
+* [Network Edge](#network-edge)
+	+ [A Primer on Physical Media Used in Networking](#a-primer-on-physical-media-used-in-networking)
+* [Network Core](#network-core)
+	+ [Packet Switching](#packet-switching)
+	+ [Circuit Switching](#circuit-switching)
+* [Delay, Loss and Throughput in a Packet-Switched Network](#delay-loss-and-throughput-in-a-packet-switched-network)
+	+ [Delay](#delay)
+	+ [Packet Loss](#packet-loss)
+	+ [End-to-End Delay and Others](#end-to-end-delay-and-others)
+	+ [Throughput](#throughput)
+* [Protocol Layers and Models](#protocol-layers-and-models)
+	+ [Encapsulation in Networking](#encapsulation-in-networking)
+* [Network Security](#network-security)
+	+ [Networks as a Malware Delivery System](#networks-as-a-malware-delivery-system)
+	+ [The Network Infrastructure Itself Can Be Attacked](#the-network-infrastructure-itself-can-be-attacked)
+	+ [The sniffers](#the-sniffers)
+	+ [Spoofing](#spoofing)
+
 ## "I heard there is rumors on the Internets":
 - Let's just say that the Internet is a gigantic network that connects millions or billions of **end systems** or **hosts**. The network itself is made of many **communication links** which intersect at **packed switches** which can be either **routers** or **link-layer switches**. The data itself is encapsulated into **packets** which are smallest discrete quantities of data that can be transported through a network at a certain abstraction level.
 - The Internet is provided by **Internet Service Providers (ISPs)** which of which is "in itself a network of packet switches and communication links". ISPs are organized in some sort of a hierarchy. You have international and national ISPs and under those are residential ISPs, cable ISPs, university ISPs ...etc.

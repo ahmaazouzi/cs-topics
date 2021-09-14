@@ -1,5 +1,30 @@
 # Security in Computer Networks
 ## Table of Contents:
+* [Introduction](#introduction)
+* [Network Security](#network-security)
+* [Principles of Cryptography](#principles-of-cryptography)
+	+ [Symmetric Key Cryptography](#symmetric-key-cryptography)
+		+ [Caesar Cipher](#caesar-cipher)
+		+ [Monoalphabetic Cipher](#monoalphabetic-cipher)
+		+ [Polyalphabetic Encryption](#polyalphabetic-encryption)
+		+ [Block Ciphers](#block-ciphers)
+		+ [Cipher-Block Chaining](#cipher-block-chaining)
+	+ [Public Key Encryption](#public-key-encryption)
+		+ [RSA](#rsa)
+* [Message Integrity and Digital Signatures](#message-integrity-and-digital-signatures)
+	+ [Cryptographic Hash Functions](#cryptographic-hash-functions)
+	+ [Message Authentication Code](#message-authentication-code)
+	+ [Digital Signatures](#digital-signatures)
+		+ [Public Key Certification](#public-key-certification)
+* [Securing TCP connection with TLS/SSL](#securing-tcp-connection-with-tls/ssl)
+		+ [Handshake](#handshake)
+		+ [Key Derivation](#key-derivation)
+		+ [Data Transfer](#data-transfer)
+		+ [SSL Record](#ssl-record)
+		+ [Actual TLS](#actual-tls)
+* [Network Layer Security, IPsec and VPNs](#network-layer-security-ipsec-and-vpns)
+	+ [IPsec and Virtual Private Networks (VPNs)](#ipsec-and-virtual-private-networks-(vpns))
+
 ## Introduction:
 - This chapter will be mainly about secure communication over IP and how to defend it against various types of attacks.
 - This chapter will use the famed characters Bob and Alice as two ends of a communication line, and might introduce other characters such as Trudy the intruder. Alice and Bob can be either two routers, a server and a client or two nodes, etc. Alice will be the sender and Bob the receiver, mostly!
@@ -8,8 +33,7 @@
 	- Bob and Alice are actually communicating with each other, and Trudy is not masquerading as one of them.
 	- If communication is tampered with, the tampering is detected.
 	- The fundamentals of cryptography, and how cryptography is used to to encrypt communication, authenticate communicators, and maintaining message integrity.
-	- How to secure applications, TCP connections, IP and LANs using among cryptography among other things.
-	- Organization network security and how it's done through firewalls and intrusion detection systems.
+	- How to secure applications, TCP connections, and IP using among cryptography among other things.
 
 ## Network Security:
 - **Secure communication** has the following characteristics:
@@ -188,5 +212,9 @@
 - The type field in an SSL record can be used to prevent a so-called **truncation attack**, where Trudy sends a TCP FIN segment which maliciously closes the the connection before the exchange actually ends. If the receiver receives a TCP FIN before an SSL closure record (which needs to be indicated in the type field), it concludes that something fishy is going on!
 
 ## Network Layer Security, IPsec and VPNs:
-## Securing Wireless LANs:
-## Operational Security, Firewalls and Intrusion Detection Systems:
+- **IP security (IPsec)** protocol provides security at the network layer. IPsec provides security to datagrams between any 2 network-layer entities be they routers or hosts. Organizations have also figured to exploit IPsec in order to create **virtual private networks (VPNs)** that run over the Internet.
+- IPsec provide "blanket coverage" confidentiality. Datagram payload is encrypted, so all UDP, TCP, ICMP is protected against sniffers. As a result all application-level data is also protected. IPsec can potentially even provide data integrity and end-point authentication.
+
+### IPsec and Virtual Private Networks (VPNs):
+- Large organizations like companies with multiple branches wish to have their own private networks for security reasons and to hide their internal communication details from prying eyes. They can do this creating their own physical **private networks** with links and routers that are totally separate from the public Internet, but this would be very costly and maybe not really worth it. Instead such organizations create **virtual private networks (VPNs)** that make use of the existing public Internet but still preserve confidentiality. Different branches of the organization are connected to the public Internet, but before their traffic enter the Internet it is encrypted using IPsec. As the following diagram shows, withing a network/branch belonging to the organization, nodes can exchange good old IPv4 datagrams, but any datagrams leaving a branch to another branch needs to be encrypted using IPsec before going to the public Internet.
+- An IPsec datagrams is a regular datagram with regular IP headers used for forwarding the datagram to its destination. Its payload includes an IPsec header used for IPsec processing. The payload of the IPsec datagram is encrypted.
