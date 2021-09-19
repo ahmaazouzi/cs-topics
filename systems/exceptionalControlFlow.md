@@ -126,7 +126,7 @@
 - By studying how system calls work inn Linux, we might have a better understanding of the inner workings of the system. Arguments are all passed onto registers rather than the stack. "The stack pointer %esp cannot be used because it is overwritten by the kernel when it enters kernel mode." Consider the following program that prints something to standard output, but using the system-level functions `write` instead of the familiar wrapper `println`:
 ```c
 int main(){
-    write(1, "Hello, world!\n", 13); // For Some reason new line is not printed
+    write(1, "Hello, world!\n", 14); // For Some reason new line is not printed (I just figured, I am using 13 for string length. My string has 13 characters plus the terminating null)
     exit(0);
 }
 ```
@@ -140,7 +140,7 @@ string_end:
 .section .text
 .globl main
 main:
-    # First, call write(1, "hello, world\n", 13)
+    # First, call write(1, "hello, world\n", 14)
     movl     $4, %eax        # System call number 4   
     movl     $1, %ebx        # stdout has descriptor 1
     movl     $string, %ecx   # Hello world string
@@ -203,7 +203,7 @@ main:
 	- Restores the context of a previously preempted process.
 	- Transfers control to the newly restored process.
 - A context switch  can happen even while the kernel is executing a system call requested by current process. If the system call blocks for any reason (let's say a system call handling an IO operation) the current process is preempted and the context switch will still occur. 
-- I don't know what a *timer interrupt* is, but a context switch can occur as a result of a timer interrupt which would go off every few milliseconds at which point might decide that the current process has run enough time and it's time to switch context. 
+- I don't know what a *timer interrupt* is, but a context switch can occur as a result of a timer interrupt which would go off every few milliseconds at which point might decide that the current process has run enough time and it's time to switch context. Just found out from the *Operating Systems, Three Easy Pieces* that a timer interrupt raises an interrupt every few milliseconds and returns control to the kernel which can decide if to keep running the current process or switch to a different process. This one way of giving the OS more control over the systems, and kinda prevent user processes from running for too long.
 - The following image shows an example of a context switch. Process A is running in user mode until it traps to the kernel mode by using the `read` system call. The trap handler requests  data from the disk controller and arranges for the disk to interrupt the processor when the data from the disk is in memory. Fetching data from the disk takes a long time, so instead of waiting for that data the kernel performs a context switch from process A to process B. Notice that during each context switch both process A and process B are executing in kernel mode:
 ![Context switching](img/contextSwitching.png)
 - Hardware cache in general doesn't usually play well with exception control flow and context switching. A context might *pollute cache*, meaning it makes it go cold for the preempted process and when a context is witched for a process, the new process might have a cold cache. 

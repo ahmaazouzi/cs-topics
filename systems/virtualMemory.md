@@ -191,14 +191,14 @@
 
 - **Address translation** is a mapping between the elements of an ***N***-element virtual address space (***VAS***) and an ***M***-element *physical address space* (***PAS***).
 ![Address translation with a page table](img/addrTranslation.png)
-- THe image above shows how the MMU uses a page table to perform address translation. A control register in the CPU called the **page table base pointer (PTBR)** points to the current page table. The ***n***-bit virtual address has two components: a ***p***-bit **virtual page offset (VPO)** and a ***(n - p)***-bit **virtual page number (VPN)**. The VPN is used by the MMU to locate the appropriate PTE so VPN 0 selects PTE 0, VPN 1 selects PTE 1, and so on. The corresponding physical page can be found by concatenating the **physical page number (PPN)** to the VPO of the virtual address. Because physical and virtual pages are both P bytes in length, the PPO and VPO are the same. 
+- The image above shows how the MMU uses a page table to perform address translation. A control register in the CPU called the **page table base pointer (PTBR)** points to the current page table. The ***n***-bit virtual address has two components: a ***p***-bit **virtual page offset (VPO)** and a ***(n - p)***-bit **virtual page number (VPN)**. The VPN is used by the MMU to locate the appropriate PTE so VPN 0 selects PTE 0, VPN 1 selects PTE 1, and so on. The corresponding physical page can be found by concatenating the **physical page number (PPN)** to the VPO of the virtual address. Because physical and virtual pages are both P bytes in length, the PPO and VPO are the same. 
 ![A page hit](img/pageHit.png) 
 - The image above traces the steps followed when there is a page hit:
 	- *Step 1*: The processor generates a virtual address and sends it to the MMU. 
 	- *Step 2*: The MMU produces the PTE address and requests it from main memory.
 	- *Step 3*: The MMU constructs the physical address and sends it to main memory.
 	- *Step 4*: The main memory returns the requested word to the processor. 
-[A page fault](img/pageFault.png)
+![A page fault](img/pageFault.png)
 - The image above shows what happens when a page fault occurs:
 	- *Step 1 to 3*: The same steps 1 to 3 in a page hit.
 	- *Step 4*: The valid bit in the PTE is 0, so the CPU triggers an exception which transfers control to a page fault exception handler in the kernel.
@@ -516,18 +516,3 @@ int *stackref(){
 
 ### Introducing Memory Leaks:
 - **Memory leaks** mean allocating blocks, say in a functions and returning without ever freeing them. If such a function is called frequently, then the unfreed garbage will grow the heap until it eats up the whole virtual memory space. This is especially bad for daemons and servers that never terminate.  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
