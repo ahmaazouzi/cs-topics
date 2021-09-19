@@ -1,5 +1,17 @@
 # Processes
 ## Table of Contents:
+* [Processes](#processes)
+	+ [Intro](#intro)
+	+ [A Process](#a-process)
+	+ [Process API](#process-api)
+	+ [Creating a Process](#creating-a-process)
+	+ [Process States](#process-states)
+	+ [Data Structures](#data-structures)
+* [Unix Process API](#unix-process-api)
+	+ [`fork()`](#fork())
+	+ [`wait()`](#wait())
+	+ [`exec()`](#exec())
+	+ [Why an API?](#why-an-api)
 
 ## Processes:
 ### Intro:
