@@ -55,5 +55,58 @@
 - OSs don't know anything about the length of jobs so it cannot tell for how long they can run, so that was a wrong assumption. Smart schedulers, however can make modest predictions about future based what they've seen in the past! We will see this in the next section about MLFQ. 
 
 ## Multi-Level Feedback Queue (MLFQ) Scheduler:
+- The **multi-level feedback queue (MLFQ)** was first described by a certain Corbato et al. in 1962 and has been a very influential ever since!
+- MLFQ tries to achieve two goals: 
+	- Minimize *turnaround time*. How can a scheduler minimize turnaround time by running shorter jobs before longer jobs STCFs style without knowing how long a process would run? 
+	- Minimize *response time*, but we know that minimizing response time can come at the expense of turnaround time. How can a scheduler do both in a satisfactory manner?!
+
+### MLFQ, the Basics:
+- MLFQ has different implementations that differ in details, but the general rules are very similar.
+- MLFQ has a number of queues, and each queue has a different **priority level**. At any point in time a queue can have 0 or more jobs. MLFQ uses the priority levels of job's queues to decide which next job to run. A queue can have multiple jobs which would have the same priority. In such case, MLFQ can decide which of these to run by using some algorithm. The authors suggest round-Robin (RR). These rules can be summarized as:
+	- **Rule 1**: If ***priority(A) > priority(B), then run A***.
+	- **Rule 2**: If ***priority(A) = priority(B), then run A and B in RR***.
+- But how does MLFQ set priority? Well, instead of assigning fixed priorities to jobs, MLFQ moves a job up and down the priority scale based on its *observed behavior*. For example, a job that repeatedly let go of the CPU while waiting for a a keyboard input is an interactive application whose priority must be high. An application with intensive use of the CPU for longer times gets a low priority. In this way, MLFQ *learns* from the *history* behavior of processes to predict their *future*.
+- The following diagram shows how MLFQ works. Jobs A and B have a high priority, while C and D have lower priorities:
+![MLFQ](img/MLFQ.png)
+- For the rest of this section, we will try to understand how priority changes over time. We will continue to improve and add on more rules to our MLFQ until we have a complete picture of how it works.
+
+### Changing priority:
+- A job doesn't live its entire life inside one queue, but its priority changes dynamically as it lives. Imagine that our workload is a mixed bag of IO-bound interactive short running jobs, and a long running CPU-bound non-interactive jobs. The priorities of such jobs can be changed according to these rules:
+	- **Rule 3**: When a job first arrive to the scheduler it is placed in the highest priority queue.
+	- **Rule 4a**: If a job uses an entire time slice without letting go of the CPU, its priority is reduced.
+	- **Rule 4b**: If a job lets go of the CPU before its time slice is over, the job stays in the same priority queue.
+- Following these rules, imagine we have a long-running CPU-bound job arriving at the scheduler. It is first placed at the highest priority queue. It eats through the whole first time slice so it gets downgraded to the next lower priority queue. It keeps doing so until it reaches the bottom of the queue.
+- Imagine a second job, but this time a short job enters the system before the first long job is over. The short job is placed in the highest priority queue. This short job might either stay in the highest queue or at worst be downgraded one or queues only because it is short. The scheduler will interrupt the long job, and switch to executing this short job because it still has a higher priority. This way, MLFQ mimics SJF.
+- What happens when a highly responsive job that include many successive IO requests enters the scene? Such a job will probably never eats up through a whole time slice, so it will stay at the highest priority queue at all time so it achieves the high performance it deserves. 
+
+#### Problems with our MLFQ Implementation so Far:
+- Our configuration of MLFQ so far suffers from several major flaws:
+	- The lower priority queues might be **starved** of all CPU time, especially when there are too many interactive applications placed in higher queues. 
+	- Malicious actors might optimize their job behavior so it look like a highly interactive job. This makes it monopolize CPU time. Such attacks are especially dangerous in data centers with shred CPUs and memories.
+	- A  job might also change its behavior over time, so it can start as CPU-bound application but at some point it becomes an interactive job. This job in urgent need of response time is in a very low priority queue has no way of elevating itself back to where it really belongs.
+
+### Boosting Priority:
+- We can periodically **boost** the priority of all jobs, by for example moving all jobs to the topmost priority queue. We can device a new rule now:
+	- **Rule 5**: After a time period S, move all jobs to the topmost priority queue.
+- This boosting achieves two goals. First, the CPU bound jobs don't get starved of CPU times as they move up the priority hierarchy and compete with higher priority jobs using RR. Second, jobs that have become suddenly interactive can now be treated as they deserve and be given better response time.
+- The value S after which a boost needs to happen must be set with care. If S is too large, starvation of lower-queue long running jobs will still be prone to starvation. If S is too small, short-running job might not get the responsiveness they need.
+
+### Better Accounting:
+- Now we need to make our MLFQ resilient to schedule gaming. I don't really understand this part. The authors say that even interactive jobs will be downgraded down the priority hierarchy as if a long job that includes interactivity is treated almost exactly as one that is IO-bound :confused:!! They suggest the following rule (which replaces rules 4a and 4b):
+	- **Rule 4**: Every job will keep moving down the priority sscale regardless of their use of IO and letting go of the CPU time too soon.
+- This configuration is not as easy to game, but 
+- At least, the SJT principle will be still maintained in this new configuration.
+
+### Additional Issues:
+- One important issue to consider when designing an MLFQ scheduler is so-called parameterization which include:
+	- Deciding how many queues to use.
+	- Should queues have the same time slices? If not, how big a time slice per queue should be?
+	- How often should priority be boosted?
+- There are no ready answers for these questions. Designers need to fine tune these parameters until they reach satisfactory results.
+- An example of MLFQ parameterization is the choice of time slices for queues. Higher priority queues have shorter slices as they'd usually contain shorter jobs, and the slices get larger as you move down to lower-priority queues. Low priority jobs would use more CPU per slice as they are mainly hungry for CPU.
+- The Solaris implementation of MLFQ allows system admin to alter the way priorities and scheduling work to suit her desires.
+
 ## Proportional Share Scheduler:
+-
+s
 ## Multiprocessor Scheduling:
