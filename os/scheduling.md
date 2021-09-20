@@ -93,7 +93,7 @@
 
 ### Better Accounting:
 - Now we need to make our MLFQ resilient to schedule gaming. I don't really understand this part. The authors say that even interactive jobs will be downgraded down the priority hierarchy as if a long job that includes interactivity is treated almost exactly as one that is IO-bound :confused:!! They suggest the following rule (which replaces rules 4a and 4b):
-	- **Rule 4**: Every job will keep moving down the priority sscale regardless of their use of IO and letting go of the CPU time too soon.
+	- **Rule 4**: Every job will keep moving down the priority scale regardless of their use of IO and letting go of the CPU time too soon.
 - This configuration is not as easy to game, but 
 - At least, the SJT principle will be still maintained in this new configuration.
 
@@ -104,9 +104,26 @@
 	- How often should priority be boosted?
 - There are no ready answers for these questions. Designers need to fine tune these parameters until they reach satisfactory results.
 - An example of MLFQ parameterization is the choice of time slices for queues. Higher priority queues have shorter slices as they'd usually contain shorter jobs, and the slices get larger as you move down to lower-priority queues. Low priority jobs would use more CPU per slice as they are mainly hungry for CPU.
-- The Solaris implementation of MLFQ allows system admin to alter the way priorities and scheduling work to suit her desires.
+- The Solaris implementation of MLFQ allows system administrator to alter the way priorities and scheduling work to suit her desires.
 
 ## Proportional Share Scheduler:
--
-s
+- Another widely used scheduler is the **proportional share** or **fair share** scheduler. Instead of optimizing for turnaround or response time, it tries to guarantee that each job gains a certain percentage of CPU time. An early form of proportional share scheduling was the so-called **lottery scheduling**. In such a type of scheduling, we often run a lottery to determine which process should run next, and processes that should run more often need to be given higher chances of winning.
+
+### Basics, Tickets and Shares:
+- Each process has a number of tickets, and the number of tickets a process has corresponds with its share/proportion of CPU time (or whatever resource). If processes A and B have 75 and 25 tickets respectively, then A has a 75% share of CPU time, and B has 25%. Let's suppose that A has tickets 0 through 74, while B has tickets 75 through 99. The scheduler will pick a ticket whose number is between 0 and 99 at random. 7, and 57 for example will belong to A, while 89 will be B's. This probabilistic setup will not guarantee exact proportion but will approximate it over long runs.
+- The choice of randomness will at least free the system from the burden of tracking which processes has used how much state. There are other good side effects to choosing randomness but I don't understand them to be honest!
+
+### Implementation:
+- I have absolutely no idea what's going on here!!!! Come on!!
+
+### The Linux Completely Fair Scheduler (CFS):
+- I don't really see how this scheduler relates to the ones just mentioned, the lottery schedulers, apart from the fact that it is another fair share scheduler. Anyways, this doesn't kinda seem as voodooy as the previous subsection which was all jumbled up!
+- The **completely fair scheduler (CFS)** used in Linux divides the CPU between all jobs evenly in a dynamic and scalable fashion (I don't know how this scalability is achieved). What probably sets this scheduler apart is that it does very little work to schedule jobs since time is shared as evenly as possible between different processes. This is a source of great efficiency!
+- CFS divides CPU time evenly between different processes through so-called **virtual runtime (`vruntime`)**. This `vruntime` increases evenly for each running process as time progresses. When a scheduling decision need to be made, the scheduler picks the process with the lowest `vruntime`. 
+- How does CFS avoid context switching too often or less often? Over-context- switching is bad for performance, while less context switching might mean less fairness in the short time! (really? :confused:). CFS provides a number of parameters to fix this problem. One such parameter is **`sched_latency`** which is used to determine the run time of a job before considering a switch. CFS uses something like 48 ms for `sched_latency` :confused: and divides this by the number of running processes. If we have 4 processes, this means each job gets 12 seconds before switching occurs. Just remember that `vruntime` increases with time, but when does it stop growing? and how about newly arriving processes?
+- Another important parameter is the so-called **`min_granularity`** which acts as some kind of minimum threshold for the size of a run time of a process. This is useful when there are way too many processes. If we divide 48, our dear `sched_latency`, by a 100 then we will need to context switch every half millisecond which is really bad! A typical value for `min_granularity` is 6 ms.
+- Different processes can be assigned **weights** to indicate different priorities. This can be done by the Unix **nice** processor level, *what??!!* :confused:!! I believe different processes acquire different time slice priorities through this mechanism.
+- Instead of using a simple list for tracking running processes, CFS uses a red-black tree which has a very efficient read time of ***O(log n)***. This is how CFS scalability is achieved. This structure only tracks running processes. Processes that go on sleeps during an IO operation for examples are not kept track of.
+- A job that goes on a sleep while waiting for an IO response don't get their `vruntime` increased during their sleep which means they get starved of CPU time by their siblings that didn't sleep and now have a much larger `vruntime`. CFS tries to fix this by assigning the just reawaken process a `vruntime` from a process in the tree (probably the one with the smallest `vruntime`). Anywayss, processes waking froma n IO sleep never get a fair share CPU time. 
+
 ## Multiprocessor Scheduling:
