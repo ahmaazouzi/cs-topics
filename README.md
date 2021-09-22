@@ -23,9 +23,9 @@
 	+ [Security in Computer Networks](networking/security.md) :white_check_mark:
 
 - [Operating Systems](os/):
-	+ [Overview](os/overview.md)
-	+ [Processes](os/processes.md)
-	+ [Scheduling](os/scheduling.md)
+	+ [Overview](os/overview.md) :white_check_mark:
+	+ [Processes](os/processes.md) :white_check_mark:
+	+ [Scheduling](os/scheduling.md) :white_check_mark:s
 	
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables)](algorithms/basicDS.md) :arrows_counterclockwise:
