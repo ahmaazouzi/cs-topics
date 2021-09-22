@@ -25,7 +25,7 @@
 - [Operating Systems](os/):
 	+ [Overview](os/overview.md) :white_check_mark:
 	+ [Processes](os/processes.md) :white_check_mark:
-	+ [Scheduling](os/scheduling.md) :white_check_mark:s
+	+ [Scheduling](os/scheduling.md) :white_check_mark:
 	
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables)](algorithms/basicDS.md) :arrows_counterclockwise:
