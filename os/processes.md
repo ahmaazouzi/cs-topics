@@ -15,7 +15,7 @@
 * [Limited Direct Execution](#limited-direct-execution)
 	+ [Direct but Limited Execution](#direct-but-limited-execution)
 		+ [Exception!!](#exception!!)
-
+s
 ## Intro:
 - Processes are probably the most basic and powerful abstraction provided by operating systems. In this document, we will follow the book's discussions of processes, sometimes briefly because much of this topic has been discussed in another system's document. Our discussion of the topic will be divided into 3 lage sections:
 	- The first section will discuss the general idea of what a process is and how an OS uses it.
