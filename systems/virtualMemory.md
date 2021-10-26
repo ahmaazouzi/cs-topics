@@ -217,7 +217,7 @@
 	- *Step 4*: The MMU translates the virtual address to physical address and sends to cache or main memory. 
 	- *Step 5*: The cache/main memory returns the requested data to the CPU.
 - When there is a TLB miss, the PTE is requested from cache/main memory. The fetched PTE is then stored in the TLB and maybe overwriting an existing PTE. The following image shows how TLB hits and misses work:
-[TLB hits and misses](img/tlb.png)
+![TLB hits and misses](img/tlb.png)
 
 ### Multi-Level Page Tables: 
 - So far, we've been talking about a single page table for each process. In a 32-bit system, having 4KB pages with a 4-byte PTE for each page requires having a 4 MB page table in memory at all time for each process even if the process uses only a small part of the VM. This becomes a bigger problem in 64-bit systems. 
