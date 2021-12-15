@@ -30,8 +30,8 @@
 - [Algorithms and Data Structures:](algorithms/)
 	+ [Basic Data Structures (Queues, Stacks, Linked Lists, Hash Tables)](algorithms/basicDS.md) :arrows_counterclockwise:
 	+ [Binary Search Trees](algorithms/bst.md) :arrows_counterclockwise:
-- - [Compilers and Languages](language_compilation):arrows_counterclockwise
-	+ [Compilation](language_compilation/compilation.md):arrows_counterclockwise
+- [Compilers and Languages](language_compilation):arrows_counterclockwise:
+	+ [Compilation](language_compilation/compilation.md):arrows_counterclockwise:
 
 - Discrete Math:
 - Distributed Systems:
