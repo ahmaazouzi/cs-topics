@@ -45,15 +45,16 @@
 
 ## Intro and Motivation:
 - A bit is useless by itself, but multiple bits grouped together can be used to encode different types of information, be it characters, negative or nonnegative numbers, etc. 
-- In this document we will study three different types of encodings: **unsigned** encodings which is used to represent whole numbers, **two's complement** encodings used to represent **signed** integers, and **floating-point** encodings which are a binary version of scientific notation used to represent real numbers.- We will also discuss issues that that perplex novices such as **overflow** which happens when we try to represent a number that requires more bits than what we used to represent it. 
+- In this document we will study three different types of encodings: **unsigned** encodings which is used to represent whole numbers, **two's complement** encodings used to represent **signed** integers, and **floating-point** encodings which are a binary version of scientific notation used to represent real numbers.
+- We will also discuss issues that that perplex novices such as **overflow** which happens when we try to represent a number that requires more bits than what we used to represent it. 
 - Integer arithmetic in computer, however, respects traditional algebraic properties such as associativity and commutativity and all that jazz.
-- Floating-point arithmetic can does not respect some algebraic rules due to so called *precision*. Consider the following two examples:
+- Floating-point arithmetic does not respect some algebraic rules due to so called *precision*. Consider the following two examples:
 	+ ***3.14 + (1e20 - 1e20) = 3.14***
 	+ ***(3.14 + 1e20) - 1e20 = 0***
 - Integers are precise while floats are just approximations to real numbers.
-- Having only a hazy idea about how how numbers are represented in computers can lead to some confusing results and cause security vulnerability. You have no choice but sit down and spend a little time trying to understand how these work.
+- Having only a hazy idea about how numbers are represented in computers can lead to some confusing results and cause security vulnerabilities. You have no choice but sit down and spend a little time trying to understand how these work.
 - Several binary representations of numbers are used such as *hexadecimal* and *octal* and these are crucial to understand machine-level code.
-- *Bit-level* manipulation is also a crucial in understanding code generated and optimized by the compiler. 
+- *Bit-level* manipulation is also crucial in understanding code generated and optimized by the compiler. 
 - Understanding this document will allow you to make a strong connection between actual real numbers and integers and their computer representation and have a stronger awareness of the capabilities and limitations of computers.  
 
 ## Information Storage:
